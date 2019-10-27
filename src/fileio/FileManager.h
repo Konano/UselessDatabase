@@ -89,11 +89,11 @@ public:
 	 * 功能:关闭文件
 	 * 返回:操作成功，返回0
 	 */
-	int closeFile(int fileID) {
+	bool closeFile(int fileID) {
 		fm->setBit(fileID, 1);
 		int f = fd[fileID];
 		close(f);
-		return 0;
+		return false;
 	}
 	/*
 	 * @函数名createFile

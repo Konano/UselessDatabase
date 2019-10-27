@@ -22,6 +22,7 @@
 #include "bufmanager/BufPageManager.h"
 #include "fileio/FileManager.h"
 #include "utils/pagedef.h"
+#include "recordmanager/RecordManager.h"
 #include <iostream>
 
 using namespace std;
