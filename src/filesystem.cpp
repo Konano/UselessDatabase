@@ -31,11 +31,42 @@ int main() {
 	MyBitMap::initConst();   //新加的初始化
 	FileManager* fm = new FileManager();
 	BufPageManager* bpm = new BufPageManager(fm);
-	fm->createFile("testfile.txt"); //新建文件
-	fm->createFile("testfile2.txt");
-	int fileID, f2;
-	fm->openFile("testfile.txt", fileID); //打开文件，fileID是返回的文件id
-        fm->openFile("testfile2.txt", f2);
+	RecordManager* rm = new RecordManager(bpm,fm);
+	//rm->createFile("testfile.txt"); //新建文件
+	//rm->createFile("testfile2.txt");
+	//int fileID1, fileID2;
+	//rm->openFile("testfile.txt", fileID1); //打开文件，fileID是返回的文件id
+    //rm->openFile("testfile2.txt", fileID2);
+    
+    vector<string> headlines;
+    headlines.push_back("studentID");
+    headlines.push_back("studentName");
+    vector<int> datalength;
+    datalength.push_back(1);
+    datalength.push_back(2);
+    vector<int> datatype;
+    datatype.push_back(0);
+    datatype.push_back(2);
+    //rm->createTable("dataset1",headlines,datalength,datatype);
+    if(rm->openTable("dataset1"))cout << "OK" << endl;
+    else cout << "shit" << endl;
+    Record x;
+    x.RID = 0;
+    Data* a = new IntData(12);
+    string str = "ha";
+    Data* b = new StringData(str);
+    x.data.push_back(a);
+    x.data.push_back(b);
+    if(rm->addRecord("dataset1",x))cout << "OK" << endl;
+    else cout << "shit" << endl;
+    vector<Record> v = rm->findRecord("dataset1",0,a);
+    for(auto a: v)cout << a.toString() << endl;
+    if(rm->removeRecord("dataset1",5))cout << "OK" << endl;
+    else cout << "shit" << endl;
+    v = rm->findRecord("dataset1",0,a);
+    for(auto a: v)cout << a.toString() << endl;
+    rm->close();
+    /*
 	for (int pageID = 0; pageID < 1000; ++ pageID) {
 		int index;
 		//为pageID获取一个缓存页
@@ -66,5 +97,6 @@ int main() {
 	}
 	//程序结束前可以调用BufPageManager的某个函数将缓存中的内容写回
 	//具体的函数大家可以看看ppt或者程序的注释
+	*/
 	return 0;
 }
