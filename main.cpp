@@ -10,11 +10,11 @@
 #include "Type.h"
 
 
-struct IndexRecord {
-    uint16_t NEXT_DEL_RECORD;
-    uint RECORD_ID;
-    uint8_t KEY; // TODO: its length is not constant
-};
+// struct IndexRecord {
+//     uint16_t NEXT_DEL_RECORD;
+//     uint RECORD_ID;
+//     uint8_t KEY; // TODO: its length is not constant
+// };
 
 /*
 class Page {
@@ -53,14 +53,14 @@ public:
 
 
 
-struct Record {
-    int recordID;
-    Any* data;
-};
+// struct Record {
+//     int recordID;
+//     Any* data;
+// };
 
-struct ForeignKey {
-    // TODO:
-};
+// struct ForeignKey {
+//     // TODO:
+// };
 
 /*
 struct Index {
