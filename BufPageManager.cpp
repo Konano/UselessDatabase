@@ -29,7 +29,7 @@ void BufPageManager::writeBack(int index) {
 BufPageManager::BufPageManager(FileManager* fm) : fm(fm) {
     hash = new Hash(this);
     pool = new MemPool();
-    lastFileID = lastPageID = -1;
+    lastFileID = lastPageID = lastIndex = -1;
 }
 
 BufPageManager::~BufPageManager() {
@@ -44,16 +44,18 @@ BufPageManager::~BufPageManager() {
 
 BufType BufPageManager::getPage(int fileID, int pageID, int& index) {
     if (fileID == lastFileID && pageID == lastPageID) {
+        index = lastIndex;
         return lastBuf;
     }
     lastFileID = fileID;
     lastPageID = pageID;
-    index = hash->find(fileID, pageID);
+    lastIndex = index = hash->find(fileID, pageID);
     if (index != -1) {
         pool->access(index);
         return lastBuf = addr[index];
     } else {
         BufType buf = fetchPage(fileID, pageID, index);
+        lastIndex = index;
         fm->readPage(fileID, pageID, buf);
         return lastBuf = buf;
     }

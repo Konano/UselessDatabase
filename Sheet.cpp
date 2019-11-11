@@ -109,7 +109,7 @@ void Sheet::removeRecord(const int record_id) {
     int index;
     BufType buf = bpm->getPage(main_file, record_id / record_onepg, index);
     if (buf[record_id / 8] & (1 << (record_id % 8))) {
-        buf[record_num / 8] -= 1 << (record_num % 8);
+        buf[record_id / 8] -= 1 << (record_id % 8);
     }
     bpm->markDirty(index);
 }

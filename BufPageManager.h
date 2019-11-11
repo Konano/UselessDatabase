@@ -19,7 +19,7 @@ private:
     Hash* hash;
     MemPool* pool;
     
-    int lastFileID, lastPageID;
+    int lastFileID, lastPageID, lastIndex;
     BufType lastBuf;
 
     BufType fetchPage(int fileID, int pageID, int& index);
