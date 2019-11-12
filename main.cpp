@@ -8,6 +8,8 @@
 #include "Database.h"
 #include "Sheet.h"
 #include "Type.h"
+#include <iostream>
+using namespace std;
 
 
 // struct IndexRecord {
@@ -76,6 +78,19 @@ int main() {
     Sheet *sheet = db->openSheet("TestSheet");
     sheet->insertRecord(4, new Any[4]{2017011474, (char*)"ZLK", 160, 80});
     sheet->createIndex(0);
+    sheet->updateRecord(1,4,new Any[4]{2017011474, (char*)"ZLK", 160, 60});
+    Any* ans;
+    sheet->queryRecord(1,4,ans);
+
+    //cout << "check" << endl;
+    for(int i = 0;i < 4;i ++){
+        if (ans[i].anyCast<int>() != NULL) {
+            cout << ans[i].anyRefCast<int>() << endl;
+        }
+        if (ans[i].anyCast<char*>() != NULL) {
+            cout << *ans[i].anyCast<char*>() << endl;
+        }
+    }
 
     delete db;
 }

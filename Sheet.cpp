@@ -7,6 +7,8 @@
 #include "Index.h"
 
 #include <time.h>
+#include <iostream>
+using namespace std;
 
 extern char* Dir(const char* dir, const char* filename, const char* suffix);
 
@@ -96,7 +98,7 @@ Sheet::Sheet(Database* db, const char* name, int col_num, Type* col_ty, bool cre
 void Sheet::insertRecord(const int len, Any* info) {
     int index;
     BufType buf = bpm->getPage(main_file, record_num / record_onepg, index);
-    buf[record_num / 8] |= 1 << (record_num % 8);
+    buf[(record_num % record_onepg) / 8] |= 1 << (record_num % 8);
     buf += (record_onepg - 1) / 8 + 1;
     buf += record_size * (record_num % record_onepg);
     for(int i = 0; i < len; i++) {
@@ -116,18 +118,56 @@ void Sheet::insertRecord(const int len, Any* info) {
 void Sheet::removeRecord(const int record_id) {
     int index;
     BufType buf = bpm->getPage(main_file, record_id / record_onepg, index);
-    if (buf[record_id / 8] & (1 << (record_id % 8))) {
-        buf[record_id / 8] -= 1 << (record_id % 8);
+    if (buf[(record_id % record_onepg) / 8] & (1 << (record_id % 8))) {
+        buf[(record_id % record_onepg) / 8] -= 1 << (record_id % 8);
     }
     bpm->markDirty(index);
 }
 
-int Sheet::quertRecord(const int record_id) {
+int Sheet::queryRecord(const int record_id, const int len, Any* &info) {
     int index;
     BufType buf = bpm->getPage(main_file, record_id / record_onepg, index);
-    if (buf[record_id / 8] & (1 << (record_id % 8))) {
+    if (buf[(record_id % record_onepg) / 8] & (1 << (record_id % 8))) {
+        buf += (record_onepg - 1) / 8 + 1;
+        buf += record_size * (record_id % record_onepg);
+        info = (Any*) malloc(len * sizeof(Any));
+        memset(info, 0, len * sizeof(Any));
+        for(int i = 0; i < len; i++) {
+            if (this->col_ty[i].ty == enumType::INT) {
+                info[i] = *(int*)buf;
+                buf += 4;
+            }
+            if (this->col_ty[i].ty == enumType::CHAR) {
+                char* str = (char *)malloc((col_ty[i].len+1) * sizeof(char));
+                memcpy(str, buf, col_ty[i].len);
+                str[col_ty[i].len] = '\0';
+                info[i] = str;
+                buf += col_ty[i].len;
+            }
+        }
         return 0;
-    } else return -1;
+    } 
+    else return -1;
+}
+
+void Sheet::updateRecord(const int record_id, const int len, Any* info) {
+    int index;
+    BufType buf = bpm->getPage(main_file, record_id / record_onepg, index);
+    //buf[(record_id % record_onepg) / 8] |= 1 << (record_id % 8);
+    buf += (record_onepg - 1) / 8 + 1;
+    buf += record_size * (record_id % record_onepg);
+    for(int i = 0; i < len; i++) {
+        if (info[i].anyCast<int>() != NULL) {
+            *(uint32_t*)buf = *info[i].anyCast<int>();
+            buf += 4;
+        }
+        if (info[i].anyCast<char*>() != NULL) {
+            memcpy(buf, *info[i].anyCast<char*>(), col_ty[i].len);
+            buf += col_ty[i].len;
+        }
+    }
+    bpm->markDirty(index);
+    //record_num++;
 }
 
 // json Sheet::toJson() {
