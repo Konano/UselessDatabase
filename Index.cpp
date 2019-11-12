@@ -115,6 +115,9 @@ void Index::close() {
 
 void Index::initIndex() {
     page_num = 1;
+    root_page = 0;
+    next_del_page = 1;
+
     int index;
     BufType buf = sheet->bpm->getPage(fileID, 0, index);
     *(uint32_t *)(buf) = (uint32_t)-1;
