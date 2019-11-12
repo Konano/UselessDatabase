@@ -38,7 +38,7 @@ public:
     int quertRecord(const int record_id);
 
     json toJson();
-    void fromJson(json j);
+    Sheet(Database* db, json j);
 };
 
 #endif

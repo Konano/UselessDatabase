@@ -36,6 +36,8 @@ public:
         _pValue = new Holder<ValueType>(value);
     }
 
+    Any() :_pValue(nullptr) {}
+
     Any(const Any &any) : _pValue(any._pValue->clone()) {}
 
     ~Any()

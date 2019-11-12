@@ -43,10 +43,6 @@ json Sheet::toJson() {
     return j;
 }
 
-void Sheet::fromJson(json j) {
-    // TODO:
-}
-
 // char* Sheet::getFileName(int ty) {
 //     if (ty == -2) {
 //         // TODO: varchar
@@ -120,4 +116,32 @@ int Sheet::quertRecord(const int record_id) {
     if (buf[record_id / 8] & (1 << (record_id % 8))) {
         return 0;
     } else return -1;
+}
+
+// json Sheet::toJson() {
+//     json j;
+//     j["name"] = name;
+//     j["col_num"] = col_num;
+//     for (uint i = 0; i < col_num; i++) {
+//         j["col_ty"].push_back(col_ty[i].toJson());
+//     }
+//     j["record_num"] = record_num;
+//     j["record_size"] = record_size;
+//     j["record_onepg"] = record_onepg;
+//     return j;
+// }
+
+Sheet::Sheet(Database* db, json j) { // from JSON
+    this->db = db;
+    this->fm = db->fm;
+    this->bpm = db->bpm;
+    strcpy(name, j["name"].get<std::string>().c_str());
+    col_num = j["col_num"].get<int>();
+    record_num = j["record_num"].get<int>();
+    record_size = j["record_size"].get<int>();
+    record_onepg = j["record_onepg"].get<int>();
+    for (uint i = 0; i < col_num; i++) {
+        col_ty[i] = Type(j["col_ty"][i]);
+    }
+    fm->openFile(Dir(db->name, name, ".usid"), main_file);
 }

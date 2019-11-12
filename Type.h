@@ -28,7 +28,7 @@ struct Type {
     enumKeyType key = enumKeyType::Common;
     bool unique = false;
     bool null = true;
-    Any def = nullptr; 
+    Any def; 
     uint size() {
         if (ty == enumType::INT) return 4;
         if (ty == enumType::CHAR) return len;
@@ -58,8 +58,22 @@ struct Type {
         }
         return j;
     }
-    void fromJson(json j) {
-        // TODO:
+    Type(json j) {
+        strcpy(name, j["name"].get<std::string>().c_str());
+        ty = (enumType)j["ty"].get<int>();
+        len = j["len"].get<int>();
+        key = (enumKeyType)j["key"].get<int>();
+        unique = j["unique"].get<bool>();
+        null = j["null"].get<bool>();
+        if (j.count("def")) {
+            if (ty == enumType::INT) {
+                def = j["def"].get<int>();
+            } else if (ty == enumType::CHAR) {
+                def = j["def"].get<std::string>().c_str();
+            }
+        } else {
+            def = Any();
+        }
     }
 
 };

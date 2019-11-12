@@ -25,12 +25,12 @@ void Database::fromJson(json j) {
     strcpy(name, j["name"].get<std::string>().c_str());
     sheet_num = j["sheet_num"].get<int>();
     for (int i = 0; i < sheet_num; i++) {
-        // TODO:
+        sheet[i] = new Sheet(this, j["sheet"][i]);
     }
 }
 
 void Database::update() {
-    std::string j = toJson().dump();
+    std::string j = toJson().dump(4);
     WriteFile(Dir(name, "database.udb"), j.c_str(), j.length());
 }
 
@@ -70,4 +70,13 @@ Sheet* Database::createSheet(const char* name, int col_num, Type* col_ty) {
     sheet[sheet_num++] = new_sheet;
     update();
     return new_sheet;
+}
+
+Sheet* Database::openSheet(const char* name) {
+    for (int i = 0; i < sheet_num; i++) {
+        if (strcmp(sheet[i]->name, name) == 0) {
+            return sheet[i];
+        }
+    }
+    return nullptr;
 }

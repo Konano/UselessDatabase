@@ -1,2 +1,4 @@
 *.o
 useless
+*.udb
+*.usid
