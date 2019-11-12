@@ -67,14 +67,15 @@ public:
 
 int main() {
 
-    Database *db = new Database("TestDatabase", true); // New Database
-    Sheet *sheet = db->createSheet("TestSheet", 4, new Type[4]{Type("Number"), Type("Name", enumType::CHAR, 3), Type("Height"), Type("Weigh")});
-    sheet->insertRecord(4, new Any[4]{2017011474, (char*)"ZLK", 160, 80});
-    sheet->removeRecord(0);
-
-    // Database *db = new Database("TestDatabase", false); // New Database
-    // Sheet *sheet = db->openSheet("TestSheet");
+    // Database *db = new Database("TestDatabase", true); // New Database
+    // Sheet *sheet = db->createSheet("TestSheet", 4, new Type[4]{Type("Number"), Type("Name", enumType::CHAR, 3), Type("Height"), Type("Weigh")});
     // sheet->insertRecord(4, new Any[4]{2017011474, (char*)"ZLK", 160, 80});
+    // sheet->removeRecord(0);
+
+    Database *db = new Database("TestDatabase", false); // New Database
+    Sheet *sheet = db->openSheet("TestSheet");
+    sheet->insertRecord(4, new Any[4]{2017011474, (char*)"ZLK", 160, 80});
+    sheet->createIndex(0);
 
     delete db;
 }

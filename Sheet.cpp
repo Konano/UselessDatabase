@@ -6,6 +6,8 @@
 #include "Type.h"
 #include "Index.h"
 
+#include <time.h>
+
 extern char* Dir(const char* dir, const char* filename, const char* suffix);
 
 // class Sheet {
@@ -48,7 +50,7 @@ json Sheet::toJson() {
     j["record_onepg"] = record_onepg;
     j["index_num"] = index_num;
     for (uint i = 0; i < index_num; i++) {
-        // j["index"].push_back(index[i].toJson());
+        j["index"].push_back(index[i].toJson());
     }
     return j;
 }
@@ -154,4 +156,25 @@ Sheet::Sheet(Database* db, json j) { // from JSON
         col_ty[i] = Type(j["col_ty"][i]);
     }
     fm->openFile(Dir(db->name, name, ".usid"), main_file);
+    index_num = j["index_num"].get<int>();
+    for (uint i = 0; i < index_num; i++) {
+        index[i] = Index(this, j["index"][i]);
+    }
 }
+
+inline char* getTime() {
+    time_t rawtime;
+    time( &rawtime );
+    char* buffer = (char *)malloc(MAX_NAME_LEN * sizeof(char));
+    strftime(buffer, MAX_NAME_LEN, "%Y%m%d%H%M%S", localtime( &rawtime ));
+    return buffer;
+}
+
+void Sheet::createIndex(uint key_index) {
+    index[index_num] = Index(this, getTime(), key_index);
+    index_num++;
+}
+
+// void Sheet::removeIndex(uint index_id) {
+
+// }

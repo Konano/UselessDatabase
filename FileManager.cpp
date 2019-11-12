@@ -116,15 +116,14 @@ char* Dir(const char* dir, const char* filename, const char* suffix) {
     return data;
 }
 
-char* Dir(const char* dir, const char* filename, const int _id, const char* suffix) {
-    char const *id = std::to_string(_id).c_str();
-    int length = strlen(dir) + 1 + strlen(filename) + 1 + strlen(id) + strlen(suffix);
+char* Dir(const char* dir, const char* filename, const char* name, const char* suffix) {
+    int length = strlen(dir) + 1 + strlen(filename) + 1 + strlen(name) + strlen(suffix);
     char* data = (char *)malloc((length + 1) * sizeof(char));
     strcpy(data, dir);
     strcpy(data + strlen(dir), "/");
     strcpy(data + strlen(dir) + 1, filename);
     strcpy(data + strlen(dir) + 1 + strlen(filename), "_");
-    strcpy(data + strlen(dir) + 1 + strlen(filename) + 1, id);
-    strcpy(data + strlen(dir) + 1 + strlen(filename) + 1 + strlen(id), suffix);
+    strcpy(data + strlen(dir) + 1 + strlen(filename) + 1, name);
+    strcpy(data + strlen(dir) + 1 + strlen(filename) + 1 + strlen(name), suffix);
     return data;
 }

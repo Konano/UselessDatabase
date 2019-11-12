@@ -38,6 +38,8 @@ public:
 
     json toJson();
     Sheet(Database* db, json j);
+
+    void createIndex(uint key_index);
 };
 
 #endif
