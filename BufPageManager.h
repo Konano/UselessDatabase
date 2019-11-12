@@ -2,12 +2,12 @@
 #define __BUF_PAGE_MANAGER
 
 #include "constants.h"
-#include "FileManager.h"
-#include "Hash.h"
-#include "MemPool.h"
+
 #include <string.h>
 
 class Hash;
+class MemPool;
+class FileManager;
 
 class BufPageManager {
 private:

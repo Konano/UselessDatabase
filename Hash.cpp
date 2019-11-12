@@ -1,5 +1,7 @@
 #include "Hash.h"
 
+#include "BufPageManager.h"
+
 int Hash::hash(int fileID, int pageID) {
     return pageID * HASH_PRIME + fileID;
 }

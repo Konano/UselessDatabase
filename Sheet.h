@@ -2,16 +2,15 @@
 #define __SHEET
 
 #include "constants.h"
-#include "Database.h"
-#include "FileManager.h"
-#include "BufPageManager.h"
-#include "Sheet.h"
 #include "Type.h"
+#include "Index.h"
 
 #include "json.hpp"
 using json = nlohmann::json;
 
 class Database;
+class FileManager;
+class BufPageManager;
 
 class Sheet {
 public:
@@ -23,8 +22,8 @@ public:
     uint col_num = 0;
     Type col_ty[MAX_COL_NUM];
     // ForeignKey f_key[MAX_COL_NUM];
-    // int index_num = 0;
-    // Index index[MAX_INDEX_NUM];
+    uint index_num = 0;
+    Index index[MAX_INDEX_NUM];
     uint record_num = 0;
     int main_file;
     uint record_size;

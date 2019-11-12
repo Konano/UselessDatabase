@@ -1,5 +1,11 @@
 #include "Sheet.h"
 
+#include "Database.h"
+#include "FileManager.h"
+#include "BufPageManager.h"
+#include "Type.h"
+#include "Index.h"
+
 extern char* Dir(const char* dir, const char* filename, const char* suffix);
 
 // class Sheet {
@@ -40,6 +46,10 @@ json Sheet::toJson() {
     j["record_num"] = record_num;
     j["record_size"] = record_size;
     j["record_onepg"] = record_onepg;
+    j["index_num"] = index_num;
+    for (uint i = 0; i < index_num; i++) {
+        // j["index"].push_back(index[i].toJson());
+    }
     return j;
 }
 

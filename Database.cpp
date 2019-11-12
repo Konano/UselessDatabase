@@ -1,5 +1,9 @@
 #include "Database.h"
 
+#include "Sheet.h"
+#include "FileManager.h"
+#include "BufPageManager.h"
+
 #ifdef WIN32
 #include <direct.h>
 #elif __linux__

@@ -2,18 +2,16 @@
 #define __DATABASE
 
 #include "constants.h"
-#include "Sheet.h"
-#include "FileManager.h"
-#include "BufPageManager.h"
 #include "Type.h"
 
 #include "json.hpp"
 using json = nlohmann::json;
 
 class Sheet;
+class FileManager;
+class BufPageManager;
 
 class Database {
-
 private:
     json toJson();
     void fromJson(json j);

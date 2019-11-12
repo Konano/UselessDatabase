@@ -1,5 +1,9 @@
 #include "BufPageManager.h"
 
+#include "FileManager.h"
+#include "Hash.h"
+#include "MemPool.h"
+
 BufType BufPageManager::fetchPage(int fileID, int pageID, int& index) {
     index = pool->alloc();
 

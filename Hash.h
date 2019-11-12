@@ -2,7 +2,7 @@
 #define __HASH
 
 #include "constants.h"
-#include "BufPageManager.h"
+
 #include <string.h>
 
 class BufPageManager;
