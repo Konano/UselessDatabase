@@ -2,6 +2,7 @@
 #define __INDEX
 
 #include "constants.h"
+#include "Any.h"
 
 #include "json.hpp"
 using json = nlohmann::json;
@@ -18,6 +19,8 @@ public:
     uint root_page;
     uint next_del_page;
     uint16_t record_size;
+    uint rank;
+    //node *root;
     int fileID;
 
 private:
@@ -35,8 +38,11 @@ public:
     void open();
     void close();
 
+    int queryRecord(const int len, Any* info);
+
     void insertRecord(const int len, Any* info);
     void removeRecord(const int len, Any* info);
+    int searchRecord(const int len, Any* info);
 };
 
 #endif
