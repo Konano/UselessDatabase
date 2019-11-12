@@ -38,18 +38,17 @@ Database::Database(const char* name, bool create) {
     fm = new FileManager();
     bpm = new BufPageManager(fm);
 
-    if (access(this->name, 0) == -1) {
-        #ifdef WIN32
-        mkdir(this->name);
-        #elif __linux__
-        mkdir(this->name, 0777);
-        #endif
-    }
-
     if (create) {
         strcpy(this->name, name); 
         memset(sheet, 0, sizeof(sheet));
         sheet_num = 0;
+        if (access(this->name, 0) == -1) {
+            #ifdef WIN32
+            mkdir(this->name);
+            #elif __linux__
+            mkdir(this->name, 0777);
+            #endif
+        }
         update();
     } else {
         fromJson(json::parse(ReadFile(Dir(name, "database.udb"))));
