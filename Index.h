@@ -13,7 +13,7 @@ class Index {
 public:
     Sheet* sheet;
     char name[MAX_NAME_LEN];
-    uint key_cal; // Tree, Pointer, TODO: Finally will be index_cal
+    uint key; // Tree, Pointer, TODO: Finally will be index_cal
     uint page_num;
     uint root_page;
     uint next_del_page;
@@ -22,13 +22,21 @@ public:
 
 private:
     // IndexRecord* BTreeInsert(uint32_t pageID, Any key, Record* record);
-    // Any calKeyValue(Record* record, uint32_t key_cal);
+    // Any calKeyValue(Record* record, uint32_t key);
+    void initIndex();
+
 
 public:
     Index() {}
-    Index(Sheet* sheet, const char* name, uint key_cal);
+    Index(Sheet* sheet, const char* name, uint key);
     Index(Sheet* sheet, json j);
     json toJson();
+
+    void open();
+    void close();
+
+    void insertRecord(const int len, Any* info);
+    void removeRecord(const int len, Any* info);
 };
 
 #endif

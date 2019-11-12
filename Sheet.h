@@ -41,6 +41,7 @@ public:
     Sheet(Database* db, json j);
 
     void createIndex(uint key_index);
+    void removeIndex(uint index_id);
 };
 
 #endif

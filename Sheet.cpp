@@ -111,6 +111,9 @@ void Sheet::insertRecord(const int len, Any* info) {
             buf += col_ty[i].len;
         }
     }
+    for (uint i = 0; i < index_num; i++) {
+        this->index[i].insertRecord(len, info);
+    }
     bpm->markDirty(index);
     record_num++;
 }
@@ -153,7 +156,6 @@ int Sheet::queryRecord(const int record_id, const int len, Any* &info) {
 void Sheet::updateRecord(const int record_id, const int len, Any* info) {
     int index;
     BufType buf = bpm->getPage(main_file, record_id / record_onepg, index);
-    //buf[(record_id % record_onepg) / 8] |= 1 << (record_id % 8);
     buf += (record_onepg - 1) / 8 + 1;
     buf += record_size * (record_id % record_onepg);
     for(int i = 0; i < len; i++) {
@@ -167,7 +169,6 @@ void Sheet::updateRecord(const int record_id, const int len, Any* info) {
         }
     }
     bpm->markDirty(index);
-    //record_num++;
 }
 
 // json Sheet::toJson() {
@@ -212,7 +213,13 @@ inline char* getTime() {
 
 void Sheet::createIndex(uint key_index) {
     index[index_num] = Index(this, getTime(), key_index);
+    index[index_num].open();
     index_num++;
+}
+
+void Sheet::removeIndex(uint index_id) {
+    index[index_id].close();
+    index[index_id] = index[--index_num];
 }
 
 // void Sheet::removeIndex(uint index_id) {

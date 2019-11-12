@@ -18,7 +18,8 @@
 
 - Name
 - Comment（描述，默认为无）
-- RID 计数器
+- RID 计数器（包括被删除了的记录，递增）
+- record_num（未被删除的记录数量）
 - 列信息
   - 每一列的信息
     - Name
@@ -65,22 +66,22 @@ Page:
 | LEFT_PAGE        | 32    | 左边 Page 编号（全 1 表示 Null）                             |
 | RIGHT_PAGE       | 32    | 右边 Page 编号（全 1 表示 Null）                             |
 | NEXT_DEL_PAGE    | 32    | 下一个 DELETED Page 编号（非全 0 表示 DELETED，全 1 表示 Null） |
-| NEXT_DEL_RECORD  | 16    | 下一个 DELETED Record 的 Offset（全 1 表示 Null）            |
-| NEXT_UNUSE_PLACE | 16    | 未被使用空间的 Offset                                        |
+| NEXT_DEL_RECORD  | 16    | 下一个 DELETED Record 的 ByteOffset（全 1 表示 Null）            |
+| NEXT_UNUSE_PLACE | 16    | 未被使用空间的 ByteOffset                                       |
 | LEAF_OR_NOT      | 1     | 是否是叶子结点（1 为 Yes，0 为 No）                          |
 | RECORD_COUNT     | 15    | Record 数量                                                  |
 | RECORDS          | ?     | 各个记录                                                     |
-| SORTED_QUEUE     | 16(?) | 以每个 Record 的 Offset 组成的队列，在索引值上保持从小到大有序 |
+| SORTED_QUEUE     | 16(?) | 以每个 Record 的 ByteOffset 组成的队列，在索引值上保持从小到大有序 |
 
 Each record in index page:
 
 | Macro           | bits | Desc                                                         |
 | --------------- | ---- | ------------------------------------------------------------ |
-| NEXT_DEL_RECORD | 16   | 下一个 DELETED Record 的 Offset（非全 0 表示 DELETED，全 1 表示 Null） |
+| NEXT_DEL_RECORD | 16   | 下一个 DELETED Record 的 ByteOffset（非全 0 表示 DELETED，全 1 表示 Null） |
 | RECORD_ID       | 32   | Record ID                                                    |
 | KEY             | ?    | 索引值                                                       |
 
-PS: SORTED_QUEUE 前后放置两个极小极大值，极小值为 0000，极大值为 1111
+PS: SORTED_QUEUE 前后放置两个极小极大值，极小值为 0000，极大值为 1FFF
 
 ## 类型
 

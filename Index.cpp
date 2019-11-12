@@ -10,7 +10,7 @@ extern char* Dir(const char* dir, const char* filename, const char* name, const 
 /*
 struct Index {
 public:
-    uint32_t key_cal; // Tree, Pointer, TODO: Finally will be index_cal
+    uint32_t key; // Tree, Pointer, TODO: Finally will be index_cal
     bool main; // main index or not
     int value_index; // if not main, which value will be choosed
     uint32_t page_num;
@@ -50,7 +50,7 @@ private:
         }
     }
 
-    Any calKeyValue(Record* record, uint32_t key_cal);
+    Any calKeyValue(Record* record, uint32_t key);
 
 public:
 
@@ -62,13 +62,13 @@ public:
     //     if (main) {
     //         BTreeInsert(root_page, NULL, record);
     //     } else {
-    //         BTreeInsert(root_page, calKeyValue(record, key_cal), record);
+    //         BTreeInsert(root_page, calKeyValue(record, key), record);
     //     }
     // }
 };
 */
 
-// uint32_t key_cal; // Tree, Pointer, TODO: Finally will be index_cal
+// uint32_t key; // Tree, Pointer, TODO: Finally will be index_cal
 //     uint32_t page_num;
 //     uint32_t root_page;
 //     uint32_t next_del_page;
@@ -81,7 +81,7 @@ public:
 json Index::toJson() {
     json j;
     j["name"] = name;
-    j["key_cal"] = key_cal;
+    j["key"] = key;
     j["page_num"] = page_num;
     j["root_page"] = root_page;
     j["next_del_page"] = next_del_page;
@@ -89,21 +89,47 @@ json Index::toJson() {
     return j;
 }
 
-Index::Index(Sheet* sheet, const char* name, uint key_cal) : sheet(sheet), key_cal(key_cal) {
+Index::Index(Sheet* sheet, const char* name, uint key) : sheet(sheet), key(key) {
     strcpy(this->name, name);
     sheet->fm->createFile(Dir(sheet->db->name, sheet->name, name, ".usid"));
-    sheet->fm->openFile(Dir(sheet->db->name, sheet->name, name, ".usid"), fileID);
     page_num = root_page = next_del_page = 0;
-    record_size = sheet->col_ty[key_cal].size() + 2 + 4;
+    record_size = sheet->col_ty[key].size() + 2 + 4;
 }
 
 Index::Index(Sheet* sheet, json j) : sheet(sheet) {
     strcpy(name, j["name"].get<std::string>().c_str());
-    key_cal = j["key_cal"].get<int>();
+    key = j["key"].get<int>();
     page_num = j["page_num"].get<int>();
     root_page = j["root_page"].get<int>();
     next_del_page = j["next_del_page"].get<int>();
     record_size = j["record_size"].get<int>();
+}
+
+void Index::open() {
     sheet->fm->openFile(Dir(sheet->db->name, sheet->name, name, ".usid"), fileID);
 }
 
+void Index::close() {
+    sheet->fm->closeFile(fileID);
+}
+
+void Index::initIndex() {
+    page_num = 1;
+    int index;
+    BufType buf = sheet->bpm->getPage(fileID, 0, index);
+    *(uint32_t *)(buf) = (uint32_t)-1;
+    *(uint32_t *)(buf+4) = (uint32_t)-1;
+    *(uint32_t *)(buf+8) = 0;
+    *(uint16_t *)(buf+12) = (uint16_t)-1;
+    *(uint16_t *)(buf+14) = 18;
+    *(uint16_t *)(buf+16) = 1;
+    *(uint16_t *)(buf+PAGE_SIZE-2) = 0x1FFF;
+    *(uint16_t *)(buf+PAGE_SIZE-4) = 0x0000;
+}
+
+void Index::insertRecord(const int len, Any* info) {
+    if (page_num == 0) {
+        initIndex();
+    }
+    // TODO
+}
