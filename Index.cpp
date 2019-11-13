@@ -143,7 +143,7 @@ struct Record{
 
     //KEY
     Any* key;
-}
+};
 
 struct BtreeNode{
     //PAGE_INDEX
@@ -160,7 +160,7 @@ struct BtreeNode{
 
     //SORTED_QUEUE
     std::vector<int> sorted_queue;
-}
+};
 
 /*
 
