@@ -5,6 +5,8 @@
 #include "FileManager.h"
 #include "Database.h"
 
+#include <vector>
+
 extern char* Dir(const char* dir, const char* filename, const char* name, const char* suffix);
 
 /*
@@ -130,6 +132,34 @@ void Index::initIndex() {
     //*(uint16_t *)(buf+10) = 0x0000; // Records
     //*(uint32_t *)(buf+10 + record_size*rank) = 0x0000;// Child ptr
     //*(uint16_t *)(buf+10 + 4 + record_size*rank + 4*rank) = 0x0000;// SORTED_QUEUE
+}
+
+struct Record{
+    //NEXT_DEL_RECORD
+    int next_del_record;
+
+    //RECORD_ID
+    int record_id;
+
+    //KEY
+    Any* key;
+}
+
+struct BtreeNode{
+    //PAGE_INDEX
+    int index;
+
+    //RECORD_COUNT
+    int record_cnt;
+
+    //CHILD_PAGE_INDEX
+    std::vector<int> child;
+
+    //RECORDS
+    std::vector<Record> record;
+
+    //SORTED_QUEUE
+    std::vector<int> sorted_queue;
 }
 
 /*
