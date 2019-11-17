@@ -149,8 +149,8 @@ int Sheet::queryRecord(const int record_id, const int len, Any* &info) {
             }
         }
         return 0;
-    } 
-    else return -1;
+    }
+    return -1;
 }
 
 void Sheet::updateRecord(const int record_id, const int len, Any* info) {
