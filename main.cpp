@@ -56,7 +56,7 @@ public:
 // TODO: 修改一个 Key 后可能要修改外键 & Index
 // TODO: VARCHAR
 
-void test_0() {
+void test_0() { // Testcase: new database
     rmdir("TestDatabase");
 
     Database *db = new Database("TestDatabase", true);
@@ -69,7 +69,7 @@ void test_0() {
     cout << "Pass Test 0" << endl;
 }
 
-void test_1() {
+void test_1() { // Testcase: record manager
     test_0();
     Database *db = new Database("TestDatabase", false);
     Sheet *sheet = db->openSheet("TestSheet");
@@ -145,50 +145,76 @@ void test_2() {
     */
     delete db;
     cout << "Pass Test 2" << endl;
-    
 }
 
+void test_3() {
+    test_1();
 
-/*
-void test_3(){
-    Any a = 5;
-    if (a < 4) printf("Yes\n"); else printf("No\n");
-    if (a < 5) printf("Yes\n"); else printf("No\n");
-    if (a < 6) printf("Yes\n"); else printf("No\n");
-    if (a > 4) printf("Yes\n"); else printf("No\n");
-    if (a > 5) printf("Yes\n"); else printf("No\n");
-    if (a > 6) printf("Yes\n"); else printf("No\n");
-    if (a == 4) printf("Yes\n"); else printf("No\n");
-    if (a == 5) printf("Yes\n"); else printf("No\n");
-    if (a == 6) printf("Yes\n"); else printf("No\n");
-    if (a <= 4) printf("Yes\n"); else printf("No\n");
-    if (a <= 5) printf("Yes\n"); else printf("No\n");
-    if (a <= 6) printf("Yes\n"); else printf("No\n");
-    if (a >= 4) printf("Yes\n"); else printf("No\n");
-    if (a >= 5) printf("Yes\n"); else printf("No\n");
-    if (a >= 6) printf("Yes\n"); else printf("No\n");
-    Any b = (char*)"TEST";
-    if (b < "TGR") printf("Yes\n"); else printf("No\n");
-    if (b < "TDSFH") printf("Yes\n"); else printf("No\n");
-    if (b < "TEST") printf("Yes\n"); else printf("No\n");
-    if (b > "TGR") printf("Yes\n"); else printf("No\n");
-    if (b > "TDSFH") printf("Yes\n"); else printf("No\n");
-    if (b > "TEST") printf("Yes\n"); else printf("No\n");
-    if (b == "TGR") printf("Yes\n"); else printf("No\n");
-    if (b == "TDSFH") printf("Yes\n"); else printf("No\n");
-    if (b == "TEST") printf("Yes\n"); else printf("No\n");
-    if (b <= "TGR") printf("Yes\n"); else printf("No\n");
-    if (b <= "TDSFH") printf("Yes\n"); else printf("No\n");
-    if (b <= "TEST") printf("Yes\n"); else printf("No\n");
-    if (b >= "TGR") printf("Yes\n"); else printf("No\n");
-    if (b >= "TDSFH") printf("Yes\n"); else printf("No\n");
-    if (b >= "TEST") printf("Yes\n"); else printf("No\n");
+    Database *db = new Database("TestDatabase", false);
+    Sheet *sheet = db->openSheet("TestSheet");
+
+    sheet->createIndex(0);
+    assert(sheet->index[0].queryRecord(1, new Any[1]{2017011475}) == 1);
+    assert(sheet->index[0].queryRecord(1, new Any[1]{2017011474}) == 1);
+    sheet->removeIndex(0);
+
+    delete db;
+    cout << "Pass Test 3" << endl;
 }
-*/
+
+void test_4() {
+    test_0();
+
+    Database *db = new Database("TestDatabase", false);
+    Sheet *sheet = db->openSheet("TestSheet");
+
+    sheet->createIndex(0);
+    sheet->insertRecord(4, new Any[4]{2017011475, (char*)"GTT", 170, 60});
+    sheet->insertRecord(4, new Any[4]{6346453455, (char*)"GTK", 345, 34});
+    assert(sheet->index[0].queryRecord(1, new Any[1]{2017011475}) == 1);
+    assert(sheet->index[0].queryRecord(1, new Any[1]{6346453455}) == 2);
+    assert(sheet->removeRecord(1) == 0);
+    assert(sheet->index[0].queryRecord(1, new Any[1]{2017011475}) == -1);
+    assert(sheet->index[0].queryRecord(1, new Any[1]{6346453455}) == 2);
+    sheet->insertRecord(4, new Any[4]{4523524, (char*)"GTK", 345, 34});
+    sheet->insertRecord(4, new Any[4]{87674234, (char*)"GTK", 345, 34});
+    assert(sheet->index[0].queryRecord(1, new Any[1]{2017011475}) == -1);
+    assert(sheet->index[0].queryRecord(1, new Any[1]{6346453455}) == 2);
+    assert(sheet->index[0].queryRecord(1, new Any[1]{4523524}) == 3);
+    assert(sheet->index[0].queryRecord(1, new Any[1]{87674234}) == 4);
+
+    delete db;
+    cout << "Pass Test 4" << endl;
+}
+
+void test_5() {
+    test_4();
+
+    Database *db = new Database("TestDatabase", false);
+    Sheet *sheet = db->openSheet("TestSheet");
+
+    assert(sheet->index[0].queryRecord(1, new Any[1]{2017011475}) == -1);
+    assert(sheet->index[0].queryRecord(1, new Any[1]{6346453455}) == 2);
+    assert(sheet->index[0].queryRecord(1, new Any[1]{4523524}) == 3);
+    assert(sheet->index[0].queryRecord(1, new Any[1]{87674234}) == 4);
+    assert(sheet->removeRecord(2) == 0);
+    assert(sheet->removeRecord(3) == 0);
+    assert(sheet->removeRecord(4) == 0);
+    assert(sheet->index[0].queryRecord(1, new Any[1]{2017011475}) == -1);
+    assert(sheet->index[0].queryRecord(1, new Any[1]{6346453455}) == -1);
+    assert(sheet->index[0].queryRecord(1, new Any[1]{4523524}) == -1);
+    assert(sheet->index[0].queryRecord(1, new Any[1]{87674234}) == -1);
+    sheet->removeIndex(0);
+
+    delete db;
+    cout << "Pass Test 5" << endl;
+}
 
 int main() {
     // test_0();
     // test_1();
-    test_2();
+    // test_2();
     // test_3();
+    // test_4();
+    // test_5();
 }

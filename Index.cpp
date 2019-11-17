@@ -196,9 +196,13 @@ void Index::convert_BtreeNode_to_buf(BtreeNode node){
     }
 }
 
+int Index::queryRecord(const int len, Any* info) {
+    return -1;
+}
+
 /*
 
-int searchRecord(const int _root, const int len, Any* info)
+int queryRecord(const int _root, const int len, Any* info)
 {
     int v = _root;    
     int _hot = - 1;
