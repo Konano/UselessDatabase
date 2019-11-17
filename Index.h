@@ -10,6 +10,46 @@ using json = nlohmann::json;
 class BufPageManager;
 class Sheet;
 
+struct Record{
+    //RECORD_ID
+    int record_id;
+
+    //KEY
+    Any* key;
+};
+
+struct BtreeNode{
+    //LEFT_PAGE
+    int left_page_index;
+
+    //RIGHT_PAGE
+    int right_page_index;
+
+    //RIGHT_PAGE_PTR
+    BtreeNode *left_page;
+
+    //LEFT_PAGE_PTR
+    BtreeNode *right_page;
+
+    //PAGE_INDEX
+    int index;
+
+    //RECORD_COUNT
+    int record_cnt;
+
+    //RECORD_SIZE
+    int record_size;
+
+    //CHILD_INDEX
+    std::vector<int> child;
+
+    //CHILD_NODE
+    std::vector<BtreeNode*> child_ptr;
+
+    //RECORDS
+    std::vector<Record> record;
+};
+
 class Index {
 public:
     Sheet* sheet;
@@ -28,7 +68,6 @@ private:
     // Any calKeyValue(Record* record, uint32_t key);
     void initIndex();
 
-
 public:
     Index() {}
     Index(Sheet* sheet, const char* name, uint key);
@@ -38,8 +77,10 @@ public:
     void open();
     void close();
 
-    int queryRecord(const int len, Any* info);
+    BtreeNode convert_buf_to_BtreeNode(int index);
+    void convert_BtreeNode_to_buf(BtreeNode node);
 
+    int queryRecord(const int len, Any* info);
     void insertRecord(const int len, Any* info);
     void removeRecord(const int len, Any* info);
     int searchRecord(const int len, Any* info);

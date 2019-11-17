@@ -5,6 +5,7 @@
 #include "Database.h"
 #include "Sheet.h"
 #include "Type.h"
+#include "Index.h"
 #include <iostream>
 using namespace std;
 
@@ -75,7 +76,6 @@ void test_0() {
 
 void test_1() {
     test_0();
-
     Database *db = new Database("TestDatabase", false);
     Sheet *sheet = db->openSheet("TestSheet");
     sheet->insertRecord(4, new Any[4]{2017011475, (char*)"GTT", 170, 60});
@@ -97,9 +97,39 @@ void test_2() {
 
     sheet->createIndex(0);
 
+    cout << "check" << endl;
+
+    BtreeNode a;
+    a.left_page_index = -1;
+    a.right_page_index = -1;
+    a.index = 0;
+    a.record_cnt = 2;
+    a.record_size = 12;
+    a.record.clear();
+    a.child.clear();
+    a.child.push_back(1);
+    a.child.push_back(2);
+    a.child.push_back(3);
+    Record temp;
+    temp.record_id = 1;
+    a.record.push_back(temp);
+    temp.record_id = 2;
+    a.record.push_back(temp);
+
+    Index ax;
+
+    ax.convert_BtreeNode_to_buf(a);
+    BtreeNode b = ax.convert_buf_to_BtreeNode(a.index);
+
+    printf("%d\n", b.index);
+    for (auto i: b.child){
+        printf("%d\n",i);
+    }
+
     delete db;
 }
 
+/*
 void test_3(){
     Any a = 5;
     if (a < 4) printf("Yes\n"); else printf("No\n");
@@ -118,10 +148,11 @@ void test_3(){
     // if (a >= 5) printf("Yes\n"); else printf("No\n");
     // if (a >= 6) printf("Yes\n"); else printf("No\n");
 }
+*/
 
 int main() {
     // test_0();
-    // test_1();
-    // test_2();
-    test_3();
+    //test_1();
+    test_2();
+    //test_3();
 }

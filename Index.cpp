@@ -6,6 +6,7 @@
 #include "Database.h"
 
 #include <vector>
+using namespace std;
 
 extern char* Dir(const char* dir, const char* filename, const char* name, const char* suffix);
 
@@ -129,53 +130,54 @@ void Index::initIndex() {
     *(uint16_t *)(buf+4) = (uint16_t)-1;
     *(uint16_t *)(buf+6) = 18;
     *(uint16_t *)(buf+8) = 1;
-    //*(uint16_t *)(buf+10) = 0x0000; // Records
-    //*(uint32_t *)(buf+10 + record_size*rank) = 0x0000;// Child ptr
-    //*(uint16_t *)(buf+10 + 4 + record_size*rank + 4*rank) = 0x0000;// SORTED_QUEUE
 }
 
-struct Record{
-    //NEXT_DEL_RECORD
-    int next_del_record;
+BtreeNode Index::convert_buf_to_BtreeNode(int index){
+    BtreeNode ans;
+    ans.child.clear();
+    ans.child_ptr.clear();
+    ans.record.clear();
+    ans.left_page = nullptr;
+    ans.right_page = nullptr;
+    
+    ans.index = index;
 
-    //RECORD_ID
-    int record_id;
+    int _index;
+    BufType buf = sheet->bpm->getPage(index, 0, _index);
+    
+    ans.left_page_index = *(uint32_t *)(buf + 4);
+    ans.right_page_index = *(uint32_t *)(buf + 8);
+    ans.record_cnt = *(uint16_t *)(buf + 12);
+    ans.record_size = *(uint32_t *)(buf + 14);
 
-    //KEY
-    Any* key;
-};
+    if(record_size != 0)ans.child.push_back(*(uint32_t *)(buf + 18));
 
-struct BtreeNode{
-    //LEFT_PAGE
-    int left_page_index;
+    for (int i = 0;i < ans.record_cnt;i ++){
+        Record temp;
+        temp.record_id = *(uint32_t *)(buf + 22 + i * record_size);
 
-    //RIGHT_PAGE
-    int right_page_index;
+        ans.child.push_back(*(uint32_t *)(buf + 22 + i * record_size - 4));
+        ans.record.push_back(temp);
+    }
+    return ans;
+}
 
-    //RIGHT_PAGE_PTR
-    *BtreeNode left_page;
+void Index::convert_BtreeNode_to_buf(BtreeNode node){
+    int _index;
+    BufType buf = sheet->bpm->getPage(node.index, 0, _index);
 
-    //LEFT_PAGE_PTR
-    *BtreeNode right_page;
-
-    //PAGE_INDEX
-    int index;
-
-    //RECORD_COUNT
-    int record_cnt;
-
-    //CHILD_INDEX
-    std::vector<int> child;
-
-    //CHILD_NODE
-    std::vector<*BtreeNode> child_ptr;
-
-    //RECORDS
-    std::vector<Record> record;
-};
-
-BtreeNode convert_buf_to_BtreeNode(int index){
-
+    buf += 4; *(uint32_t*) buf = node.left_page_index;
+    buf += 4; *(uint32_t*) buf = node.right_page_index;
+    buf += 4; *(uint16_t*) buf = node.record_cnt;
+    buf += 2; *(uint32_t*) buf = node.record_size;
+    if(node.record_cnt != 0){
+        buf += 4; *(uint32_t*) buf = node.child[0];
+    }
+    for (int i = 0;i < node.record_cnt;i ++){
+        buf += 4; *(uint32_t*) buf = node.record[i].record_id;
+        buf += 4;
+        buf += node.record_size - 8; *(uint32_t*) buf = node.child[i + 1];
+    }
 }
 
 /*

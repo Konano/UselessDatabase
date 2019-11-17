@@ -64,12 +64,12 @@ Page:
 | Macro            | bits  | Desc                                                         |
 | ---------------- | ----- | ------------------------------------------------------------ |
 | NEXT_DEL_PAGE    | 32    | 下一个 DELETED Page 编号（非全 0 表示 DELETED，全 1 表示 Null） |
-| LEFT_PAGE        | 32    | 左边 Page 编号（全 1 表示 Null）                             |
-| RIGHT_PAGE       | 32    | 右边 Page 编号（全 1 表示 Null）                             |
-| LEAF_OR_NOT      | 1     | 是否是叶子结点（1 为 Yes，0 为 No）                          |
-| RECORD_COUNT     | 15    | Record 数量                                                  |
-| MIN_CHILD        | 32    | 最左边的儿子的 Page 编号                                     |
-| RECORDS          | ?(?)  | 各个记录                                                     |
+| LEFT_PAGE        | 32    | 左边 Page 编号（全 1 表示 Null）                               |
+| RIGHT_PAGE       | 32    | 右边 Page 编号（全 1 表示 Null）                               |
+| RECORD_COUNT     | 16    | Record 数量                                                   |
+| RECORD_SIZE      | 32    | RECORD长度                                                    |
+| MIN_CHILD        | 32    | 最左边的儿子的 Page 编号                                       |
+| RECORDS          | ?(?)  | 各个记录                                                      |
 
 CHILD_PAGE 在非叶子节点才有。
 
@@ -77,7 +77,6 @@ Each record in index page:
 
 | Macro           | bits | Desc                                                         |
 | --------------- | ---- | ------------------------------------------------------------ |
-| NEXT_DEL_RECORD | 16   | 下一个 DELETED Record 的 ByteOffset（非全 0 表示 DELETED，全 1 表示 Null） |
 | RECORD_ID       | 32   | Record ID                                                    |
 | KEY             | ?    | 索引值                                                       |
 | CHILD           | 32   | 当前 Record 右边儿子的 Page 编号                             |
