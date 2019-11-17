@@ -34,6 +34,10 @@ BufPageManager::BufPageManager(FileManager* fm) : fm(fm) {
     hash = new Hash(this);
     pool = new MemPool();
     lastFileID = lastPageID = lastIndex = -1;
+    memset(addr, 0, sizeof(addr));
+    memset(file_id, 0, sizeof(file_id));
+    memset(page_id, 0, sizeof(page_id));
+    memset(dirty, 0, sizeof(dirty));
 }
 
 BufPageManager::~BufPageManager() {
@@ -41,7 +45,6 @@ BufPageManager::~BufPageManager() {
         writeBack(i);
         delete addr[i];
     }
-    // delete fm;
     delete hash;
     delete pool;
 }
