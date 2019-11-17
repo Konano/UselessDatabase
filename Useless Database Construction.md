@@ -63,17 +63,13 @@ Page:
 
 | Macro            | bits  | Desc                                                         |
 | ---------------- | ----- | ------------------------------------------------------------ |
+| NEXT_DEL_PAGE    | 32    | 下一个 DELETED Page 编号（非全 0 表示 DELETED，全 1 表示 Null） |
 | LEFT_PAGE        | 32    | 左边 Page 编号（全 1 表示 Null）                             |
 | RIGHT_PAGE       | 32    | 右边 Page 编号（全 1 表示 Null）                             |
-| NEXT_DEL_PAGE    | 32    | 下一个 DELETED Page 编号（非全 0 表示 DELETED，全 1 表示 Null） |
-| NEXT_DEL_RECORD  | 16    | 下一个 DELETED Record 的 ByteOffset（全 1 表示 Null）        |
-| NEXT_UNUSE_PLACE | 16    | 未被使用空间的 ByteOffset                                    |
 | LEAF_OR_NOT      | 1     | 是否是叶子结点（1 为 Yes，0 为 No）                          |
 | RECORD_COUNT     | 15    | Record 数量                                                  |
 | MIN_CHILD        | 32    | 最左边的儿子的 Page 编号                                     |
 | RECORDS          | ?(?)  | 各个记录                                                     |
-| CHILD_PAGE       | 32(?) | 孩子 Page                                                    |
-| SORTED_QUEUE     | 16(?) | 以每个 Record 的 ByteOffset 组成的队列，在索引值上保持从小到大有序 |
 
 CHILD_PAGE 在非叶子节点才有。
 
