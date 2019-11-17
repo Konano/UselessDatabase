@@ -172,9 +172,6 @@ struct BtreeNode{
 
     //RECORDS
     std::vector<Record> record;
-
-    //SORTED_QUEUE
-    std::vector<int> sorted_queue;
 };
 
 BtreeNode convert_buf_to_BtreeNode(int index){
