@@ -66,12 +66,16 @@ Page:
 | LEFT_PAGE        | 32    | 左边 Page 编号（全 1 表示 Null）                             |
 | RIGHT_PAGE       | 32    | 右边 Page 编号（全 1 表示 Null）                             |
 | NEXT_DEL_PAGE    | 32    | 下一个 DELETED Page 编号（非全 0 表示 DELETED，全 1 表示 Null） |
-| NEXT_DEL_RECORD  | 16    | 下一个 DELETED Record 的 ByteOffset（全 1 表示 Null）            |
-| NEXT_UNUSE_PLACE | 16    | 未被使用空间的 ByteOffset                                       |
+| NEXT_DEL_RECORD  | 16    | 下一个 DELETED Record 的 ByteOffset（全 1 表示 Null）        |
+| NEXT_UNUSE_PLACE | 16    | 未被使用空间的 ByteOffset                                    |
 | LEAF_OR_NOT      | 1     | 是否是叶子结点（1 为 Yes，0 为 No）                          |
 | RECORD_COUNT     | 15    | Record 数量                                                  |
-| RECORDS          | ?     | 各个记录                                                     |
+| MIN_CHILD        | 32    | 最左边的儿子的 Page 编号                                     |
+| RECORDS          | ?(?)  | 各个记录                                                     |
+| CHILD_PAGE       | 32(?) | 孩子 Page                                                    |
 | SORTED_QUEUE     | 16(?) | 以每个 Record 的 ByteOffset 组成的队列，在索引值上保持从小到大有序 |
+
+CHILD_PAGE 在非叶子节点才有。
 
 Each record in index page:
 
@@ -80,6 +84,7 @@ Each record in index page:
 | NEXT_DEL_RECORD | 16   | 下一个 DELETED Record 的 ByteOffset（非全 0 表示 DELETED，全 1 表示 Null） |
 | RECORD_ID       | 32   | Record ID                                                    |
 | KEY             | ?    | 索引值                                                       |
+| CHILD           | 32   | 当前 Record 右边儿子的 Page 编号                             |
 
 PS: SORTED_QUEUE 前后放置两个极小极大值，极小值为 0000，极大值为 1FFF
 
