@@ -146,14 +146,29 @@ struct Record{
 };
 
 struct BtreeNode{
+    //LEFT_PAGE
+    int left_page_index;
+
+    //RIGHT_PAGE
+    int right_page_index;
+
+    //RIGHT_PAGE_PTR
+    *BtreeNode left_page;
+
+    //LEFT_PAGE_PTR
+    *BtreeNode right_page;
+
     //PAGE_INDEX
     int index;
 
     //RECORD_COUNT
     int record_cnt;
 
-    //CHILD_PAGE_INDEX
+    //CHILD_INDEX
     std::vector<int> child;
+
+    //CHILD_NODE
+    std::vector<*BtreeNode> child_ptr;
 
     //RECORDS
     std::vector<Record> record;
