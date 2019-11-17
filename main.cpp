@@ -1,6 +1,3 @@
-// TODO: makefile
-// TODO: all define should be in a file
-
 #include "constants.h"
 #include "Any.h"
 #include "FileManager.h"
@@ -53,8 +50,6 @@ public:
 };
 */
 
-
-
 // struct Record {
 //     int recordID;
 //     Any* data;
@@ -67,30 +62,66 @@ public:
 // TODO: 修改一个 Key 后可能要修改外键 & Index
 // TODO: VARCHAR
 
-int main() {
+void test_0() {
+    rmdir("TestDatabase");
 
-    // Database *db = new Database("TestDatabase", true); // New Database
-    // Sheet *sheet = db->createSheet("TestSheet", 4, new Type[4]{Type("Number"), Type("Name", enumType::CHAR, 3), Type("Height"), Type("Weigh")});
-    // sheet->insertRecord(4, new Any[4]{2017011474, (char*)"ZLK", 160, 80});
-    // sheet->removeRecord(0);
-
-    Database *db = new Database("TestDatabase", false); // New Database
-    Sheet *sheet = db->openSheet("TestSheet");
+    Database *db = new Database("TestDatabase", true);
+    Sheet *sheet = db->createSheet("TestSheet", 4, new Type[4]{Type("Number"), Type("Name", enumType::CHAR, 3), Type("Height"), Type("Weigh")});
     sheet->insertRecord(4, new Any[4]{2017011474, (char*)"ZLK", 160, 80});
-    sheet->createIndex(0);
-    sheet->updateRecord(1, 4, new Any[4]{2017011474, (char*)"ZLK", 160, 60});
-    Any* ans;
-    sheet->queryRecord(1, 4, ans);
-
-    //cout << "check" << endl;
-    for(int i = 0;i < 4;i ++){
-        if (ans[i].anyCast<int>() != NULL) {
-            cout << ans[i].anyRefCast<int>() << endl;
-        }
-        if (ans[i].anyCast<char*>() != NULL) {
-            cout << *ans[i].anyCast<char*>() << endl;
-        }
-    }
+    sheet->removeRecord(0);
 
     delete db;
+}
+
+void test_1() {
+    test_0();
+
+    Database *db = new Database("TestDatabase", false);
+    Sheet *sheet = db->openSheet("TestSheet");
+    sheet->insertRecord(4, new Any[4]{2017011475, (char*)"GTT", 170, 60});
+    sheet->insertRecord(4, new Any[4]{2017011473, (char*)"LTF", 180, 70});
+    sheet->insertRecord(4, new Any[4]{2017011470, (char*)"ZLK", 190, 50});
+    sheet->removeRecord(3);
+    sheet->updateRecord(2, 4, new Any[4]{2017011474, (char*)"ZLK", 160, 60});
+    Any* ans;
+    sheet->queryRecord(2, 4, ans);
+
+    delete db;
+}
+
+void test_2() {
+    test_1();
+
+    Database *db = new Database("TestDatabase", false);
+    Sheet *sheet = db->openSheet("TestSheet");
+
+    sheet->createIndex(0);
+
+    delete db;
+}
+
+void test_3(){
+    Any a = 5;
+    if (a < 4) printf("Yes\n"); else printf("No\n");
+    if (a < 5) printf("Yes\n"); else printf("No\n");
+    if (a < 6) printf("Yes\n"); else printf("No\n");
+    // if (a > 4) printf("Yes\n"); else printf("No\n");
+    // if (a > 5) printf("Yes\n"); else printf("No\n");
+    // if (a > 6) printf("Yes\n"); else printf("No\n");
+    // if (a == 4) printf("Yes\n"); else printf("No\n");
+    // if (a == 5) printf("Yes\n"); else printf("No\n");
+    // if (a == 6) printf("Yes\n"); else printf("No\n");
+    // if (a <= 4) printf("Yes\n"); else printf("No\n");
+    // if (a <= 5) printf("Yes\n"); else printf("No\n");
+    // if (a <= 6) printf("Yes\n"); else printf("No\n");
+    // if (a >= 4) printf("Yes\n"); else printf("No\n");
+    // if (a >= 5) printf("Yes\n"); else printf("No\n");
+    // if (a >= 6) printf("Yes\n"); else printf("No\n");
+}
+
+int main() {
+    // test_0();
+    // test_1();
+    // test_2();
+    test_3();
 }
