@@ -86,7 +86,6 @@ public:
     int queryRecord(const int len, Any* info);
     void insertRecord(const int len, Any* info);
     void removeRecord(const int len, Any* info);
-    int searchRecord(const int len, Any* info);
 };
 
 #endif
