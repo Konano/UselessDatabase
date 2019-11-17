@@ -1,6 +1,12 @@
 #ifndef __ANY
 #define __ANY
 
+// #include <type_traits>
+#include <string.h>
+
+// template <typename T, typename U>
+// struct compare : public std::conditional_t<std::is_same<T, U>::value, std::true_type, std::false_type> {};
+
 class BaseHolder
 {
 public:
@@ -68,6 +74,91 @@ public:
     ValueType &anyRefCast()
     {
         return (dynamic_cast<Holder<ValueType> &>(*_pValue))._value;
+    }
+
+    bool operator<(const char* value)
+    {
+        if (this->anyCast<char*>() != nullptr) {
+            return strcmp(*this->anyCast<char*>(), value) < 0;
+        }
+        return false;
+    }
+
+    bool operator>(const char* value)
+    {
+        if (this->anyCast<char*>() != nullptr) {
+            return strcmp(*this->anyCast<char*>(), value) > 0;
+        }
+        return false;
+    }
+
+    bool operator==(const char* value)
+    {
+        if (this->anyCast<char*>() != nullptr) {
+            return strcmp(*this->anyCast<char*>(), value) == 0;
+        }
+        return false;
+    }
+
+    bool operator<=(const char* value)
+    {
+        if (this->anyCast<char*>() != nullptr) {
+            return strcmp(*this->anyCast<char*>(), value) <= 0;
+        }
+        return false;
+    }
+
+    bool operator>=(const char* value)
+    {
+        if (this->anyCast<char*>() != nullptr) {
+            return strcmp(*this->anyCast<char*>(), value) >= 0;
+        }
+        return false;
+    }
+
+    template <typename ValueType>
+    bool operator<(const ValueType &value)
+    {
+        if (this->anyCast<ValueType>() != nullptr) {
+            return *this->anyCast<ValueType>() < value;
+        }
+        return false;
+    }
+
+    template <typename ValueType>
+    bool operator>(const ValueType &value)
+    {
+        if (this->anyCast<ValueType>() != nullptr) {
+            return *this->anyCast<ValueType>() > value;
+        }
+        return false;
+    }
+
+    template <typename ValueType>
+    bool operator==(const ValueType &value)
+    {
+        if (this->anyCast<ValueType>() != nullptr) {
+            return *this->anyCast<ValueType>() == value;
+        }
+        return false;
+    }
+
+    template <typename ValueType>
+    bool operator<=(const ValueType &value)
+    {
+        if (this->anyCast<ValueType>() != nullptr) {
+            return *this->anyCast<ValueType>() <= value;
+        }
+        return false;
+    }
+
+    template <typename ValueType>
+    bool operator>=(const ValueType &value)
+    {
+        if (this->anyCast<ValueType>() != nullptr) {
+            return *this->anyCast<ValueType>() >= value;
+        }
+        return false;
     }
 
 private:
