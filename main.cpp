@@ -95,16 +95,16 @@ void test_1() {
     cout << "Pass Test 1" << endl;
 }
 
-/*
+
 void test_2() {
-    test_1();
+    test_0();
 
     Database *db = new Database("TestDatabase", false);
     Sheet *sheet = db->openSheet("TestSheet");
 
-    sheet->createIndex(0);
+    //sheet->createIndex(0);
 
-    cout << "check" << endl;
+    //cout << "check" << endl;
 
     BtreeNode a;
     a.left_page_index = -1;
@@ -119,24 +119,35 @@ void test_2() {
     a.child.push_back(3);
     Record temp;
     temp.record_id = 1;
+    temp.key = 1;
     a.record.push_back(temp);
     temp.record_id = 2;
     a.record.push_back(temp);
 
-    Index ax;
+    Index ax(sheet,"haha",1);
 
+    //cout << "check" << endl;
     ax.convert_BtreeNode_to_buf(a);
+    //cout << "check" << endl;
     BtreeNode b = ax.convert_buf_to_BtreeNode(a.index);
+    //cout << "check" << endl;
 
+    /*
     printf("%d\n", b.index);
     for (auto i: b.child){
         printf("%d\n",i);
     }
-
+    for (int i = 0;i < 2;i ++){
+        if (b.record[i].key.anyCast<int>() != NULL){
+            cout << *b.record[i].key.anyCast<int>() << endl;
+        }
+    }
+    */
     delete db;
     cout << "Pass Test 2" << endl;
+    
 }
-*/
+
 
 /*
 void test_3(){
@@ -177,7 +188,7 @@ void test_3(){
 
 int main() {
     // test_0();
-    test_1();
-    // test_2();
+    // test_1();
+    test_2();
     // test_3();
 }

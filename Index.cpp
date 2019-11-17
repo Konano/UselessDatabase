@@ -144,7 +144,7 @@ BtreeNode Index::convert_buf_to_BtreeNode(int index){
 
     int _index;
     BufType buf = sheet->bpm->getPage(index, 0, _index);
-    
+
     ans.left_page_index = *(uint32_t *)(buf + 4);
     ans.right_page_index = *(uint32_t *)(buf + 8);
     ans.record_cnt = *(uint16_t *)(buf + 12);
@@ -154,9 +154,17 @@ BtreeNode Index::convert_buf_to_BtreeNode(int index){
 
     for (int i = 0;i < ans.record_cnt;i ++){
         Record temp;
-        temp.record_id = *(uint32_t *)(buf + 22 + i * record_size);
-
-        ans.child.push_back(*(uint32_t *)(buf + 22 + i * record_size - 4));
+        temp.record_id = *(uint32_t *)(buf + 22 + i * ans.record_size);
+        if (this->ty == enumType::INT) {
+            temp.key = *(int*)(buf + 22 + i * ans.record_size + 4);
+        }
+        if (this->ty == enumType::CHAR) {
+            char* str = (char *)malloc((ans.record_size - 8 + 1) * sizeof(char));
+            memcpy(str, buf + 22 + i * ans.record_size + 4 , ans.record_size - 8);
+            str[ans.record_size - 8] = '\0';
+            temp.key = str;
+        }
+        ans.child.push_back(*(uint32_t *)(buf + 22 + (i + 1) * ans.record_size - 4));
         ans.record.push_back(temp);
     }
     return ans;
@@ -170,12 +178,20 @@ void Index::convert_BtreeNode_to_buf(BtreeNode node){
     buf += 4; *(uint32_t*) buf = node.right_page_index;
     buf += 4; *(uint16_t*) buf = node.record_cnt;
     buf += 2; *(uint32_t*) buf = node.record_size;
+
     if(node.record_cnt != 0){
         buf += 4; *(uint32_t*) buf = node.child[0];
     }
+
     for (int i = 0;i < node.record_cnt;i ++){
         buf += 4; *(uint32_t*) buf = node.record[i].record_id;
         buf += 4;
+        if (node.record[i].key.anyCast<int>() != NULL) {
+            *(uint32_t*)buf = *node.record[i].key.anyCast<int>();
+        }
+        if (node.record[i].key.anyCast<char*>() != NULL) {
+            memcpy(buf, *node.record[i].key.anyCast<char*>(), node.record_size - 8);
+        }
         buf += node.record_size - 8; *(uint32_t*) buf = node.child[i + 1];
     }
 }

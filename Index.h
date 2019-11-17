@@ -3,6 +3,7 @@
 
 #include "constants.h"
 #include "Any.h"
+#include "Type.h"
 
 #include "json.hpp"
 using json = nlohmann::json;
@@ -15,7 +16,7 @@ struct Record{
     int record_id;
 
     //KEY
-    Any* key;
+    Any key;
 };
 
 struct BtreeNode{
@@ -62,6 +63,8 @@ public:
     uint rank;
     //node *root;
     int fileID;
+
+    enumType ty = enumType::INT;
 
 private:
     // IndexRecord* BTreeInsert(uint32_t pageID, Any key, Record* record);
