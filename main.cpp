@@ -62,7 +62,8 @@ void test_0() {
     Database *db = new Database("TestDatabase", true);
     Sheet *sheet = db->createSheet("TestSheet", 4, new Type[4]{Type("Number"), Type("Name", enumType::CHAR, 3), Type("Height"), Type("Weigh")});
     sheet->insertRecord(4, new Any[4]{2017011474, (char*)"ZLK", 160, 80});
-    sheet->removeRecord(0);
+    assert(sheet->removeRecord(0) == 0);
+    assert(sheet->removeRecord(0) == -1);
 
     delete db;
     cout << "Pass Test 0" << endl;
@@ -75,7 +76,7 @@ void test_1() {
     sheet->insertRecord(4, new Any[4]{2017011475, (char*)"GTT", 170, 60});
     sheet->insertRecord(4, new Any[4]{2017011473, (char*)"LTF", 180, 70});
     sheet->insertRecord(4, new Any[4]{2017011470, (char*)"ZLK", 190, 50});
-    sheet->removeRecord(3);
+    assert(sheet->removeRecord(3) == 0);
     sheet->updateRecord(2, 4, new Any[4]{2017011474, (char*)"ZLK", 160, 60});
     Any* ans;
     assert(sheet->queryRecord(0, 4, ans) == -1);
@@ -95,9 +96,8 @@ void test_1() {
     cout << "Pass Test 1" << endl;
 }
 
-
 void test_2() {
-    test_0();
+    test_1();
 
     Database *db = new Database("TestDatabase", false);
     Sheet *sheet = db->openSheet("TestSheet");

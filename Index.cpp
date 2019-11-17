@@ -288,8 +288,6 @@ void Index::insertRecord(const int len, Any* info) {
     return true;    //插入成功*/
 }
 
-
-
 void Index::removeRecord(const int len, Any* info) {
 
 }
