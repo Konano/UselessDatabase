@@ -1,3 +1,5 @@
+// TODO remove using namespace std;
+
 #include "constants.h"
 #include "Any.h"
 #include "FileManager.h"
@@ -9,12 +11,8 @@
 #include <iostream>
 using namespace std;
 
-
-// struct IndexRecord {
-//     uint16_t NEXT_DEL_RECORD;
-//     uint RECORD_ID;
-//     uint8_t KEY; // TODO: its length is not constant
-// };
+// #define NDEBUG
+#include <assert.h>
 
 /*
 class Page {
@@ -51,11 +49,6 @@ public:
 };
 */
 
-// struct Record {
-//     int recordID;
-//     Any* data;
-// };
-
 // struct ForeignKey {
 //     // TODO:
 // };
@@ -72,6 +65,7 @@ void test_0() {
     sheet->removeRecord(0);
 
     delete db;
+    cout << "Pass Test 0" << endl;
 }
 
 void test_1() {
@@ -84,11 +78,24 @@ void test_1() {
     sheet->removeRecord(3);
     sheet->updateRecord(2, 4, new Any[4]{2017011474, (char*)"ZLK", 160, 60});
     Any* ans;
-    sheet->queryRecord(2, 4, ans);
+    assert(sheet->queryRecord(0, 4, ans) == -1);
+    assert(sheet->queryRecord(3, 4, ans) == -1);
+    assert(sheet->queryRecord(2, 4, ans) == 0);
+    assert(ans[0] == 2017011474);
+    assert(ans[1] == "ZLK");
+    assert(ans[2] == 160);
+    assert(ans[3] == 60);
+    assert(sheet->queryRecord(1, 4, ans) == 0);
+    assert(ans[0] == 2017011475);
+    assert(ans[1] == "GTT");
+    assert(ans[2] == 170);
+    assert(ans[3] == 60);
 
     delete db;
+    cout << "Pass Test 1" << endl;
 }
 
+/*
 void test_2() {
     test_1();
 
@@ -127,7 +134,9 @@ void test_2() {
     }
 
     delete db;
+    cout << "Pass Test 2" << endl;
 }
+*/
 
 /*
 void test_3(){
@@ -135,24 +144,40 @@ void test_3(){
     if (a < 4) printf("Yes\n"); else printf("No\n");
     if (a < 5) printf("Yes\n"); else printf("No\n");
     if (a < 6) printf("Yes\n"); else printf("No\n");
-    // if (a > 4) printf("Yes\n"); else printf("No\n");
-    // if (a > 5) printf("Yes\n"); else printf("No\n");
-    // if (a > 6) printf("Yes\n"); else printf("No\n");
-    // if (a == 4) printf("Yes\n"); else printf("No\n");
-    // if (a == 5) printf("Yes\n"); else printf("No\n");
-    // if (a == 6) printf("Yes\n"); else printf("No\n");
-    // if (a <= 4) printf("Yes\n"); else printf("No\n");
-    // if (a <= 5) printf("Yes\n"); else printf("No\n");
-    // if (a <= 6) printf("Yes\n"); else printf("No\n");
-    // if (a >= 4) printf("Yes\n"); else printf("No\n");
-    // if (a >= 5) printf("Yes\n"); else printf("No\n");
-    // if (a >= 6) printf("Yes\n"); else printf("No\n");
+    if (a > 4) printf("Yes\n"); else printf("No\n");
+    if (a > 5) printf("Yes\n"); else printf("No\n");
+    if (a > 6) printf("Yes\n"); else printf("No\n");
+    if (a == 4) printf("Yes\n"); else printf("No\n");
+    if (a == 5) printf("Yes\n"); else printf("No\n");
+    if (a == 6) printf("Yes\n"); else printf("No\n");
+    if (a <= 4) printf("Yes\n"); else printf("No\n");
+    if (a <= 5) printf("Yes\n"); else printf("No\n");
+    if (a <= 6) printf("Yes\n"); else printf("No\n");
+    if (a >= 4) printf("Yes\n"); else printf("No\n");
+    if (a >= 5) printf("Yes\n"); else printf("No\n");
+    if (a >= 6) printf("Yes\n"); else printf("No\n");
+    Any b = (char*)"TEST";
+    if (b < "TGR") printf("Yes\n"); else printf("No\n");
+    if (b < "TDSFH") printf("Yes\n"); else printf("No\n");
+    if (b < "TEST") printf("Yes\n"); else printf("No\n");
+    if (b > "TGR") printf("Yes\n"); else printf("No\n");
+    if (b > "TDSFH") printf("Yes\n"); else printf("No\n");
+    if (b > "TEST") printf("Yes\n"); else printf("No\n");
+    if (b == "TGR") printf("Yes\n"); else printf("No\n");
+    if (b == "TDSFH") printf("Yes\n"); else printf("No\n");
+    if (b == "TEST") printf("Yes\n"); else printf("No\n");
+    if (b <= "TGR") printf("Yes\n"); else printf("No\n");
+    if (b <= "TDSFH") printf("Yes\n"); else printf("No\n");
+    if (b <= "TEST") printf("Yes\n"); else printf("No\n");
+    if (b >= "TGR") printf("Yes\n"); else printf("No\n");
+    if (b >= "TDSFH") printf("Yes\n"); else printf("No\n");
+    if (b >= "TEST") printf("Yes\n"); else printf("No\n");
 }
 */
 
 int main() {
     // test_0();
-    //test_1();
-    test_2();
-    //test_3();
+    test_1();
+    // test_2();
+    // test_3();
 }
