@@ -162,6 +162,10 @@ struct BtreeNode{
     std::vector<int> sorted_queue;
 };
 
+BtreeNode convert_buf_to_BtreeNode(int index){
+
+}
+
 /*
 
 int searchRecord(const int _root, const int len, Any* info)
