@@ -34,7 +34,7 @@ public:
     Sheet(Database* db, const char* name, int col_num, Type* col_ty, bool create = false);
     void insertRecord(const int len, Any* info);
     // void removeRecord(const int len, Any* info);
-    void removeRecord(const int record_id);
+    int removeRecord(const int record_id);
     int queryRecord(const int record_id, const int len, Any* &info);
     void updateRecord(const int record_id, const int len, Any* info);
 

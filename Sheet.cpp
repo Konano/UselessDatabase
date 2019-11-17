@@ -118,13 +118,15 @@ void Sheet::insertRecord(const int len, Any* info) {
     record_num++;
 }
 
-void Sheet::removeRecord(const int record_id) {
+int Sheet::removeRecord(const int record_id) {
     int index;
     BufType buf = bpm->getPage(main_file, record_id / record_onepg, index);
     if (buf[(record_id % record_onepg) / 8] & (1 << (record_id % 8))) {
         buf[(record_id % record_onepg) / 8] -= 1 << (record_id % 8);
+        bpm->markDirty(index);
+        return 0;
     }
-    bpm->markDirty(index);
+    return -1;
 }
 
 int Sheet::queryRecord(const int record_id, const int len, Any* &info) {
