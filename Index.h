@@ -37,7 +37,7 @@ private:
     void overflow_upstream(int index);
     
     int queryRecord(Any* info, int index);
-    void insertRecord(const int len, Any* info, int record_id, int index);
+    void insertRecord(Any* info, int record_id, int index);
 
 public:
     Index() {}
@@ -54,7 +54,7 @@ public:
     void Btree_remove(BtreeNode* node);
 
     int queryRecord(Any* info);
-    void insertRecord(const int len, Any* info, int record_id);
+    void insertRecord(Any* info, int record_id);
     void removeRecord(const int len, Any* info);
 };
 

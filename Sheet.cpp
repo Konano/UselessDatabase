@@ -112,7 +112,7 @@ void Sheet::insertRecord(const int len, Any* info) {
         }
     }
     for (uint i = 0; i < index_num; i++) {
-        this->index[i].insertRecord(len, info, record_num);
+        this->index[i].insertRecord(&info[this->index[i].key], record_num);
     }
     bpm->markDirty(index);
     record_num++;
@@ -238,7 +238,7 @@ void Sheet::createIndex(uint key_index) {
                     _buf += col_ty[i].len;
                 }
             }
-            index[index_num].insertRecord(col_num, info, record_id);
+            index[index_num].insertRecord(info, record_id);
         }
     }
     index_num++;

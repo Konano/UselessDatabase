@@ -160,7 +160,7 @@ void test_3() {
     delete db;
     cout << "Pass Test 3" << endl;
 }
-/*
+
 void test_4() {
     test_0();
 
@@ -168,10 +168,13 @@ void test_4() {
     Sheet *sheet = db->openSheet("TestSheet");
 
     sheet->createIndex(0);
-    sheet->insertRecord(4, new Any[4]{2017011475, (char*)"GTT", 170, 60});
-    sheet->insertRecord(4, new Any[4]{6346453455, (char*)"GTK", 345, 34});
+    cout << "check" << endl;
+    sheet->insertRecord(1, new Any[1]{2017011475});
+    sheet->insertRecord(1, new Any[1]{6346453455});
+    cout << "check" << endl;
     assert(sheet->index[0].queryRecord(new Any[1]{2017011475}) == 1);
     assert(sheet->index[0].queryRecord(new Any[1]{6346453455}) == 2);
+    cout << "check" << endl;
     assert(sheet->removeRecord(1) == 0);
     assert(sheet->index[0].queryRecord(new Any[1]{2017011475}) == -1);
     assert(sheet->index[0].queryRecord(new Any[1]{6346453455}) == 2);
@@ -185,7 +188,7 @@ void test_4() {
     delete db;
     cout << "Pass Test 4" << endl;
 }
-
+/*
 void test_5() {
     test_4();
 
@@ -215,7 +218,7 @@ int main() {
     // test_0();
     // test_1();
     // test_2();
-    test_3();
-    // test_4();
+    // test_3();
+    test_4();
     // test_5();
 }

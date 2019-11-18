@@ -151,6 +151,9 @@ int Index::queryRecord(Any* info) {
 
 int Index::queryRecord(Any* info, int index) {
     
+    //cout << "queryRecord";
+    //cout << index << endl;
+    printf("qu%d\n", index);
     BtreeNode *now = Index::convert_buf_to_BtreeNode(index);
     
     int i;
@@ -163,7 +166,7 @@ int Index::queryRecord(Any* info, int index) {
         }
     }
 
-    if (now->child[i] == -1){
+    if (now->is_leaf){
         return -1;
     }
     else {
@@ -173,6 +176,9 @@ int Index::queryRecord(Any* info, int index) {
 
 void Index::overflow_upstream(int index){
 
+    //cout << "overflowupstream";
+    //cout << index << end;
+    printf("up%d\n", index);
     BtreeNode* now = Index::convert_buf_to_BtreeNode(index);
 
     if ((int)now->record.size() <= btree_max_per_node - 1){
@@ -234,12 +240,14 @@ void Index::overflow_upstream(int index){
     }
 }
 
-void Index::insertRecord(const int len, Any* info, int record_id) {
-    return insertRecord(len, info, record_id,root_page);
+void Index::insertRecord(Any* info, int record_id) {
+    return insertRecord(info, record_id,root_page);
 }
 
-void Index::insertRecord(const int len, Any* info, int record_id,int index) {
-
+void Index::insertRecord(Any* info, int record_id,int index) {
+    //cout << "insertRecord" ;
+    //cout << index << end;
+    printf("in%d\n", index);
     BtreeNode *now = Index::convert_buf_to_BtreeNode(index);
     
     int i = 0;
@@ -269,11 +277,14 @@ void Index::insertRecord(const int len, Any* info, int record_id,int index) {
             vector<int>::iterator itx = now->child.begin();
             while(i --)itx ++;
             now->child.insert(itx, -1);
+            printf("%d\n", now->record.size());
+            printf("%d\n", now->child.size());
             Index::convert_BtreeNode_to_buf(now);
             return ;
         }
     }
     else {
-        Index::insertRecord(len, info, record_id, index);
+        Index::insertRecord(info, record_id, now->child[i]);
+        Index::convert_BtreeNode_to_buf(now);
     }
 }
