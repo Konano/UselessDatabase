@@ -323,13 +323,13 @@ void Index::removeRecord(Any* info, int record_id, BtreeNode* now){
         else {
             BtreeNode* follow_node = Index::convert_buf_to_BtreeNode(now->child[i + 1]);
             now->record[i] = follow_node->record[0];
-            Index::removeRecord(&follow_node->record[0].key,follow_node->record[0].record_id,follow_node);
+            Index::removeRecord(&follow_node->record[0].key, follow_node->record[0].record_id, follow_node);
             Index::convert_BtreeNode_to_buf(now);
             Index::convert_BtreeNode_to_buf(follow_node);
         }
     }
     else {
-        if(!now->is_leaf)Index::removeRecord(info,record_id,Index::convert_buf_to_BtreeNode(now->child[i]));
+        if (!now->is_leaf) Index::removeRecord(info, record_id, Index::convert_buf_to_BtreeNode(now->child[i]));
         Index::convert_BtreeNode_to_buf(now);
     }
 }

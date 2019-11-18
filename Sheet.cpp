@@ -95,7 +95,7 @@ Sheet::Sheet(Database* db, const char* name, int col_num, Type* col_ty, bool cre
     while ((record_onepg + 1) * record_size + record_onepg / 8 + 1 <= PAGE_SIZE) record_onepg++;
 }
 
-void Sheet::insertRecord(const int len, Any* info) {
+void Sheet::insertRecord(Any* info) {
     int index;
     BufType buf = bpm->getPage(main_file, record_num / record_onepg, index);
     buf[(record_num % record_onepg) / 8] |= 1 << (record_num % 8);
@@ -122,22 +122,28 @@ int Sheet::removeRecord(const int record_id) {
     int index;
     BufType buf = bpm->getPage(main_file, record_id / record_onepg, index);
     if (buf[(record_id % record_onepg) / 8] & (1 << (record_id % 8))) {
+        Any* info;
+        queryRecord(record_id, info);
+        for (uint i = 0; i < index_num; i++) {
+            this->index[i].removeRecord(&info[this->index[i].key], record_id);
+        }
         buf[(record_id % record_onepg) / 8] -= 1 << (record_id % 8);
         bpm->markDirty(index);
         return 0;
     }
+    
     return -1;
 }
 
-int Sheet::queryRecord(const int record_id, const int len, Any* &info) {
+int Sheet::queryRecord(const int record_id, Any* &info) {
     int index;
     BufType buf = bpm->getPage(main_file, record_id / record_onepg, index);
     if (buf[(record_id % record_onepg) / 8] & (1 << (record_id % 8))) {
         buf += (record_onepg - 1) / 8 + 1;
         buf += record_size * (record_id % record_onepg);
-        info = (Any*) malloc(len * sizeof(Any));
-        memset(info, 0, len * sizeof(Any));
-        for(int i = 0; i < len; i++) {
+        info = (Any*) malloc(col_num * sizeof(Any));
+        memset(info, 0, col_num * sizeof(Any));
+        for(uint i = 0; i < col_num; i++) {
             if (this->col_ty[i].ty == enumType::INT) {
                 info[i] = *(int*)buf;
                 buf += 4;

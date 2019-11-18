@@ -1,11 +1,7 @@
 #ifndef __ANY
 #define __ANY
 
-// #include <type_traits>
 #include <string.h>
-
-// template <typename T, typename U>
-// struct compare : public std::conditional_t<std::is_same<T, U>::value, std::true_type, std::false_type> {};
 
 class BaseHolder
 {
@@ -46,10 +42,11 @@ public:
 
     Any(const Any &any) : _pValue(any._pValue->clone()) {}
 
-    // Any& operator=(Any&& any) {
-    //     _pValue = any._pValue->clone();
-    //     return *this;
-    // }
+    ~Any()
+    {
+        if (_pValue)
+            delete _pValue;
+    }
 
     Any& operator=(const Any& any) {
         _pValue = nullptr;
@@ -57,16 +54,6 @@ public:
             _pValue = any._pValue->clone();
         }
         return *this;
-    }
-
-    // Any(Any&& any) {
-    //     _pValue = any._pValue->clone();
-    // }
-
-    ~Any()
-    {
-        if (_pValue)
-            delete _pValue;
     }
 
     template <typename ValueType>
