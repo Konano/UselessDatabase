@@ -4,6 +4,7 @@
 #include "Sheet.h"
 #include "FileManager.h"
 #include "Database.h"
+#include <iostream>
 
 #include <vector>
 using namespace std;
@@ -173,17 +174,32 @@ int Index::queryRecord(Any* info, int index) {
 void Index::overflow_upstream(int index){
 
     BtreeNode* now = Index::convert_buf_to_BtreeNode(index);
-    BtreeNode* fa = Index::convert_buf_to_BtreeNode(now->fa_index);
-    BtreeNode* right = new BtreeNode();
 
     if ((int)now->record.size() <= btree_max_per_node - 1){
         return ;
     }
     else {
+
+        BtreeNode* fa;
+
+        if(now->fa_index == -1){
+            fa = new BtreeNode();
+            fa->index = ++page_num;
+            fa->is_leaf = false;
+        }
+        else{
+            fa = Index::convert_buf_to_BtreeNode(now->fa_index);
+        }
+        BtreeNode* right = new BtreeNode();
+        //TODO: Reuse del page
+        right->index = ++ page_num;
+
+
         BtreeRecord mid = now->record[now->record.size() >> 1];
         vector<BtreeRecord>::iterator it = fa->record.begin();
         vector<int>::iterator itx = fa->child.begin();
-        for (uint i = 0;i < fa->record.size();i ++){
+        uint i;
+        for (i = 0;i < fa->record.size();i ++){
             if(fa->record[i].key >= mid.key){
                 break;
             }
@@ -192,12 +208,34 @@ void Index::overflow_upstream(int index){
         }
         fa->record.insert(it,mid);
         fa->child.insert(itx,-1);
+        fa->child[i] = now->index;
+        fa->child[i + 1] = right->index;
+        now->fa_index = fa->index;
+        right->fa_index = fa->index;
+        right->child.clear();
+        right->record.clear();
+        right->child.push_back(now->child[(now->record.size() >> 1) + 1]);
+        for (uint i = (now->record.size() >> 1) + 1;i < now->record.size();i ++){
+            right->child.push_back(now->child[i + 1]);
+            right->record.push_back(now->record[i]);
+        }
 
+        int left_size = (now->record.size() >> 1);
+        int right_size = now->record.size() - left_size - 1;
+
+        now->record_cnt = left_size;
+        right->record_cnt = right_size;
+
+        Index::convert_BtreeNode_to_buf(now);
+        Index::convert_BtreeNode_to_buf(fa);
+        Index::convert_BtreeNode_to_buf(right);
+
+        overflow_upstream(fa->index);        
     }
 }
 
 void Index::insertRecord(const int len, Any* info, int record_id) {
-    return insertRecord(len, info, root_page);
+    return insertRecord(len, info, record_id,root_page);
 }
 
 void Index::insertRecord(const int len, Any* info, int record_id,int index) {
@@ -208,14 +246,15 @@ void Index::insertRecord(const int len, Any* info, int record_id,int index) {
     vector<BtreeRecord>::iterator it;
     for(it=now->record.begin();it!=now->record.end();it++)
     {
+        cout << i << endl;
         if(it->key >= *info){
             break;
         }
         i ++;
     }
 
-    if (now->child[i] == -1){
-        //TODO: BEGIN INSERT
+    if (now->is_leaf){
+        //cout << "shit2" << endl;
         if((int)now->record.size() > btree_max_per_node - 1){
             now->record.insert(it, BtreeRecord(record_id,*info));
             vector<int>::iterator itx = now->child.begin();

@@ -238,7 +238,6 @@ void Sheet::createIndex(uint key_index) {
                     _buf += col_ty[i].len;
                 }
             }
-
             index[index_num].insertRecord(col_num, info, record_id);
         }
     }

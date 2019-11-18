@@ -30,8 +30,6 @@ public:
 
     int btree_max_per_node;
     int btree_root_index;
-    int next_empty_page;
-
 private:
     // IndexRecord* BTreeInsert(uint32_t pageID, Any key, Record* record);
     // Any calKeyValue(Record* record, uint32_t key);

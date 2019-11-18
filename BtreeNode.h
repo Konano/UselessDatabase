@@ -47,7 +47,10 @@ struct BtreeNode{
 
     bool is_leaf;
 
-    BtreeNode() {};
+    BtreeNode() {
+        this->is_leaf = true;
+        this->fa_index = -1;
+    };
 
     // BtreeNode() {
     //     this->left_page_index = this->right_page_index = -1;

@@ -128,11 +128,8 @@ void test_2() {
 
     Index ax(sheet, "haha", 1,3,0);
 
-    //cout << "check" << endl;
     ax.convert_BtreeNode_to_buf(&a);
-    //cout << "check" << endl;
     BtreeNode* b = ax.convert_buf_to_BtreeNode(a.index);
-    //cout << "check" << endl;
 
     /*
     printf("%d\n", b.index);
