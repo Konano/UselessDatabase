@@ -153,7 +153,7 @@ BtreeNode Index::convert_buf_to_BtreeNode(int index){
     if(record_size != 0)ans.child.push_back(*(uint32_t *)(buf + 18));
 
     for (int i = 0;i < ans.record_cnt;i ++){
-        Record temp;
+        BtreeRecord temp;
         temp.record_id = *(uint32_t *)(buf + 22 + i * ans.record_size);
         if (this->ty == enumType::INT) {
             temp.key = *(int*)(buf + 22 + i * ans.record_size + 4);

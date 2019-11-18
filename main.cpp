@@ -117,14 +117,14 @@ void test_2() {
     a.child.push_back(1);
     a.child.push_back(2);
     a.child.push_back(3);
-    Record temp;
+    BtreeRecord temp;
     temp.record_id = 1;
     temp.key = 1;
     a.record.push_back(temp);
     temp.record_id = 2;
     a.record.push_back(temp);
 
-    Index ax(sheet,"haha",1);
+    Index ax(sheet, "haha", 1);
 
     //cout << "check" << endl;
     ax.convert_BtreeNode_to_buf(a);
