@@ -25,6 +25,7 @@ public:
     //node *root;
     int fileID;
 
+    //TODO: 索引header的类型,现在默认是Int
     enumType ty = enumType::INT;
 
 private:
