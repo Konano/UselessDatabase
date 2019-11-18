@@ -278,7 +278,7 @@ void BTree<T>::solveOverflow(BTNodePosi(T) v)
 }
 */
 
-void Index::insertRecord(const int len, Any* info) {
+void Index::insertRecord(int record_id, const int len, Any* info) {
     /*
     BTNodePosi(T) v = search(e);    if (v) return false;    //确认目标节点不存在
     int r = VecSearch(_hot->key, e);    //在节点_hot的有序关键码向量中查找合适的插入位置

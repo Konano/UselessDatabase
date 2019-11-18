@@ -46,7 +46,7 @@ public:
     void convert_BtreeNode_to_buf(BtreeNode* node);
 
     int queryRecord(const int len, Any* info);
-    void insertRecord(const int len, Any* info);
+    void insertRecord(int record_id, const int len, Any* info);
     void removeRecord(const int len, Any* info);
 };
 

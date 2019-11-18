@@ -139,7 +139,7 @@ char* dirPath(const char* dir, const char* filename, const char* name, const cha
 
 int cleanDir(const char *dir)
 {
-    char dir_name[128];
+    char dir_name[512];
     DIR *dirp;
     struct dirent *dp;
     struct stat dir_stat;

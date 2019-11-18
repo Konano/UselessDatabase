@@ -112,7 +112,7 @@ void Sheet::insertRecord(const int len, Any* info) {
         }
     }
     for (uint i = 0; i < index_num; i++) {
-        this->index[i].insertRecord(len, info);
+        this->index[i].insertRecord(record_num, len, info);
     }
     bpm->markDirty(index);
     record_num++;
@@ -217,11 +217,29 @@ void Sheet::createIndex(uint key_index) {
     index[index_num] = Index(this, getTime(), key_index);
     index[index_num].open();
 
-    int index;
-    for (int record_id = 0; record_id < record_num; record_id++) {
-        BufType buf = bpm->getPage(main_file, record_id / record_onepg, index);
+    int _index;
+    for (uint record_id = 0; record_id < record_num; record_id++) {
+        BufType buf = bpm->getPage(main_file, record_id / record_onepg, _index);
         if (buf[(record_id % record_onepg) / 8] & (1 << (record_id % 8))) {
-            // index[index_num].insert(); TODO Wait for me to add
+
+            BufType _buf = buf + (record_onepg - 1) / 8 + 1 + record_size * (record_id % record_onepg);
+            Any* info = (Any*) malloc(col_num * sizeof(Any));
+            memset(info, 0, col_num * sizeof(Any));
+            for(uint i = 0; i < col_num; i++) {
+                if (this->col_ty[i].ty == enumType::INT) {
+                    info[i] = *(int*)_buf;
+                    _buf += 4;
+                }
+                if (this->col_ty[i].ty == enumType::CHAR) {
+                    char* str = (char *)malloc((col_ty[i].len+1) * sizeof(char));
+                    memcpy(str, _buf, col_ty[i].len);
+                    str[col_ty[i].len] = '\0';
+                    info[i] = str;
+                    _buf += col_ty[i].len;
+                }
+            }
+
+            index[index_num].insertRecord(record_id, col_num, info);
         }
     }
     index_num++;
