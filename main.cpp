@@ -155,12 +155,13 @@ void test_3() {
     sheet->createIndex(0);
     // assert(sheet->index[0].queryRecord(1, new Any[1]{2017011475}) == 1);
     // assert(sheet->index[0].queryRecord(1, new Any[1]{2017011474}) == 1);
-    sheet->removeIndex(0);
+    // sheet->removeIndex(0);
 
     delete db;
     cout << "Pass Test 3" << endl;
 }
 
+/*
 void test_4() {
     test_0();
 
@@ -188,7 +189,7 @@ void test_4() {
     delete db;
     cout << "Pass Test 4" << endl;
 }
-/*
+
 void test_5() {
     test_4();
 
@@ -214,11 +215,10 @@ void test_5() {
 */
 
 int main() {
-    // assert(cleanDir("TestDatabase") == 0);
     // test_0();
     // test_1();
     // test_2();
-    // test_3();
-    test_4();
+    test_3();
+    // test_4();
     // test_5();
 }

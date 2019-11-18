@@ -10,6 +10,7 @@
 using namespace std;
 
 extern char* dirPath(const char* dir, const char* filename, const char* name, const char* suffix);
+extern int cleanDir(const char *dir);
 
 json Index::toJson() {
     json j;
@@ -67,6 +68,7 @@ void Index::close() {
 void Index::remove() {
     if (fileID != -1) close();
     Btree_remove(root);
+    sheet->fm->deleteFile(dirPath(sheet->db->name, sheet->name, name, ".usid"));
 }
 
 void Index::Btree_remove(BtreeNode* node) {
@@ -174,12 +176,7 @@ int Index::queryRecord(Any* info, int index) {
     }
 }
 
-void Index::overflow_upstream(int index){
-
-    //cout << "overflowupstream";
-    //cout << index << end;
-    printf("up%d\n", index);
-    BtreeNode* now = Index::convert_buf_to_BtreeNode(index);
+void Index::overflow_upstream(BtreeNode* now){
 
     if ((int)now->record.size() <= btree_max_per_node - 1){
         return ;
@@ -236,23 +233,21 @@ void Index::overflow_upstream(int index){
         Index::convert_BtreeNode_to_buf(fa);
         Index::convert_BtreeNode_to_buf(right);
 
-        overflow_upstream(fa->index);        
+        overflow_upstream(fa);        
     }
 }
 
 void Index::insertRecord(Any* info, int record_id) {
-    return insertRecord(info, record_id,root_page);
+    return insertRecord(info, record_id, root);
 }
 
-void Index::insertRecord(Any* info, int record_id,int index) {
-    //cout << "insertRecord" ;
-    //cout << index << end;
-    printf("in%d\n", index);
-    BtreeNode *now = Index::convert_buf_to_BtreeNode(index);
+void Index::insertRecord(Any* info, int record_id, BtreeNode* now) {
+
+    // BtreeNode *now = Index::convert_buf_to_BtreeNode(index);
     
     int i = 0;
     vector<BtreeRecord>::iterator it;
-    for(it=now->record.begin();it!=now->record.end();it++)
+    for (it = now->record.begin();it!=now->record.end();it++)
     {
         cout << i << endl;
         if(it->key >= *info){
@@ -265,26 +260,28 @@ void Index::insertRecord(Any* info, int record_id,int index) {
         //cout << "shit2" << endl;
         if((int)now->record.size() > btree_max_per_node - 1){
             now->record.insert(it, BtreeRecord(record_id,*info));
+            now->record_cnt++;
             vector<int>::iterator itx = now->child.begin();
             while(i --)itx ++;
             now->child.insert(itx, -1);
             Index::convert_BtreeNode_to_buf(now);
-            overflow_upstream(index);
+            overflow_upstream(now);
             return ;
         }
         else {
             now->record.insert(it, BtreeRecord(record_id,*info));
+            now->record_cnt++;
             vector<int>::iterator itx = now->child.begin();
             while(i --)itx ++;
             now->child.insert(itx, -1);
-            printf("%d\n", now->record.size());
-            printf("%d\n", now->child.size());
+            // printf("%d\n", now->record.size());
+            // printf("%d\n", now->child.size());
             Index::convert_BtreeNode_to_buf(now);
             return ;
         }
     }
     else {
-        Index::insertRecord(info, record_id, now->child[i]);
+        Index::insertRecord(info, record_id, now);
         Index::convert_BtreeNode_to_buf(now);
     }
 }

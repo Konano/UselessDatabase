@@ -34,10 +34,10 @@ private:
     // IndexRecord* BTreeInsert(uint32_t pageID, Any key, Record* record);
     // Any calKeyValue(Record* record, uint32_t key);
     //void initIndex();
-    void overflow_upstream(int index);
-    
+    void overflow_upstream(BtreeNode* now);
+
     int queryRecord(Any* info, int index);
-    void insertRecord(Any* info, int record_id, int index);
+    void insertRecord(Any* info, int record_id, BtreeNode* now);
 
 public:
     Index() {}

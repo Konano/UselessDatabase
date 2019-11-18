@@ -26,6 +26,7 @@ public:
     FileManager();
     ~FileManager();
     bool createFile(const char* name);
+    int deleteFile(const char* name);
     bool openFile(const char* name, int& fileID);
     bool closeFile(int fileID);
     int readPage(int fileID, int pageID, BufType buf);

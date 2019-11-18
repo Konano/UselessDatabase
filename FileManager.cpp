@@ -53,6 +53,10 @@ bool FileManager::openFile(const char* name, int& fileID) {
     return true;
 }
 
+int FileManager::deleteFile(const char* name) {
+    return remove(name);
+}
+
 bool FileManager::closeFile(int fileID) {
     setFlag(fileID, 0);
     bpm->closeFile(fileID);

@@ -101,7 +101,7 @@ void Sheet::insertRecord(const int len, Any* info) {
     buf[(record_num % record_onepg) / 8] |= 1 << (record_num % 8);
     buf += (record_onepg - 1) / 8 + 1;
     buf += record_size * (record_num % record_onepg);
-    for(int i = 0; i < len; i++) {
+    for(uint i = 0; i < col_num; i++) {
         if (info[i].anyCast<int>() != NULL) {
             *(uint32_t*)buf = *info[i].anyCast<int>();
             buf += 4;
@@ -238,7 +238,7 @@ void Sheet::createIndex(uint key_index) {
                     _buf += col_ty[i].len;
                 }
             }
-            index[index_num].insertRecord(info, record_id);
+            index[index_num].insertRecord(&info[index[index_num].key], record_id);
         }
     }
     index_num++;
