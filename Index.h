@@ -28,14 +28,19 @@ public:
     //TODO: 索引header的类型,现在默认是Int
     enumType ty = enumType::INT;
 
+    int btree_max_per_node;
+    int btree_root_index;
+    int next_empty_page;
+
 private:
     // IndexRecord* BTreeInsert(uint32_t pageID, Any key, Record* record);
     // Any calKeyValue(Record* record, uint32_t key);
-    // void initIndex();
+    //void initIndex();
+    void overflow_upstream(int index);
 
 public:
     Index() {}
-    Index(Sheet* sheet, const char* name, uint key);
+    Index(Sheet* sheet, const char* name, uint key,int btree_max_per_node,int btree_root_index);
     Index(Sheet* sheet, json j);
     json toJson();
 
@@ -45,8 +50,8 @@ public:
     BtreeNode* convert_buf_to_BtreeNode(int index);
     void convert_BtreeNode_to_buf(BtreeNode* node);
 
-    int queryRecord(const int len, Any* info);
-    void insertRecord(int record_id, const int len, Any* info);
+    int queryRecord(Any* info,int index);
+    void insertRecord(const int len, Any* info, int record_id, int index);
     void removeRecord(const int len, Any* info);
 };
 

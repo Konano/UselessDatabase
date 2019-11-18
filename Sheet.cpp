@@ -112,7 +112,7 @@ void Sheet::insertRecord(const int len, Any* info) {
         }
     }
     for (uint i = 0; i < index_num; i++) {
-        this->index[i].insertRecord(record_num, len, info);
+        this->index[i].insertRecord(len, info, record_num, 0);
     }
     bpm->markDirty(index);
     record_num++;
@@ -214,7 +214,7 @@ inline char* getTime() {
 }
 
 void Sheet::createIndex(uint key_index) {
-    index[index_num] = Index(this, getTime(), key_index);
+    index[index_num] = Index(this, getTime(), key_index, 3, 0);
     index[index_num].open();
 
     int _index;
@@ -239,7 +239,7 @@ void Sheet::createIndex(uint key_index) {
                 }
             }
 
-            index[index_num].insertRecord(record_id, col_num, info);
+            index[index_num].insertRecord(col_num ,info,record_id, 0);
         }
     }
     index_num++;

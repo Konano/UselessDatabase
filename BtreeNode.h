@@ -10,6 +10,10 @@ struct BtreeRecord{
 
     //KEY
     Any key;
+    BtreeRecord(){}
+    BtreeRecord(int record_id, Any key):record_id(record_id),key(key){
+
+    }
 };
 
 struct BtreeNode{
@@ -40,6 +44,7 @@ struct BtreeNode{
     //RECORDS
     std::vector<BtreeRecord> record;
 
+
     bool is_leaf;
 
     BtreeNode() {};
@@ -54,6 +59,10 @@ struct BtreeNode{
 
     // BtreeNode(BufType buf); // TODO
     // void toBuf(BufType buf); // TODO
+
+    //FATHER_INDEX
+    int fa_index;
+
 };
 
 #endif

@@ -10,77 +10,6 @@ using namespace std;
 
 extern char* dirPath(const char* dir, const char* filename, const char* name, const char* suffix);
 
-/*
-struct Index {
-public:
-    uint32_t key; // Tree, Pointer, TODO: Finally will be index_cal
-    bool main; // main index or not
-    int value_index; // if not main, which value will be choosed
-    uint32_t page_num;
-    uint32_t root_page;
-    uint32_t next_del_page;
-    uint16_t leaf_record_size;
-    uint16_t nonleaf_record_size;
-    int fileID;
-    BufPageManager* bpm;
-
-private:
-    IndexRecord* BTreeInsert(uint32_t pageID, Any key, Record* record) {
-        if (page_num == 0) {
-            // TODO:
-            // BufType buf = bpm->getPage(fileID, page_num++);
-            // Page page = Page::newPage(buf, record);
-            // page.assemble(buf);
-        } else {
-            Page page = Page(bpm->getPage(fileID, pageID));
-            if (page.leaf_or_not == false) {
-                int lb = find(pageID, record);
-                IndexRecord* a = BTreeInsert(page.record[lb], key, record);
-                if (a != nullptr) {
-                    if (page.full()) {
-                        pageflip();
-                    } else { 
-                        page.insert(lb, a);
-                        return nullptr;
-                    }
-                }
-                return nullptr;
-            } else {
-                int lb = find(pageID, record);
-                page.insert(lb, LeafRecord(record));
-                return nullptr;
-            }
-        }
-    }
-
-    Any calKeyValue(Record* record, uint32_t key);
-
-public:
-
-    Index() {
-        // fm->openFile
-    }
-
-    // void insertRecord(const int len, Any* info) {
-    //     if (main) {
-    //         BTreeInsert(root_page, NULL, record);
-    //     } else {
-    //         BTreeInsert(root_page, calKeyValue(record, key), record);
-    //     }
-    // }
-};
-*/
-
-// uint32_t key; // Tree, Pointer, TODO: Finally will be index_cal
-//     uint32_t page_num;
-//     uint32_t root_page;
-//     uint32_t next_del_page;
-//     uint16_t leaf_record_size;
-//     uint16_t nonleaf_record_size;
-//     int fileID;
-//     BufPageManager* bpm;
-//     Sheet* sheet;
-
 json Index::toJson() {
     json j;
     j["name"] = name;
@@ -92,7 +21,7 @@ json Index::toJson() {
     return j;
 }
 
-Index::Index(Sheet* sheet, const char* name, uint key) : sheet(sheet), key(key) {
+Index::Index(Sheet* sheet, const char* name, uint key,int btree_max_per_node,int btree_root_index) : sheet(sheet), key(key), btree_max_per_node(btree_max_per_node), btree_root_index(btree_root_index) {
     strcpy(this->name, name);
     sheet->fm->createFile(dirPath(sheet->db->name, sheet->name, name, ".usid"));
     page_num = 1;
@@ -166,6 +95,7 @@ BtreeNode* Index::convert_buf_to_BtreeNode(int index) {
         ans->child.push_back(*(uint32_t *)(buf + 18 + (i + 1) * record_size - 4));
         ans->record.push_back(temp);
     }
+    ans->fa_index = *(uint32_t *)(buf + 18 + ans->record_cnt * record_size);
     return ans;
 }
 
@@ -192,103 +122,93 @@ void Index::convert_BtreeNode_to_buf(BtreeNode* node) {
         } buf += record_size - 8; 
         *(uint32_t*) buf = node->child[i + 1]; buf += 4;
     }
-
     sheet->bpm->markDirty(_index);
+    buf += 4; *(uint32_t*) buf = node->fa_index;
 }
 
-int Index::queryRecord(const int len, Any* info) {
-    return -1;
+int Index::queryRecord(Any* info, int index) {
+    
+    BtreeNode *now = Index::convert_buf_to_BtreeNode(index);
+    
+    int i;
+    for (i = 0;i < now->record_cnt;i ++){
+        if(now->record[i].key == *info){
+            return now->record[i].record_id;
+        }
+        else if(now->record[i].key > *info){
+            break;
+        }
+    }
+
+    if (now->child[i] == -1){
+        return -1;
+    }
+    else {
+        return Index::queryRecord(info, now->child[i]);
+    }
 }
 
-/*
+void Index::overflow_upstream(int index){
 
-int queryRecord(const int _root, const int len, Any* info)
-{
-    int v = _root;    
-    int _hot = - 1;
+    BtreeNode* now = Index::convert_buf_to_BtreeNode(index);
+    BtreeNode* fa = Index::convert_buf_to_BtreeNode(now->fa_index);
+    BtreeNode* right = new BtreeNode();
 
-    int index;
-    BufType buf = this.sheet->bpm->getPage(fileID, 0, index);
-
-    while (v) {
-        int l = 0,r = (*(uint16_t *)(buf + 8) ) >> 1;
-        if(r == 0) return -1;
-        
-        int ans = -1;
-        while(l <= r){
-            int mid = (l + r) >> 1;
-            if(this->sheet->col_ty[key].ty == enumType::INT){
-                int tmp = *(int*)(buf+10+record_size*mid);
-                int info_val = info->anyRefCast<int>();
-
-                if(info_val >= tmp){
-                    ans = mid;
-                    l = mid + 1;
-                }
-                else r = mid - 1;
-            }
-            else if(this->sheet->col_ty[key].ty == enumType::CHAR){
-                char* tmp = (char *)malloc((sheet->col_ty[key].len+1) * sizeof(char));
-                tmp[sheet->col_ty[key].len] = '\0';
-                char* info_val = info.anyCast<char*>();
+    if ((int)now->record.size() <= btree_max_per_node - 1){
+        return ;
+    }
+    else {
+        BtreeRecord mid = now->record[now->record.size() >> 1];
+        vector<BtreeRecord>::iterator it = fa->record.begin();
+        vector<int>::iterator itx = fa->child.begin();
+        for (int i = 0;i < fa->record.size();i ++){
+            if(fa->record[i].key >= mid.key){
                 break;
-                ans = -1;
             }
+            it ++;
+            itx ++;
         }
+        fa->record.insert(it,mid);
+        fa->child.insert(itx,-1);
 
+    }
+}
 
-        int r = ans;    //在当前节点中，找到不大于e的最大关键码
-        if(this.sheet->col_ty[key].ty == enumType::INT){
-            int info_val = info->anyRefCast<int>();
-            if ((0 <= r) && (info_val == *(int*)(buf+10+record_size*r);))
-                return v;   //成功：在当前节点中命中目标关键码
+void Index::insertRecord(const int len, Any* info, int record_id,int index) {
+
+    BtreeNode *now = Index::convert_buf_to_BtreeNode(index);
+    
+    int i = 0;
+    vector<BtreeRecord>::iterator it;
+    for(it=now->record.begin();it!=now->record.end();it++)
+    {
+        if(it->key >= *info){
+            break;
         }
-        _hot = v;   
-        v = *(uint32_t *)(buf+10 + record_size*rank + 4 * r);    //否则，转入对应子树（_hot指向其父）----需做I/O，最费时间
+        i ++;
     }
- 
-    return -1;
-}
-*/
 
-/*
-void BTree<T>::solveOverflow(BTNodePosi(T) v)
-{
-    if (_order >= v->child.size())  return; //递归基：当前节点并未上溢
-    int s = _order / 2; //轴点（此时应有_order = key.size() = child.size() - 1）
-    BTNodePosi(T) u = new BTNode<T>();  //注意：新节点已有一个空孩子
-    for (int j = 0; j < _order - s - 1; ++j) {  //v右侧_order-s-1个孩子及关键码分裂为右侧节点u
-        VecInsert(u->child, j, VecRemove(v->child, s + 1)); //逐个移动效率低
-        VecInsert(u->key, j, VecRemove(v->key, s + 1)); //此策略可改进
+    if (now->child[i] == -1){
+        //TODO: BEGIN INSERT
+        if((int)now->record.size() > btree_max_per_node - 1){
+            now->record.insert(it, BtreeRecord(record_id,*info));
+            vector<int>::iterator itx = now->child.begin();
+            while(i --)itx ++;
+            now->child.insert(itx, -1);
+            Index::convert_BtreeNode_to_buf(now);
+            overflow_upstream(index);
+            return ;
+        }
+        else {
+            now->record.insert(it, BtreeRecord(record_id,*info));
+            vector<int>::iterator itx = now->child.begin();
+            while(i --)itx ++;
+            now->child.insert(itx, -1);
+            Index::convert_BtreeNode_to_buf(now);
+            return ;
+        }
     }
-    u->child[_order - s - 1] = VecRemove(v->child, s + 1);  //移动v最靠右的孩子
-    if (u->child[0])    //若u的孩子们非空
-        for (int j = 0; j < _order - s; ++j)    //令它们的父节点统一
-            u->child[j]->parent = u;    //指向u
-    BTNodePosi(T) p = v->parent;    //v当前的父节点p
-    if (!p) {   //若p空则创建之
-        _root = p = new BTNode<T>();
-        p->child[0] = v;
-        v->parent = p;
+    else {
+        Index::insertRecord(len, info, record_id, index);
     }
-    int r = 1 + VecSearch(p->key, v->key[0]);   //p中指向v的指针的秩
-    VecInsert(p->key, r, VecRemove(v->key, s)); //轴点关键码上升
-    VecInsert(p->child, r + 1, u);  u->parent = p;  //新节点u与父节点p互联
-    solveOverflow(p);   //上升一层，如有必要则继续分裂----至多递归O（logn）层
-}
-*/
-
-void Index::insertRecord(int record_id, const int len, Any* info) {
-    /*
-    BTNodePosi(T) v = search(e);    if (v) return false;    //确认目标节点不存在
-    int r = VecSearch(_hot->key, e);    //在节点_hot的有序关键码向量中查找合适的插入位置
-    VecInsert(_hot->key, r + 1, e); //将新关键码插至对应的位置
-    VecInsert(_hot->child, r + 2, (BTNodePosi(T))NULL); //创建一个空子树指针
-    _size++;    //更新全树规模
-    solveOverflow(_hot);    //如有必要，需做分裂
-    return true;    //插入成功*/
-}
-
-void Index::removeRecord(const int len, Any* info) {
-
 }

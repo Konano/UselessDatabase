@@ -126,7 +126,7 @@ void test_2() {
     temp.record_id = 2;
     a.record.push_back(temp);
 
-    Index ax(sheet, "haha", 1);
+    Index ax(sheet, "haha", 1,3,0);
 
     //cout << "check" << endl;
     ax.convert_BtreeNode_to_buf(&a);
@@ -148,7 +148,7 @@ void test_2() {
     delete db;
     cout << "Pass Test 2" << endl;
 }
-
+/*
 void test_3() {
     test_1();
 
@@ -211,7 +211,7 @@ void test_5() {
     delete db;
     cout << "Pass Test 5" << endl;
 }
-
+*/
 int main() {
     // assert(cleanDir("TestDatabase") == 0);
     // test_0();
