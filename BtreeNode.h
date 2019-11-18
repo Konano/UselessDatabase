@@ -50,6 +50,8 @@ struct BtreeNode{
     BtreeNode() {
         this->is_leaf = true;
         this->fa_index = -1;
+        this->child.clear();
+        this->child.push_back(-1);
     };
 
     // BtreeNode() {

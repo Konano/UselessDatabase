@@ -189,36 +189,39 @@ void test_4() {
     delete db;
     cout << "Pass Test 4" << endl;
 }
-
+*/
 void test_5() {
-    test_4();
+    test_1();
 
     Database *db = new Database("TestDatabase", false);
     Sheet *sheet = db->openSheet("TestSheet");
 
-    assert(sheet->index[0].queryRecord(1, new Any[1]{2017011475}) == -1);
-    assert(sheet->index[0].queryRecord(1, new Any[1]{6346453455}) == 2);
-    assert(sheet->index[0].queryRecord(1, new Any[1]{4523524}) == 3);
-    assert(sheet->index[0].queryRecord(1, new Any[1]{87674234}) == 4);
-    assert(sheet->removeRecord(2) == 0);
-    assert(sheet->removeRecord(3) == 0);
-    assert(sheet->removeRecord(4) == 0);
-    assert(sheet->index[0].queryRecord(1, new Any[1]{2017011475}) == -1);
-    assert(sheet->index[0].queryRecord(1, new Any[1]{6346453455}) == -1);
-    assert(sheet->index[0].queryRecord(1, new Any[1]{4523524}) == -1);
-    assert(sheet->index[0].queryRecord(1, new Any[1]{87674234}) == -1);
+    sheet->createIndex(0);
+    sheet->index[0].insertRecord(new Any[1]{2017011476}, 7);
+    //sheet->index[0].insertRecord(new Any[1]{346453455}, 2);
+    //cout << sheet->index[0].queryRecord(new Any[1]{2017011475}) << endl;
+    assert(sheet->index[0].queryRecord(new Any[1]{2017011475}) == 1);
+    assert(sheet->index[0].queryRecord(new Any[1]{346453455}) == -1);
+    assert(sheet->index[0].queryRecord(new Any[1]{4523524}) == -1);
+    assert(sheet->index[0].queryRecord(new Any[1]{87674234}) == -1);
+    sheet->index[0].removeRecord(new Any[1]{2017011475},1);
+    //assert(sheet->removeRecord(3) == 0);
+    //assert(sheet->removeRecord(4) == 0);
+    assert(sheet->index[0].queryRecord(new Any[1]{2017011475}) == -1);
+    assert(sheet->index[0].queryRecord(new Any[1]{2017011476}) == 7);
+    //assert(sheet->index[0].queryRecord(1, new Any[1]{4523524}) == -1);
+    //assert(sheet->index[0].queryRecord(1, new Any[1]{87674234}) == -1);
     sheet->removeIndex(0);
 
     delete db;
     cout << "Pass Test 5" << endl;
 }
-*/
 
 int main() {
     // test_0();
     // test_1();
     // test_2();
-    test_3();
+    //test_3();
     // test_4();
-    // test_5();
+    test_5();
 }

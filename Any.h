@@ -46,6 +46,23 @@ public:
 
     Any(const Any &any) : _pValue(any._pValue->clone()) {}
 
+    // Any& operator=(Any&& any) {
+    //     _pValue = any._pValue->clone();
+    //     return *this;
+    // }
+
+    Any& operator=(const Any& any) {
+        _pValue = nullptr;
+        if (any._pValue) {
+            _pValue = any._pValue->clone();
+        }
+        return *this;
+    }
+
+    // Any(Any&& any) {
+    //     _pValue = any._pValue->clone();
+    // }
+
     ~Any()
     {
         if (_pValue)
