@@ -11,9 +11,9 @@
 #include <sys/stat.h>
 #endif
 
-extern char* ReadFile(const char* path);
-extern void WriteFile(const char* path, const char* data, const int length);
-extern char* Dir(const char* dir, const char* path);
+extern char* readFile(const char* path);
+extern void writeFile(const char* path, const char* data, const int length);
+extern char* dirPath(const char* dir, const char* path);
 
 json Database::toJson() {
     json j;
@@ -35,7 +35,7 @@ void Database::fromJson(json j) {
 
 void Database::update() {
     std::string j = toJson().dump(4);
-    WriteFile(Dir(name, "database.udb"), j.c_str(), j.length());
+    writeFile(dirPath(name, "database.udb"), j.c_str(), j.length());
 }
 
 Database::Database(const char* name, bool create) {
@@ -55,14 +55,14 @@ Database::Database(const char* name, bool create) {
         }
         update();
     } else {
-        fromJson(json::parse(ReadFile(Dir(name, "database.udb"))));
+        fromJson(json::parse(readFile(dirPath(name, "database.udb"))));
     }
 }
 
 Database::~Database() {
     update();
-    delete bpm;
     delete fm;
+    delete bpm;
     for (int i = 0; i < MAX_SHEET_NUM; i++) if (sheet[i] != nullptr) {
         delete sheet[i];
     }

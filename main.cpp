@@ -14,6 +14,8 @@ using namespace std;
 // #define NDEBUG
 #include <assert.h>
 
+extern int cleanDir(const char *dir);
+
 /*
 class Page {
 public:
@@ -57,7 +59,7 @@ public:
 // TODO: VARCHAR
 
 void test_0() { // Testcase: new database
-    rmdir("TestDatabase");
+    assert(cleanDir("TestDatabase") == 0);
 
     Database *db = new Database("TestDatabase", true);
     Sheet *sheet = db->createSheet("TestSheet", 4, new Type[4]{Type("Number"), Type("Name", enumType::CHAR, 3), Type("Height"), Type("Weigh")});
@@ -71,6 +73,7 @@ void test_0() { // Testcase: new database
 
 void test_1() { // Testcase: record manager
     test_0();
+
     Database *db = new Database("TestDatabase", false);
     Sheet *sheet = db->openSheet("TestSheet");
     sheet->insertRecord(4, new Any[4]{2017011475, (char*)"GTT", 170, 60});
@@ -111,7 +114,6 @@ void test_2() {
     a.right_page_index = -1;
     a.index = 0;
     a.record_cnt = 2;
-    a.record_size = 12;
     a.record.clear();
     a.child.clear();
     a.child.push_back(1);
@@ -127,9 +129,9 @@ void test_2() {
     Index ax(sheet, "haha", 1);
 
     //cout << "check" << endl;
-    ax.convert_BtreeNode_to_buf(a);
+    ax.convert_BtreeNode_to_buf(&a);
     //cout << "check" << endl;
-    BtreeNode b = ax.convert_buf_to_BtreeNode(a.index);
+    BtreeNode* b = ax.convert_buf_to_BtreeNode(a.index);
     //cout << "check" << endl;
 
     /*
@@ -154,9 +156,9 @@ void test_3() {
     Sheet *sheet = db->openSheet("TestSheet");
 
     sheet->createIndex(0);
-    assert(sheet->index[0].queryRecord(1, new Any[1]{2017011475}) == 1);
-    assert(sheet->index[0].queryRecord(1, new Any[1]{2017011474}) == 1);
-    sheet->removeIndex(0);
+    // assert(sheet->index[0].queryRecord(1, new Any[1]{2017011475}) == 1);
+    // assert(sheet->index[0].queryRecord(1, new Any[1]{2017011474}) == 1);
+    // sheet->removeIndex(0);
 
     delete db;
     cout << "Pass Test 3" << endl;
@@ -211,10 +213,11 @@ void test_5() {
 }
 
 int main() {
+    // assert(cleanDir("TestDatabase") == 0);
     // test_0();
     // test_1();
     // test_2();
-    // test_3();
+    test_3();
     // test_4();
     // test_5();
 }

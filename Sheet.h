@@ -24,7 +24,7 @@ public:
     // ForeignKey f_key[MAX_COL_NUM];
     uint index_num = 0;
     Index index[MAX_INDEX_NUM];
-    uint record_num = 0;
+    uint record_num = 0; // all record, include removed record
     int main_file;
     uint record_size;
     uint record_onepg;

@@ -42,8 +42,7 @@
       - Page 数量
       - 根 Page 编号
       - 下一个 DELETED Page 编号（-1 表示 Null）
-      - 叶子结点 Record 大小
-      - 非叶子结点 Record 大小
+      - Record 大小
 
 ### Data
 
@@ -67,7 +66,6 @@ Page:
 | LEFT_PAGE        | 32    | 左边 Page 编号（全 1 表示 Null）                               |
 | RIGHT_PAGE       | 32    | 右边 Page 编号（全 1 表示 Null）                               |
 | RECORD_COUNT     | 16    | Record 数量                                                   |
-| RECORD_SIZE      | 32    | RECORD长度                                                    |
 | MIN_CHILD        | 32    | 最左边的儿子的 Page 编号                                       |
 | RECORDS          | ?(?)  | 各个记录                                                      |
 

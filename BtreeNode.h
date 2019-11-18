@@ -31,9 +31,6 @@ struct BtreeNode{
     //RECORD_COUNT
     int record_cnt;
 
-    //RECORD_SIZE
-    int record_size;
-
     //CHILD_INDEX
     std::vector<int> child;
 
@@ -42,6 +39,21 @@ struct BtreeNode{
 
     //RECORDS
     std::vector<BtreeRecord> record;
+
+    bool is_leaf;
+
+    BtreeNode() {};
+
+    // BtreeNode() {
+    //     this->left_page_index = this->right_page_index = -1;
+    //     this->left_page = this->right_page = nullptr;
+    //     this->index = 0;
+    //     this->record_cnt = 0;
+    //     this->is_leaf = true;
+    // }
+
+    // BtreeNode(BufType buf); // TODO
+    // void toBuf(BufType buf); // TODO
 };
 
 #endif

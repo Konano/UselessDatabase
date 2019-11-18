@@ -10,7 +10,7 @@
 #include <iostream>
 using namespace std;
 
-extern char* Dir(const char* dir, const char* filename, const char* suffix);
+extern char* dirPath(const char* dir, const char* filename, const char* suffix);
 
 // class Sheet {
 // public:
@@ -87,9 +87,9 @@ Sheet::Sheet(Database* db, const char* name, int col_num, Type* col_ty, bool cre
     this->col_num = col_num;
     memcpy(this->col_ty, col_ty, sizeof(Type) * col_num);
     if (create) {
-        fm->createFile(Dir(db->name, name, ".usid"));
+        fm->createFile(dirPath(db->name, name, ".usid"));
     }
-    fm->openFile(Dir(db->name, name, ".usid"), main_file);
+    fm->openFile(dirPath(db->name, name, ".usid"), main_file);
     record_size = calDataSize();
     record_onepg = 0;
     while ((record_onepg + 1) * record_size + record_onepg / 8 + 1 <= PAGE_SIZE) record_onepg++;
@@ -198,7 +198,7 @@ Sheet::Sheet(Database* db, json j) { // from JSON
     for (uint i = 0; i < col_num; i++) {
         col_ty[i] = Type(j["col_ty"][i]);
     }
-    fm->openFile(Dir(db->name, name, ".usid"), main_file);
+    fm->openFile(dirPath(db->name, name, ".usid"), main_file);
     index_num = j["index_num"].get<int>();
     for (uint i = 0; i < index_num; i++) {
         index[i] = Index(this, j["index"][i]);
@@ -216,6 +216,14 @@ inline char* getTime() {
 void Sheet::createIndex(uint key_index) {
     index[index_num] = Index(this, getTime(), key_index);
     index[index_num].open();
+
+    int index;
+    for (int record_id = 0; record_id < record_num; record_id++) {
+        BufType buf = bpm->getPage(main_file, record_id / record_onepg, index);
+        if (buf[(record_id % record_onepg) / 8] & (1 << (record_id % 8))) {
+            // index[index_num].insert(); TODO Wait for me to add
+        }
+    }
     index_num++;
 }
 

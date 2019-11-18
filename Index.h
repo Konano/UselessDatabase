@@ -16,13 +16,13 @@ class Index {
 public:
     Sheet* sheet;
     char name[MAX_NAME_LEN];
-    uint key; // Tree, Pointer, TODO: Finally will be index_cal
+    uint key; // TODO: Finally will be index_cal, Tree, Pointer
     uint page_num;
     uint root_page;
     uint next_del_page;
     uint16_t record_size;
-    uint rank;
-    //node *root;
+    uint max_recond_num;
+    BtreeNode* root;
     int fileID;
 
     //TODO: 索引header的类型,现在默认是Int
@@ -31,7 +31,7 @@ public:
 private:
     // IndexRecord* BTreeInsert(uint32_t pageID, Any key, Record* record);
     // Any calKeyValue(Record* record, uint32_t key);
-    void initIndex();
+    // void initIndex();
 
 public:
     Index() {}
@@ -42,8 +42,8 @@ public:
     void open();
     void close();
 
-    BtreeNode convert_buf_to_BtreeNode(int index);
-    void convert_BtreeNode_to_buf(BtreeNode node);
+    BtreeNode* convert_buf_to_BtreeNode(int index);
+    void convert_BtreeNode_to_buf(BtreeNode* node);
 
     int queryRecord(const int len, Any* info);
     void insertRecord(const int len, Any* info);

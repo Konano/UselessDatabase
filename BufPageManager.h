@@ -32,6 +32,7 @@ public:
     BufType getPage(int fileID, int pageID, int& index);
     void markDirty(int index);
     bool check(int fileID, int pageID, int index);
+    void closeFile(int fileID);
 };
 
 #endif

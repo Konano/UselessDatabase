@@ -9,12 +9,15 @@
 #include <string.h>
 #include <stdlib.h>
 
+class BufPageManager;
+
 #define PREFIX_128(x) (((__uint128_t)1 << (x)) - 1)
 
 class FileManager {
 private:
     int fd[MAX_FILE_NUM];
     __uint128_t flag;
+    BufPageManager* bpm;
 
     int alloc();
     void setFlag(int wh, bool val);
@@ -27,6 +30,7 @@ public:
     bool closeFile(int fileID);
     int readPage(int fileID, int pageID, BufType buf);
     int writePage(int fileID, int pageID, BufType buf);
+    void setBPM(BufPageManager* bpm);
 };
 
 #endif

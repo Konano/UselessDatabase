@@ -8,7 +8,7 @@
 #include <vector>
 using namespace std;
 
-extern char* Dir(const char* dir, const char* filename, const char* name, const char* suffix);
+extern char* dirPath(const char* dir, const char* filename, const char* name, const char* suffix);
 
 /*
 struct Index {
@@ -94,9 +94,25 @@ json Index::toJson() {
 
 Index::Index(Sheet* sheet, const char* name, uint key) : sheet(sheet), key(key) {
     strcpy(this->name, name);
-    sheet->fm->createFile(Dir(sheet->db->name, sheet->name, name, ".usid"));
-    page_num = root_page = next_del_page = 0;
-    record_size = sheet->col_ty[key].size() + 2 + 4;
+    sheet->fm->createFile(dirPath(sheet->db->name, sheet->name, name, ".usid"));
+    page_num = 1;
+    next_del_page = -1;
+    record_size = sheet->col_ty[key].size() + 8;
+    max_recond_num = (PAGE_SIZE - 18) / record_size;
+
+    open();
+
+    int index;
+    BufType buf = sheet->bpm->getPage(fileID, 0, index);
+    *(uint32_t *)(buf+0) = -1;
+    *(uint32_t *)(buf+4) = -1;
+    *(uint32_t *)(buf+8) = -1;
+    *(uint16_t *)(buf+12) = 0;
+    sheet->bpm->markDirty(index);
+    
+    root_page = 0;
+    root = convert_buf_to_BtreeNode(root_page);
+    close();
 }
 
 Index::Index(Sheet* sheet, json j) : sheet(sheet) {
@@ -109,91 +125,75 @@ Index::Index(Sheet* sheet, json j) : sheet(sheet) {
 }
 
 void Index::open() {
-    sheet->fm->openFile(Dir(sheet->db->name, sheet->name, name, ".usid"), fileID);
+    sheet->fm->openFile(dirPath(sheet->db->name, sheet->name, name, ".usid"), fileID);
 }
 
 void Index::close() {
     sheet->fm->closeFile(fileID);
 }
 
-void Index::initIndex() {
-    page_num = 1;
-    root_page = 0;
-    next_del_page = 1;
-    //header = 10Byte
-    //child ptr is one more
-    rank = (PAGE_SIZE - 10 - 4) / (record_size + 4 + 2);
-
-    int index;
-    BufType buf = sheet->bpm->getPage(fileID, 0, index);
-    *(uint32_t *)(buf+0) = 0;
-    *(uint16_t *)(buf+4) = (uint16_t)-1;
-    *(uint16_t *)(buf+6) = 18;
-    *(uint16_t *)(buf+8) = 1;
-}
-
-BtreeNode Index::convert_buf_to_BtreeNode(int index){
-    BtreeNode ans;
-    ans.child.clear();
-    ans.child_ptr.clear();
-    ans.record.clear();
-    ans.left_page = nullptr;
-    ans.right_page = nullptr;
+BtreeNode* Index::convert_buf_to_BtreeNode(int index) {
+    BtreeNode* ans = new BtreeNode();
+    ans->child.clear();
+    ans->child_ptr.clear();
+    ans->record.clear();
+    ans->left_page = nullptr;
+    ans->right_page = nullptr;
     
-    ans.index = index;
+    ans->index = index;
 
     int _index;
-    BufType buf = sheet->bpm->getPage(index, 0, _index);
+    BufType buf = sheet->bpm->getPage(fileID, index, _index);
 
-    ans.left_page_index = *(uint32_t *)(buf + 4);
-    ans.right_page_index = *(uint32_t *)(buf + 8);
-    ans.record_cnt = *(uint16_t *)(buf + 12);
-    ans.record_size = *(uint32_t *)(buf + 14);
+    ans->left_page_index = *(uint32_t *)(buf + 4);
+    ans->right_page_index = *(uint32_t *)(buf + 8);
+    ans->record_cnt = *(uint16_t *)(buf + 12);
 
-    if(record_size != 0)ans.child.push_back(*(uint32_t *)(buf + 18));
+    if(record_size != 0) ans->child.push_back(*(uint32_t *)(buf + 14));
 
-    for (int i = 0;i < ans.record_cnt;i ++){
+    for (int i = 0;i < ans->record_cnt;i ++){
         BtreeRecord temp;
-        temp.record_id = *(uint32_t *)(buf + 22 + i * ans.record_size);
+        temp.record_id = *(uint32_t *)(buf + 18 + i * record_size);
         if (this->ty == enumType::INT) {
-            temp.key = *(int*)(buf + 22 + i * ans.record_size + 4);
+            temp.key = *(int*)(buf + 18 + i * record_size + 4);
         }
         if (this->ty == enumType::CHAR) {
-            char* str = (char *)malloc((ans.record_size - 8 + 1) * sizeof(char));
-            memcpy(str, buf + 22 + i * ans.record_size + 4 , ans.record_size - 8);
-            str[ans.record_size - 8] = '\0';
+            char* str = (char *)malloc((record_size - 8 + 1) * sizeof(char));
+            memcpy(str, buf + 18 + i * record_size + 4 , record_size - 8);
+            str[record_size - 8] = '\0';
             temp.key = str;
         }
-        ans.child.push_back(*(uint32_t *)(buf + 22 + (i + 1) * ans.record_size - 4));
-        ans.record.push_back(temp);
+        ans->child.push_back(*(uint32_t *)(buf + 18 + (i + 1) * record_size - 4));
+        ans->record.push_back(temp);
     }
     return ans;
 }
 
-void Index::convert_BtreeNode_to_buf(BtreeNode node){
+void Index::convert_BtreeNode_to_buf(BtreeNode* node) {
     int _index;
-    BufType buf = sheet->bpm->getPage(node.index, 0, _index);
+    BufType buf = sheet->bpm->getPage(fileID, node->index, _index);
 
-    buf += 4; *(uint32_t*) buf = node.left_page_index;
-    buf += 4; *(uint32_t*) buf = node.right_page_index;
-    buf += 4; *(uint16_t*) buf = node.record_cnt;
-    buf += 2; *(uint32_t*) buf = node.record_size;
+    *(uint32_t*) buf = -1; buf += 4; 
+    *(uint32_t*) buf = node->left_page_index; buf += 4; 
+    *(uint32_t*) buf = node->right_page_index; buf += 4; 
+    *(uint16_t*) buf = node->record_cnt; buf += 2; 
 
-    if(node.record_cnt != 0){
-        buf += 4; *(uint32_t*) buf = node.child[0];
+    if(node->record_cnt != 0){
+        *(uint32_t*) buf = node->child[0]; buf += 4;
     }
 
-    for (int i = 0;i < node.record_cnt;i ++){
-        buf += 4; *(uint32_t*) buf = node.record[i].record_id;
-        buf += 4;
-        if (node.record[i].key.anyCast<int>() != NULL) {
-            *(uint32_t*)buf = *node.record[i].key.anyCast<int>();
+    for (int i = 0;i < node->record_cnt;i ++){
+        *(uint32_t*) buf = node->record[i].record_id; buf += 4;
+        if (node->record[i].key.anyCast<int>() != NULL) {
+            *(uint32_t*)buf = *node->record[i].key.anyCast<int>();
         }
-        if (node.record[i].key.anyCast<char*>() != NULL) {
-            memcpy(buf, *node.record[i].key.anyCast<char*>(), node.record_size - 8);
-        }
-        buf += node.record_size - 8; *(uint32_t*) buf = node.child[i + 1];
+        if (node->record[i].key.anyCast<char*>() != NULL) {
+            memcpy(buf, *node->record[i].key.anyCast<char*>(), record_size - 8);
+        } buf += record_size - 8; 
+        *(uint32_t*) buf = node->child[i + 1]; buf += 4;
     }
+
+    sheet->bpm->markDirty(_index);
 }
 
 int Index::queryRecord(const int len, Any* info) {
@@ -279,9 +279,6 @@ void BTree<T>::solveOverflow(BTNodePosi(T) v)
 */
 
 void Index::insertRecord(const int len, Any* info) {
-    if (page_num == 0) {
-        initIndex();
-    }
     /*
     BTNodePosi(T) v = search(e);    if (v) return false;    //确认目标节点不存在
     int r = VecSearch(_hot->key, e);    //在节点_hot的有序关键码向量中查找合适的插入位置

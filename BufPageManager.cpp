@@ -11,6 +11,7 @@ BufType BufPageManager::fetchPage(int fileID, int pageID, int& index) {
         writeBack(index);
     } else {
         addr[index] = new uint8_t[PAGE_SIZE];
+        memset(addr[index], 0, PAGE_SIZE);
     }
     file_id[index] = fileID;
     page_id[index] = pageID;
@@ -24,13 +25,14 @@ void BufPageManager::writeBack(int index) {
         fm->writePage(file_id[index], page_id[index], addr[index]);
         dirty[index] = false;
     }
-    // pool->free(index);
+    // TODO pool->free(index);
     hash->del(file_id[index], page_id[index]);
     // file_id[index] = page_id[index] = 0;
     // addr[index] = nullptr;
 }
 
 BufPageManager::BufPageManager(FileManager* fm) : fm(fm) {
+    fm->setBPM(this);
     hash = new Hash(this);
     pool = new MemPool();
     lastFileID = lastPageID = lastIndex = -1;
@@ -75,4 +77,14 @@ void BufPageManager::markDirty(int index) {
 
 bool BufPageManager::check(int fileID, int pageID, int index) {
     return file_id[index] == fileID && page_id[index] == pageID;
+}
+
+void BufPageManager::closeFile(int fileID) {
+    for (int i = 0; i < MAX_BUF_NUM; ++ i) {
+        if (file_id[i] == fileID) {
+            writeBack(i);
+            delete addr[i];
+            addr[i] = nullptr;
+        }
+    }
 }

@@ -1,6 +1,10 @@
 #include "FileManager.h"
+#include "BufPageManager.h"
 
 #include <string>
+#include <sys/stat.h>
+#include <dirent.h>
+#include <fcntl.h>
 
 int FileManager::alloc() { // Find lowest 0
     int wh = 0;
@@ -51,6 +55,7 @@ bool FileManager::openFile(const char* name, int& fileID) {
 
 bool FileManager::closeFile(int fileID) {
     setFlag(fileID, 0);
+    bpm->closeFile(fileID);
     close(fd[fileID]);
     return true;
 }
@@ -73,31 +78,35 @@ int FileManager::writePage(int fileID, int pageID, BufType buf) {
     return 0;
 }
 
-char* ReadFile(const char* path)
+void FileManager::setBPM(BufPageManager* bpm) {
+    this->bpm = bpm;
+}
+
+char* readFile(const char* path)
 {
     int length;
-	FILE* file = fopen(path, "rb");
-	if (file == nullptr) {
-		return nullptr;
-	}
-	fseek(file, 0, SEEK_END);
-	length = ftell(file);
-	char* data = (char *)malloc((length + 1) * sizeof(char));
-	rewind(file);
-	length = fread(data, 1, length, file);
-	data[length] = '\0';
-	fclose(file);
-	return data;
+    FILE* file = fopen(path, "rb");
+    if (file == nullptr) {
+        return nullptr;
+    }
+    fseek(file, 0, SEEK_END);
+    length = ftell(file);
+    char* data = (char *)malloc((length + 1) * sizeof(char));
+    rewind(file);
+    length = fread(data, 1, length, file);
+    data[length] = '\0';
+    fclose(file);
+    return data;
 }
 
-void WriteFile(const char* path, const char* data, const int length)
+void writeFile(const char* path, const char* data, const int length)
 {
-	FILE* file = fopen(path, "wb");
+    FILE* file = fopen(path, "wb");
     fwrite(data, 1, length, file);
-	fclose(file);
+    fclose(file);
 }
 
-char* Dir(const char* dir, const char* path) {
+char* dirPath(const char* dir, const char* path) {
     int length = strlen(dir) + 1 + strlen(path);
     char* data = (char *)malloc((length + 1) * sizeof(char));
     strcpy(data, dir);
@@ -106,7 +115,7 @@ char* Dir(const char* dir, const char* path) {
     return data;
 }
 
-char* Dir(const char* dir, const char* filename, const char* suffix) {
+char* dirPath(const char* dir, const char* filename, const char* suffix) {
     int length = strlen(dir) + 1 + strlen(filename) + strlen(suffix);
     char* data = (char *)malloc((length + 1) * sizeof(char));
     strcpy(data, dir);
@@ -116,7 +125,7 @@ char* Dir(const char* dir, const char* filename, const char* suffix) {
     return data;
 }
 
-char* Dir(const char* dir, const char* filename, const char* name, const char* suffix) {
+char* dirPath(const char* dir, const char* filename, const char* name, const char* suffix) {
     int length = strlen(dir) + 1 + strlen(filename) + 1 + strlen(name) + strlen(suffix);
     char* data = (char *)malloc((length + 1) * sizeof(char));
     strcpy(data, dir);
@@ -126,4 +135,46 @@ char* Dir(const char* dir, const char* filename, const char* name, const char* s
     strcpy(data + strlen(dir) + 1 + strlen(filename) + 1, name);
     strcpy(data + strlen(dir) + 1 + strlen(filename) + 1 + strlen(name), suffix);
     return data;
+}
+
+int cleanDir(const char *dir)
+{
+    char dir_name[128];
+    DIR *dirp;
+    struct dirent *dp;
+    struct stat dir_stat;
+    int tmp;
+
+    // if can't access, nothing to do
+    if ( 0 != access(dir, F_OK) ) {
+        return 0;
+    }
+
+    // if can't get direcrtory stat, fail
+    if ( 0 > stat(dir, &dir_stat) ) {
+        perror("get directory stat error");
+        return -1;
+    }
+
+    if ( S_ISREG(dir_stat.st_mode) ) { // files
+        remove(dir);
+    } else if ( S_ISDIR(dir_stat.st_mode) ) { // folder
+        dirp = opendir(dir);
+        while ( (dp=readdir(dirp)) != NULL ) {
+            if ( (0 == strcmp(".", dp->d_name)) || (0 == strcmp("..", dp->d_name)) ) { // Ignore . & ..
+                continue;
+            }
+            sprintf(dir_name, "%s/%s", dir, dp->d_name);
+            if ((tmp = cleanDir(dir_name)) != 0) {
+                return tmp;
+            }
+        }
+        closedir(dirp);
+        rmdir(dir); // remove empty folder
+    } else {
+        perror("unknow file type!");
+        return -1;    
+    }
+    
+    return 0;
 }
