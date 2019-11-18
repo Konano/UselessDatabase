@@ -112,7 +112,7 @@ void Sheet::insertRecord(const int len, Any* info) {
         }
     }
     for (uint i = 0; i < index_num; i++) {
-        this->index[i].insertRecord(len, info, record_num, 0);
+        this->index[i].insertRecord(len, info, record_num);
     }
     bpm->markDirty(index);
     record_num++;
@@ -239,7 +239,7 @@ void Sheet::createIndex(uint key_index) {
                 }
             }
 
-            index[index_num].insertRecord(col_num ,info,record_id, 0);
+            index[index_num].insertRecord(col_num, info, record_id);
         }
     }
     index_num++;
@@ -247,6 +247,7 @@ void Sheet::createIndex(uint key_index) {
 
 void Sheet::removeIndex(uint index_id) {
     index[index_id].close();
+    index[index_id].remove();
     index[index_id] = index[--index_num];
 }
 

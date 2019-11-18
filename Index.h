@@ -37,6 +37,9 @@ private:
     // Any calKeyValue(Record* record, uint32_t key);
     //void initIndex();
     void overflow_upstream(int index);
+    
+    int queryRecord(Any* info, int index);
+    void insertRecord(const int len, Any* info, int record_id, int index);
 
 public:
     Index() {}
@@ -46,12 +49,14 @@ public:
 
     void open();
     void close();
+    void remove();
 
     BtreeNode* convert_buf_to_BtreeNode(int index);
     void convert_BtreeNode_to_buf(BtreeNode* node);
+    void Btree_remove(BtreeNode* node);
 
-    int queryRecord(Any* info,int index);
-    void insertRecord(const int len, Any* info, int record_id, int index);
+    int queryRecord(Any* info);
+    void insertRecord(const int len, Any* info, int record_id);
     void removeRecord(const int len, Any* info);
 };
 

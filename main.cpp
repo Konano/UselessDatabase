@@ -148,7 +148,7 @@ void test_2() {
     delete db;
     cout << "Pass Test 2" << endl;
 }
-/*
+
 void test_3() {
     test_1();
 
@@ -158,12 +158,12 @@ void test_3() {
     sheet->createIndex(0);
     // assert(sheet->index[0].queryRecord(1, new Any[1]{2017011475}) == 1);
     // assert(sheet->index[0].queryRecord(1, new Any[1]{2017011474}) == 1);
-    // sheet->removeIndex(0);
+    sheet->removeIndex(0);
 
     delete db;
     cout << "Pass Test 3" << endl;
 }
-
+/*
 void test_4() {
     test_0();
 
@@ -173,17 +173,17 @@ void test_4() {
     sheet->createIndex(0);
     sheet->insertRecord(4, new Any[4]{2017011475, (char*)"GTT", 170, 60});
     sheet->insertRecord(4, new Any[4]{6346453455, (char*)"GTK", 345, 34});
-    assert(sheet->index[0].queryRecord(1, new Any[1]{2017011475}) == 1);
-    assert(sheet->index[0].queryRecord(1, new Any[1]{6346453455}) == 2);
+    assert(sheet->index[0].queryRecord(new Any[1]{2017011475}) == 1);
+    assert(sheet->index[0].queryRecord(new Any[1]{6346453455}) == 2);
     assert(sheet->removeRecord(1) == 0);
-    assert(sheet->index[0].queryRecord(1, new Any[1]{2017011475}) == -1);
-    assert(sheet->index[0].queryRecord(1, new Any[1]{6346453455}) == 2);
+    assert(sheet->index[0].queryRecord(new Any[1]{2017011475}) == -1);
+    assert(sheet->index[0].queryRecord(new Any[1]{6346453455}) == 2);
     sheet->insertRecord(4, new Any[4]{4523524, (char*)"GTK", 345, 34});
     sheet->insertRecord(4, new Any[4]{87674234, (char*)"GTK", 345, 34});
-    assert(sheet->index[0].queryRecord(1, new Any[1]{2017011475}) == -1);
-    assert(sheet->index[0].queryRecord(1, new Any[1]{6346453455}) == 2);
-    assert(sheet->index[0].queryRecord(1, new Any[1]{4523524}) == 3);
-    assert(sheet->index[0].queryRecord(1, new Any[1]{87674234}) == 4);
+    assert(sheet->index[0].queryRecord(new Any[1]{2017011475}) == -1);
+    assert(sheet->index[0].queryRecord(new Any[1]{6346453455}) == 2);
+    assert(sheet->index[0].queryRecord(new Any[1]{4523524}) == 3);
+    assert(sheet->index[0].queryRecord(new Any[1]{87674234}) == 4);
 
     delete db;
     cout << "Pass Test 4" << endl;
@@ -212,6 +212,7 @@ void test_5() {
     cout << "Pass Test 5" << endl;
 }
 */
+
 int main() {
     // assert(cleanDir("TestDatabase") == 0);
     // test_0();

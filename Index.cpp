@@ -51,6 +51,7 @@ Index::Index(Sheet* sheet, json j) : sheet(sheet) {
     root_page = j["root_page"].get<int>();
     next_del_page = j["next_del_page"].get<int>();
     record_size = j["record_size"].get<int>();
+    fileID = -1; // file is closed
 }
 
 void Index::open() {
@@ -59,6 +60,23 @@ void Index::open() {
 
 void Index::close() {
     sheet->fm->closeFile(fileID);
+    fileID = -1; // file is closed
+}
+
+void Index::remove() {
+    if (fileID != -1) close();
+    Btree_remove(root);
+}
+
+void Index::Btree_remove(BtreeNode* node) {
+    if (node == nullptr) return;
+    Btree_remove(node->left_page);
+    Btree_remove(node->right_page);
+    if (node->record_cnt) {
+        for (int i = 0; i <= node->record_cnt; i++) {
+            Btree_remove(node->child_ptr[i]);
+        }
+    }
 }
 
 BtreeNode* Index::convert_buf_to_BtreeNode(int index) {
@@ -126,6 +144,10 @@ void Index::convert_BtreeNode_to_buf(BtreeNode* node) {
     buf += 4; *(uint32_t*) buf = node->fa_index;
 }
 
+int Index::queryRecord(Any* info) {
+    return Index::queryRecord(info, root_page);
+}
+
 int Index::queryRecord(Any* info, int index) {
     
     BtreeNode *now = Index::convert_buf_to_BtreeNode(index);
@@ -161,7 +183,7 @@ void Index::overflow_upstream(int index){
         BtreeRecord mid = now->record[now->record.size() >> 1];
         vector<BtreeRecord>::iterator it = fa->record.begin();
         vector<int>::iterator itx = fa->child.begin();
-        for (int i = 0;i < fa->record.size();i ++){
+        for (uint i = 0;i < fa->record.size();i ++){
             if(fa->record[i].key >= mid.key){
                 break;
             }
@@ -172,6 +194,10 @@ void Index::overflow_upstream(int index){
         fa->child.insert(itx,-1);
 
     }
+}
+
+void Index::insertRecord(const int len, Any* info, int record_id) {
+    return insertRecord(len, info, root_page);
 }
 
 void Index::insertRecord(const int len, Any* info, int record_id,int index) {
