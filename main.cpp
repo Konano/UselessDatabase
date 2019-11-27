@@ -128,8 +128,8 @@ void test_4() {
 
     sheet->createIndex(0);
     cout << "check" << endl;
-    sheet->insertRecord(new Any[4]{2017011475, (char*)"GTK", 345, 34});
-    sheet->insertRecord(new Any[4]{634645345, (char*)"GTK", 345, 34});
+    sheet->insertRecord(new Any[4]{2017011475, (char*)"GGT", 345, 34});
+    sheet->insertRecord(new Any[4]{634645345, (char*)"KLE", 345, 34});
     cout << "check" << endl;
     assert(sheet->index[0].queryRecord(new Any[1]{2017011475}) == 1);
     assert(sheet->index[0].queryRecord(new Any[1]{634645345}) == 2);
@@ -137,8 +137,8 @@ void test_4() {
     assert(sheet->removeRecord(1) == 0);
     assert(sheet->index[0].queryRecord(new Any[1]{2017011475}) == -1);
     assert(sheet->index[0].queryRecord(new Any[1]{634645345}) == 2);
-    sheet->insertRecord(new Any[4]{4523524, (char*)"GTK", 345, 34});
-    sheet->insertRecord(new Any[4]{87674234, (char*)"GTK", 345, 34});
+    sheet->insertRecord(new Any[4]{4523524, (char*)"YNT", 345, 34});
+    sheet->insertRecord(new Any[4]{87674234, (char*)"VWH", 345, 34});
     assert(sheet->index[0].queryRecord(new Any[1]{2017011475}) == -1);
     assert(sheet->index[0].queryRecord(new Any[1]{634645345}) == 2);
     assert(sheet->index[0].queryRecord(new Any[1]{4523524}) == 3);
@@ -174,11 +174,40 @@ void test_5() {
     cout << "Pass Test 5" << endl;
 }
 
+void test_6() {
+    test_0();
+
+    Database *db = new Database("TestDatabase", false);
+    Sheet *sheet = db->openSheet("TestSheet");
+
+    sheet->createIndex(1);
+    cout << "check" << endl;
+    sheet->insertRecord(new Any[4]{2017011475, (char*)"GGT", 345, 34});
+    sheet->insertRecord(new Any[4]{634645345, (char*)"KLE", 345, 34});
+    cout << "check" << endl;
+    assert(sheet->index[0].queryRecord(new Any[1]{(char*)"GGT"}) == 1);
+    assert(sheet->index[0].queryRecord(new Any[1]{(char*)"KLE"}) == 2);
+    cout << "check" << endl;
+    assert(sheet->removeRecord(1) == 0);
+    assert(sheet->index[0].queryRecord(new Any[1]{(char*)"GGT"}) == -1);
+    assert(sheet->index[0].queryRecord(new Any[1]{(char*)"KLE"}) == 2);
+    sheet->insertRecord(new Any[4]{4523524, (char*)"YNT", 345, 34});
+    sheet->insertRecord(new Any[4]{87674234, (char*)"VWH", 345, 34});
+    assert(sheet->index[0].queryRecord(new Any[1]{(char*)"GGT"}) == -1);
+    assert(sheet->index[0].queryRecord(new Any[1]{(char*)"KLE"}) == 2);
+    assert(sheet->index[0].queryRecord(new Any[1]{(char*)"YNT"}) == 3);
+    assert(sheet->index[0].queryRecord(new Any[1]{(char*)"VWH"}) == 4);
+
+    delete db;
+    cout << "Pass Test 6" << endl;
+}
+
 int main() {
     // test_0();
     // test_1();
     // test_2();
     // test_3();
-    test_4();
-    // test_5();
+    // test_4();
+    // test_5(); // TODO
+    // test_6(); // TODO
 }
