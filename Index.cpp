@@ -198,12 +198,103 @@ int Index::queryRecord(Any* info, int index) {
 }
 
 void Index::overflow_downstream(BtreeNode* now){
-    cout << "down" << now->index << " "  << now->record_cnt << endl;
+    //cout << "down" << now->index << " "  << now->record_cnt << endl;
     if((int)now->record.size() < (btree_max_per_node / 2)){
         return ;
     }
     else {
-        
+        if(now->fa_index == -1)
+        {
+            if(now->record_cnt != 0)return ;
+            else {
+                root = Index::convert_buf_to_BtreeNode(now->child[0]);
+                root_page = now->child[0];
+                return ;
+            }
+        }
+        else {
+            BtreeNode* fa = Index::convert_buf_to_BtreeNode(now->fa_index);
+            uint i;
+            for (i = 0;i < fa->child.size();i ++){
+                if(fa->child[i] == now->index){
+                    break;
+                }
+            }
+            if (i != 0){
+                BtreeNode* left = Index::convert_buf_to_BtreeNode(now->child[i - 1]);
+                if (left->record_cnt < (btree_max_per_node / 2)){
+                    //TODO: REUSE DELETED PAGE
+                    left->record.push_back(fa->record[i - 1]);
+                    for(int j = 0; j < now->record_cnt ;j ++){
+                        left->record.push_back(now->record[j]);
+                        left->child.push_back(now->child[j]);
+                    }
+                    left->child.push_back(now->child[now->child.size() - 1]);
+                    vector<BtreeRecord>::iterator it = fa->record.begin();
+                    vector<int>::iterator itx = fa->child.begin();
+                    itx++;
+                    uint temp = i;
+                    while(--temp){it ++; itx++;}
+                    fa->record.erase(it);
+                    fa->child.erase(itx);
+                    fa->record_cnt--;
+                    Index::convert_BtreeNode_to_buf(now);
+                    Index::convert_BtreeNode_to_buf(left);
+
+                    overflow_downstream(fa);        
+                    Index::convert_BtreeNode_to_buf(fa);
+                }
+                else {
+                    now->record.insert(now->record.begin(),fa->record[i - 1]);
+                    now->child.insert(now->child.begin(),-1);
+
+                    fa->record[i - 1] = left->record[left->record.size() - 1];
+
+                    left->record.erase(left->record.end() - 1);
+                    left->child.erase(left->child.end() - 1);
+                    Index::convert_BtreeNode_to_buf(now);
+                    Index::convert_BtreeNode_to_buf(left);
+                    Index::convert_BtreeNode_to_buf(fa);
+                }
+            }
+            else {
+                BtreeNode* right = Index::convert_buf_to_BtreeNode(now->child[i + 1]);
+                if (right->record_cnt < (btree_max_per_node / 2)){
+                    //TODO: REUSE DELETED PAGE
+                    now->record.push_back(fa->record[i]);
+                    for(int j = 0; j < right->record_cnt ;j ++){
+                        now->record.push_back(right->record[j]);
+                        now->child.push_back(right->child[j]);
+                    }
+                    now->child.push_back(right->child[right->child.size() - 1]);
+                    vector<BtreeRecord>::iterator it = fa->record.begin();
+                    vector<int>::iterator itx = fa->child.begin();
+                    uint temp = i;
+                    itx ++;
+                    while(temp--){it ++; itx++;}
+                    fa->record.erase(it);
+                    fa->child.erase(itx);
+                    fa->record_cnt--;
+                    Index::convert_BtreeNode_to_buf(now);
+                    Index::convert_BtreeNode_to_buf(right);
+
+                    overflow_downstream(fa);        
+                    Index::convert_BtreeNode_to_buf(fa);
+                }
+                else {
+                    now->record.insert(now->record.begin(),fa->record[i - 1]);
+                    now->child.insert(now->child.begin(),-1);
+
+                    fa->record[i - 1] = right->record[0];
+
+                    right->record.erase(right->record.begin());
+                    right->child.erase(right->child.begin());
+                    Index::convert_BtreeNode_to_buf(now);
+                    Index::convert_BtreeNode_to_buf(right);
+                    Index::convert_BtreeNode_to_buf(fa);
+                }
+            }
+        }
     }
 }
 
@@ -316,7 +407,7 @@ void Index::removeRecord(Any* info, int record_id){
 
 void Index::removeRecord(Any* info, int record_id, BtreeNode* now){
     
-    cout << "remove" << now->index << " "  << now->record_cnt << " " << record_id << endl;
+    //cout << "remove" << now->index << " "  << now->record_cnt << " " << record_id << endl;
     int i = 0;
     vector<BtreeRecord>::iterator it;
     for (it = now->record.begin();it!=now->record.end();it++)
@@ -339,6 +430,7 @@ void Index::removeRecord(Any* info, int record_id, BtreeNode* now){
         }
         else {
             BtreeNode* follow_node = Index::convert_buf_to_BtreeNode(now->child[i + 1]);
+            while(follow_node->child[0] != -1)follow_node = Index::convert_buf_to_BtreeNode(follow_node->child[0]);
             now->record[i] = follow_node->record[0];
             Index::removeRecord(&follow_node->record[0].key, follow_node->record[0].record_id, follow_node);
             Index::convert_BtreeNode_to_buf(now);

@@ -164,9 +164,9 @@ void test_5() {
     assert(sheet->index[0].queryRecord(new Any[1]{346453455}) == 3);
     assert(sheet->index[0].queryRecord(new Any[1]{4523524}) == -1);
     assert(sheet->index[0].queryRecord(new Any[1]{87674234}) == -1);
-    sheet->index[0].Debug();
+    //sheet->index[0].Debug();
     sheet->index[0].removeRecord(new Any[1]{2017011475}, 1);
-    sheet->index[0].Debug();
+    //sheet->index[0].Debug();
     //assert(sheet->removeRecord(3) == 0);
     //assert(sheet->removeRecord(4) == 0);
     assert(sheet->index[0].queryRecord(new Any[1]{2017011475}) == -1);
@@ -186,13 +186,13 @@ void test_6() {
     Sheet *sheet = db->openSheet("TestSheet");
 
     sheet->createIndex(1);
-    cout << "check" << endl;
+    //cout << "check" << endl;
     sheet->insertRecord(new Any[4]{2017011475, (char*)"GGT", 345, 34});
     sheet->insertRecord(new Any[4]{634645345, (char*)"KLE", 345, 34});
-    cout << "check" << endl;
+    //cout << "check" << endl;
     assert(sheet->index[0].queryRecord(new Any[1]{(char*)"GGT"}) == 1);
     assert(sheet->index[0].queryRecord(new Any[1]{(char*)"KLE"}) == 2);
-    cout << "check" << endl;
+    //cout << "check" << endl;
     assert(sheet->removeRecord(1) == 0);
     assert(sheet->index[0].queryRecord(new Any[1]{(char*)"GGT"}) == -1);
     assert(sheet->index[0].queryRecord(new Any[1]{(char*)"KLE"}) == 2);
