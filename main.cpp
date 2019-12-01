@@ -84,7 +84,7 @@ void test_2() {
     temp.record_id = 2;
     a.record.push_back(temp);
 
-    Index ax(sheet, "haha", 1,3,0);
+    Index ax(sheet, "haha", 1,3);
 
     ax.convert_BtreeNode_to_buf(&a);
     ax.convert_buf_to_BtreeNode(a.index);
@@ -155,13 +155,18 @@ void test_5() {
     Sheet *sheet = db->openSheet("TestSheet");
 
     sheet->createIndex(0);
+    //sheet->index[0].Debug();
     sheet->index[0].insertRecord(new Any[1]{2017011476}, 7);
-    sheet->index[0].insertRecord(new Any[1]{346453455}, 2);
+    //sheet->index[0].Debug();
+    sheet->index[0].insertRecord(new Any[1]{346453455}, 3);
+    //sheet->index[0].Debug();
     assert(sheet->index[0].queryRecord(new Any[1]{2017011475}) == 1);
-    assert(sheet->index[0].queryRecord(new Any[1]{346453455}) == 2);
+    assert(sheet->index[0].queryRecord(new Any[1]{346453455}) == 3);
     assert(sheet->index[0].queryRecord(new Any[1]{4523524}) == -1);
     assert(sheet->index[0].queryRecord(new Any[1]{87674234}) == -1);
+    sheet->index[0].Debug();
     sheet->index[0].removeRecord(new Any[1]{2017011475}, 1);
+    sheet->index[0].Debug();
     //assert(sheet->removeRecord(3) == 0);
     //assert(sheet->removeRecord(4) == 0);
     assert(sheet->index[0].queryRecord(new Any[1]{2017011475}) == -1);
@@ -175,7 +180,7 @@ void test_5() {
 }
 
 void test_6() {
-    test_0();
+    //test_0();
 
     Database *db = new Database("TestDatabase", false);
     Sheet *sheet = db->openSheet("TestSheet");
@@ -208,6 +213,6 @@ int main() {
     // test_2();
     // test_3();
     // test_4();
-    // test_5(); // TODO
+    test_5(); // TODO
     // test_6(); // TODO
 }

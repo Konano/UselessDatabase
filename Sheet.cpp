@@ -220,7 +220,7 @@ inline char* getTime() {
 }
 
 void Sheet::createIndex(uint key_index) {
-    index[index_num] = Index(this, getTime(), key_index, 3, 0);
+    index[index_num] = Index(this, getTime(), key_index, 3);
     index[index_num].open();
 
     int _index;

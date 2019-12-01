@@ -23,7 +23,7 @@ json Index::toJson() {
     return j;
 }
 
-Index::Index(Sheet* sheet, const char* name, uint key,int btree_max_per_node,int btree_root_index) : sheet(sheet), key(key), btree_max_per_node(btree_max_per_node), btree_root_index(btree_root_index) {
+Index::Index(Sheet* sheet, const char* name, uint key,int btree_max_per_node) : sheet(sheet), key(key), btree_max_per_node(btree_max_per_node) {
     strcpy(this->name, name);
     sheet->fm->createFile(dirPath(sheet->db->name, sheet->name, name, ".usid"));
     page_num = 1;
@@ -38,11 +38,13 @@ Index::Index(Sheet* sheet, const char* name, uint key,int btree_max_per_node,int
     *(uint32_t *)(buf+0) = -1;
     *(uint32_t *)(buf+4) = -1;
     *(uint32_t *)(buf+8) = -1;
-    *(uint16_t *)(buf+12) = 0;
+    *(uint32_t *)(buf+12) = -1;
+    *(uint16_t *)(buf+16) = 0;
     sheet->bpm->markDirty(index);
     
     root_page = 0;
     root = convert_buf_to_BtreeNode(root_page);
+    root->fa_index = -1;
     close();
 }
 
@@ -81,6 +83,25 @@ void Index::Btree_remove(BtreeNode* node) {
     }
 }
 
+void Index::Debug(){
+    cout << "root" << root->index << root_page << endl;
+    debug(root);
+}
+
+void Index::debug(BtreeNode* node){
+    cout << "node " << node->index << " fa " << node->fa_index << " isleaf " << node->is_leaf <<endl;
+    cout << node->record_cnt << endl;
+    for(auto a: node->record){
+        cout << a.record_id << " " << *a.key.anyCast<int>() << endl;
+    }
+    for(auto a: node->child){
+        cout << a << endl;
+    }
+    for(auto a: node->child){
+        if(a >= 0)debug(Index::convert_buf_to_BtreeNode(a));
+    }
+}
+
 BtreeNode* Index::convert_buf_to_BtreeNode(int index) {
     BtreeNode* ans = new BtreeNode();
     ans->child.clear();
@@ -96,26 +117,27 @@ BtreeNode* Index::convert_buf_to_BtreeNode(int index) {
 
     ans->left_page_index = *(uint32_t *)(buf + 4);
     ans->right_page_index = *(uint32_t *)(buf + 8);
-    ans->record_cnt = *(uint16_t *)(buf + 12);
+    ans->fa_index = *(uint32_t *)(buf + 12);
+    ans->record_cnt = *(uint16_t *)(buf + 16);
 
-    if(record_size != 0) ans->child.push_back(*(uint32_t *)(buf + 14));
+    if(ans->record_cnt != 0){ans->child.push_back(*(uint32_t *)(buf + 18)); if(ans->child[0] != -1)ans->is_leaf = false;}
+    else ans->child.push_back(-1);
 
     for (int i = 0;i < ans->record_cnt;i ++){
         BtreeRecord temp;
-        temp.record_id = *(uint32_t *)(buf + 18 + i * record_size);
+        temp.record_id = *(uint32_t *)(buf + 22 + i * record_size);
         if (this->ty == enumType::INT) {
-            temp.key = *(int*)(buf + 18 + i * record_size + 4);
+            temp.key = *(int*)(buf + 22 + i * record_size + 4);
         }
         if (this->ty == enumType::CHAR) {
             char* str = (char *)malloc((record_size - 8 + 1) * sizeof(char));
-            memcpy(str, buf + 18 + i * record_size + 4 , record_size - 8);
+            memcpy(str, buf + 22 + i * record_size + 4 , record_size - 8);
             str[record_size - 8] = '\0';
             temp.key = str;
         }
-        ans->child.push_back(*(uint32_t *)(buf + 18 + (i + 1) * record_size - 4));
+        ans->child.push_back(*(uint32_t *)(buf + 22 + (i + 1) * record_size - 4));
         ans->record.push_back(temp);
     }
-    ans->fa_index = *(uint32_t *)(buf + 18 + ans->record_cnt * record_size);
     return ans;
 }
 
@@ -126,6 +148,7 @@ void Index::convert_BtreeNode_to_buf(BtreeNode* node) {
     *(uint32_t*) buf = -1; buf += 4; 
     *(uint32_t*) buf = node->left_page_index; buf += 4; 
     *(uint32_t*) buf = node->right_page_index; buf += 4; 
+    *(uint32_t*) buf = node->fa_index; buf += 4;
     *(uint16_t*) buf = node->record_cnt; buf += 2; 
 
     if(node->record_cnt != 0){
@@ -142,7 +165,6 @@ void Index::convert_BtreeNode_to_buf(BtreeNode* node) {
         *(uint32_t*) buf = node->child[i + 1]; buf += 4;
     }
     sheet->bpm->markDirty(_index);
-    buf += 4; *(uint32_t*) buf = node->fa_index;
 }
 
 int Index::queryRecord(Any* info) {
@@ -153,7 +175,7 @@ int Index::queryRecord(Any* info, int index) {
     
     BtreeNode *now = Index::convert_buf_to_BtreeNode(index);
     
-    cout << "queryRecord" << index << " " << *info->anyCast<int>() << endl;
+    //cout << "queryRecord" << index << endl;
 
     int i;
     for (i = 0;i < now->record_cnt;i ++){
@@ -177,11 +199,17 @@ int Index::queryRecord(Any* info, int index) {
 
 void Index::overflow_downstream(BtreeNode* now){
     cout << "down" << now->index << " "  << now->record_cnt << endl;
+    if((int)now->record.size() < (btree_max_per_node / 2)){
+        return ;
+    }
+    else {
+        
+    }
 }
 
 void Index::overflow_upstream(BtreeNode* now){
 
-    cout << "up" << now->index << " "  << now->record_cnt << endl;
+    //cout << "up" << now->index << " "  << now->record_cnt << endl;
     if ((int)now->record.size() <= btree_max_per_node - 1){
         return ;
     }
@@ -191,7 +219,9 @@ void Index::overflow_upstream(BtreeNode* now){
 
         if(now->fa_index == -1){
             fa = new BtreeNode();
-            fa->index = ++page_num;
+            fa->index = page_num++;
+            root = fa;
+            root_page = page_num - 1;
             fa->is_leaf = false;
         }
         else{
@@ -199,8 +229,7 @@ void Index::overflow_upstream(BtreeNode* now){
         }
         BtreeNode* right = new BtreeNode();
         //TODO: Reuse del page
-        right->index = ++ page_num;
-
+        right->index = page_num++;
 
         BtreeRecord mid = now->record[now->record.size() >> 1];
         vector<BtreeRecord>::iterator it = fa->record.begin();
@@ -249,7 +278,8 @@ void Index::insertRecord(Any* info, int record_id) {
 void Index::insertRecord(Any* info, int record_id, BtreeNode* now) {
 
     // BtreeNode *now = Index::convert_buf_to_BtreeNode(index);
-    cout << "insert" << now->index << " "  << now->record_cnt << " " << *info->anyCast<int>() << " " << record_id << endl;
+    //cout << "insert" << now->index << " "  << now->record_cnt ;
+    //cout << " " << *info->anyCast<int>() << " " << record_id << endl;
     int i = 0;
     vector<BtreeRecord>::iterator it;
     for (it = now->record.begin();it!=now->record.end();it++)
@@ -264,25 +294,14 @@ void Index::insertRecord(Any* info, int record_id, BtreeNode* now) {
     }
 
     if (now->is_leaf){
-        if((int)now->record.size() > btree_max_per_node - 1){
-            now->record.insert(it, BtreeRecord(record_id,*info));
-            now->record_cnt++;
-            vector<int>::iterator itx = now->child.begin();
-            while(i --)itx ++;
-            now->child.insert(itx, -1);
-            Index::convert_BtreeNode_to_buf(now);
-            overflow_upstream(now);
-            return ;
-        }
-        else {
-            now->record.insert(it, BtreeRecord(record_id,*info));
-            now->record_cnt++;
-            vector<int>::iterator itx = now->child.begin();
-            while(i --)itx ++;
-            now->child.insert(itx, -1);
-            Index::convert_BtreeNode_to_buf(now);
-            return ;
-        }
+        now->record.insert(it, BtreeRecord(record_id,*info));
+        now->record_cnt++;
+        vector<int>::iterator itx = now->child.begin();
+        while(i --)itx ++;
+        now->child.insert(itx, -1);
+        Index::convert_BtreeNode_to_buf(now);
+        overflow_upstream(now);
+        return ;
     }
     else {
         BtreeNode* child_i = Index::convert_buf_to_BtreeNode(now->child[i]);
@@ -315,9 +334,7 @@ void Index::removeRecord(Any* info, int record_id, BtreeNode* now){
             now->record.erase(it);
             now->child.erase(now->child.begin());
             now->record_cnt--;
-            if((int)now->record.size() < (btree_max_per_node / 2 - 1)){
-                overflow_downstream(now);
-            }
+            overflow_downstream(now);
             Index::convert_BtreeNode_to_buf(now);
         }
         else {

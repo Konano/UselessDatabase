@@ -43,7 +43,7 @@ private:
 
 public:
     Index() {}
-    Index(Sheet* sheet, const char* name, uint key,int btree_max_per_node,int btree_root_index);
+    Index(Sheet* sheet, const char* name, uint key,int btree_max_per_node);
     Index(Sheet* sheet, json j);
     json toJson();
 
@@ -58,6 +58,9 @@ public:
     int queryRecord(Any* info);
     void insertRecord(Any* info, int record_id);
     void removeRecord(Any* info, int record_id);
+
+    void Debug();
+    void debug(BtreeNode* node);
 };
 
 #endif
