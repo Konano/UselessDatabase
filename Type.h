@@ -34,6 +34,7 @@ public:
     enumKeyType key = Common;
     int foreign_sheet = -1; // TODO: when delete other sheet, need modify
     Any def; // TODO: maybe can be NULL, but now NULL means no-def
+
     bool isUnique() { return unique || key == Primary; }
     bool isNull() { return null && key == Common; }
     uint size() {
@@ -83,18 +84,9 @@ public:
         }
         foreign_sheet = j["foreign_sheet"];
     }
-    int setForeignKey(int sheet_id) { 
-        if (key == Foreign) return -1;
-        key = Foreign;
-        foreign_sheet = sheet_id;
-        return 0;
-    }
-    int unsetForeignKey() {
-        if (key != Foreign) return -1;
-        key = Common;
-        foreign_sheet = -1;
-        return 0;
-    }
+
+    void setForeignKey(int sheet_id) { key = Foreign; foreign_sheet = sheet_id; }
+    void unsetForeignKey() { key = Common; foreign_sheet = -1; }
 
 };
 
