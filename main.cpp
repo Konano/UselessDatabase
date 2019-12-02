@@ -1,5 +1,3 @@
-// TODO remove using namespace std;
-
 #include "constants.h"
 #include "Any.h"
 #include "FileManager.h"
@@ -16,15 +14,23 @@ using namespace std;
 
 extern int cleanDir(const char *dir);
 
-// TODO ForeignKey
-// TODO 修改一个 Key 后可能要修改外键 & Index
-// TODO VARCHAR
-
 void init() { // Testcase: new database
     assert(cleanDir("TestDatabase") == 0);
 
     Database *db = new Database("TestDatabase", true);
     db->createSheet("TestSheet", 4, new Type[4]{Type("Number"), Type("Name", enumType::CHAR, 3), Type("Height"), Type("Weigh")});
+
+    delete db;
+    cout << "Database init" << endl;
+}
+
+void init_2sheets() { // Testcase: new database
+    assert(cleanDir("TestDatabase") == 0);
+
+    Database *db = new Database("TestDatabase", true);
+    db->createSheet("TestSheet", 4, new Type[4]{Type("ID", enumType::INT, 0, enumKeyType::Primary), Type("Name", enumType::CHAR, 3), Type("Height"), Type("Weigh")});
+    db->createSheet("TestSheet", 2, new Type[4]{Type("ID", enumType::INT, 0, enumKeyType::Primary), Type("Name", enumType::CHAR, 3)});
+    db->createSheet("TestSheet", 3, new Type[4]{Type("ClassID", enumType::INT, 0, enumKeyType::Foreign, 1), Type("StudentID", enumType::INT, 0, enumKeyType::Foreign, 0)});
 
     delete db;
     cout << "Database init" << endl;
@@ -225,10 +231,18 @@ void test_7() { // add column, del column
 
     sheet->insertRecord(new Any[4]{2017011475, (char*)"GGT", 345, 34});
     sheet->insertRecord(new Any[4]{634645345, (char*)"KLE", 345, 34});
-    sheet->createColumn(Type("Height", enumType::INT, 0, Any(5)));
+    sheet->createColumn(Type("Height", enumType::INT, 0, enumKeyType::Common, 0, Any(5)));
     sheet->removeColumn(0);
-    sheet->modifyColumn(0, Type("Height", enumType::INT, 0, Any(5)));
+    sheet->modifyColumn(0, Type("Height", enumType::INT, 0, enumKeyType::Common, 0, Any(5)));
     cout << "Pass Test 7" << endl;
+}
+
+void test_8() {
+    init_2sheets();
+
+    // Database *db = new Database("TestDatabase", false);
+    // Sheet *sheet = db->openSheet("TestSheet");
+    cout << "Pass Test 8" << endl;
 }
 
 int main() {
@@ -237,7 +251,8 @@ int main() {
     // test_2();
     // test_3();
     // test_4();
-    // test_5(); // TODO
-    // test_6(); // TODO
-    test_7();
+    // test_5();
+    // test_6();
+    // test_7();
+    test_8();
 }

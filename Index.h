@@ -16,7 +16,7 @@ class Index {
 public:
     Sheet* sheet;
     char name[MAX_NAME_LEN];
-    uint key; // TODO: Finally will be index_cal, Tree, Pointer
+    uint key; // TODO: Finally will be index_cal, Tree, Pointer, to support combine index
     uint page_num;
     uint root_page;
     uint next_del_page;

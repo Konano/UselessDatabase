@@ -19,7 +19,7 @@ private:
     
 public:
     char name[MAX_NAME_LEN];
-    Sheet* sheet[MAX_SHEET_NUM];
+    Sheet* sheet[MAX_SHEET_NUM]; // need to modify foreign key
     int sheet_num;
 
     FileManager* fm;

@@ -7,11 +7,12 @@
 #include "json.hpp"
 using json = nlohmann::json;
 
+
 enum enumType {
     INT,
-    // FLOAT,
+    // TODO: FLOAT,
     CHAR
-    // VARCHAR
+    // TODO: VARCHAR
 };
 
 enum enumKeyType {
@@ -25,26 +26,25 @@ private:
     bool unique = false;
     bool null = true;
     bool deleted = false;
+    uint8_t char_len = 0; // only CHAR will use it
 public:
     char name[MAX_NAME_LEN];
-    // char comment[MAX_COMMENT_LEN];
-    enumType ty = enumType::INT;
-    uint8_t len = 0; // only CHAR will use it
-    enumKeyType key = enumKeyType::Common;
-    Any def;
-    bool isUnique() { return unique || key == enumKeyType::Primary; }
-    bool isNull() { return null && key == enumKeyType::Common; }
+    // TODO: char comment[MAX_COMMENT_LEN];
+    enumType ty = INT;
+    enumKeyType key = Common;
+    int foreign_sheet = -1; // TODO: when delete other sheet, need modify
+    Any def; // TODO: maybe can be NULL, but now NULL means no-def
+    bool isUnique() { return unique || key == Primary; }
+    bool isNull() { return null && key == Common; }
     uint size() {
-        if (ty == enumType::INT) return 4;
-        if (ty == enumType::CHAR) return len;
-        // if (ty == enumType::CHAR) return type_len;
-        // if (ty == enumType::FLOAT) return 4;
+        if (ty == INT) return 4;
+        if (ty == CHAR) return char_len;
         return -1;
     }
-    Type(const char* _name = "", enumType _ty = enumType::INT, uint8_t _len = 0, 
-         Any _def = Any(), bool _unique = false, bool _null = true) 
-    : unique(_unique), null(_null), ty(_ty), len(_len), def(_def) {
-        memcpy(name, _name, strlen(_name));
+    Type(const char* _name = "", enumType _ty = INT, uint8_t _char_len = 0, 
+         enumKeyType _key = Common, int _foreign_sheet = 0, Any _def = Any(), bool _unique = false, bool _null = true) 
+    : unique(_unique), null(_null), char_len(_char_len), ty(_ty), key(_key), foreign_sheet(_foreign_sheet), def(_def) {
+        strcpy(name, _name);
     }
     void del() { deleted = true; }
     bool isDelete() { return deleted; }
@@ -53,7 +53,7 @@ public:
         json j;
         j["name"] = name;
         j["ty"] = ty;
-        j["len"] = len;
+        j["char_len"] = char_len;
         j["key"] = key;
         j["unique"] = unique;
         j["null"] = null;
@@ -62,12 +62,13 @@ public:
         } else if (def.anyCast<char*>() != nullptr) {
             j["def"] = def.anyRefCast<char*>();
         }
+        j["foreign_sheet"] = foreign_sheet;
         return j;
     }
     Type(json j) {
         strcpy(name, j["name"].get<std::string>().c_str());
         ty = (enumType)j["ty"].get<int>();
-        len = j["len"].get<int>();
+        char_len = j["char_len"].get<int>();
         key = (enumKeyType)j["key"].get<int>();
         unique = j["unique"].get<bool>();
         null = j["null"].get<bool>();
@@ -80,6 +81,19 @@ public:
         } else {
             def = Any();
         }
+        foreign_sheet = j["foreign_sheet"];
+    }
+    int setForeignKey(int sheet_id) { 
+        if (key == Foreign) return -1;
+        key = Foreign;
+        foreign_sheet = sheet_id;
+        return 0;
+    }
+    int unsetForeignKey() {
+        if (key != Foreign) return -1;
+        key = Common;
+        foreign_sheet = -1;
+        return 0;
     }
 
 };

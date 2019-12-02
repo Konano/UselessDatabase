@@ -169,6 +169,7 @@ public:
         }
         return false;
     }
+    bool isNull() { return _pValue == nullptr; }
 
 private:
     BaseHolder *_pValue;

@@ -69,7 +69,8 @@ Database::~Database() {
 }
 
 Sheet* Database::createSheet(const char* name, int col_num, Type* col_ty) {
-    Sheet* new_sheet = new Sheet(this, name, col_num, col_ty, true);
+    Sheet* new_sheet = new Sheet();
+    new_sheet->createSheet(this, name, col_num, col_ty, true);
     sheet[sheet_num++] = new_sheet;
     update();
     return new_sheet;

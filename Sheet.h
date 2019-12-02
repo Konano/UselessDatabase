@@ -21,7 +21,7 @@ public:
     BufPageManager* bpm;
     uint col_num = 0;
     Type col_ty[MAX_COL_NUM];
-    // ForeignKey f_key[MAX_COL_NUM];
+    int pri_key = -1;
     uint index_num = 0;
     Index index[MAX_INDEX_NUM];
     uint record_num = 0; // all record, include removed record
@@ -29,14 +29,14 @@ public:
     uint record_size;
     uint record_onepg;
 
-    // char* getFileName(int ty);
+    Sheet() {}
     uint calDataSize();
-    Sheet(Database* db, const char* name, int col_num, Type* col_ty, bool create = false);
-    void insertRecord(Any* info);
+    int createSheet(Database* db, const char* name, int col_num, Type* col_ty, bool create = false);
+    int insertRecord(Any* info);
     // void removeRecord(const int len, Any* info);
     int removeRecord(const int record_id);
     int queryRecord(const int record_id, Any* &info);
-    void updateRecord(const int record_id, const int len, Any* info);
+    int updateRecord(const int record_id, const int len, Any* info);
 
     json toJson();
     Sheet(Database* db, json j);
@@ -49,6 +49,9 @@ public:
     void modifyColumn(uint key_index, Type ty);
 
     void rebuild(int ty, uint key_index);
+    int createForeignKey(uint key_index, uint sheet_id);
+    int removeForeignKey(uint key_index);
+    bool queryPrimaryKey(Any query_val); 
 };
 
 #endif
