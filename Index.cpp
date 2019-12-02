@@ -10,7 +10,7 @@
 using namespace std;
 
 extern char* dirPath(const char* dir, const char* filename, const char* name, const char* suffix);
-extern int cleanDir(const char *dir);
+extern int cleanFiles(const char *dir);
 
 json Index::toJson() {
     json j;

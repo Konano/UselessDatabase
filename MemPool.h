@@ -11,7 +11,7 @@ private:
     node pool[MAX_BUF_NUM];
     int num, head, tail;
 
-    inline void link(int a, int b);
+    void link(int a, int b);
 
 public:
     MemPool();

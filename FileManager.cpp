@@ -19,7 +19,7 @@ int FileManager::alloc() { // Find lowest 0
     return wh;
 }
 
-void FileManager::setFlag(int wh, bool val) {
+inline void FileManager::setFlag(int wh, bool val) {
     if (val) {
         flag |= (__uint128_t)1 << wh; 
     } else {
@@ -86,8 +86,7 @@ void FileManager::setBPM(BufPageManager* bpm) {
     this->bpm = bpm;
 }
 
-char* readFile(const char* path)
-{
+char* readFile(const char* path) {
     int length;
     FILE* file = fopen(path, "rb");
     if (file == nullptr) {
@@ -103,14 +102,13 @@ char* readFile(const char* path)
     return data;
 }
 
-void writeFile(const char* path, const char* data, const int length)
-{
+void writeFile(const char* path, const char* data, const int length) {
     FILE* file = fopen(path, "wb");
     fwrite(data, 1, length, file);
     fclose(file);
 }
 
-char* dirPath(const char* dir, const char* path) {
+char* dirPath(const char* dir, const char* path) { // dir / path
     int length = strlen(dir) + 1 + strlen(path);
     char* data = (char *)malloc((length + 1) * sizeof(char));
     strcpy(data, dir);
@@ -119,7 +117,7 @@ char* dirPath(const char* dir, const char* path) {
     return data;
 }
 
-char* dirPath(const char* dir, const char* filename, const char* suffix) {
+char* dirPath(const char* dir, const char* filename, const char* suffix) { // dir / filename suffix
     int length = strlen(dir) + 1 + strlen(filename) + strlen(suffix);
     char* data = (char *)malloc((length + 1) * sizeof(char));
     strcpy(data, dir);
@@ -129,7 +127,7 @@ char* dirPath(const char* dir, const char* filename, const char* suffix) {
     return data;
 }
 
-char* dirPath(const char* dir, const char* filename, const char* name, const char* suffix) {
+char* dirPath(const char* dir, const char* filename, const char* name, const char* suffix) { // dir / filename _ name suffix
     int length = strlen(dir) + 1 + strlen(filename) + 1 + strlen(name) + strlen(suffix);
     char* data = (char *)malloc((length + 1) * sizeof(char));
     strcpy(data, dir);
@@ -141,8 +139,7 @@ char* dirPath(const char* dir, const char* filename, const char* name, const cha
     return data;
 }
 
-int cleanDir(const char *dir)
-{
+int cleanFiles(const char *dir) { // clean file(s)
     char dir_name[512];
     DIR *dirp;
     struct dirent *dp;
@@ -169,7 +166,7 @@ int cleanDir(const char *dir)
                 continue;
             }
             sprintf(dir_name, "%s/%s", dir, dp->d_name);
-            if ((tmp = cleanDir(dir_name)) != 0) {
+            if ((tmp = cleanFiles(dir_name)) != 0) {
                 return tmp;
             }
         }
@@ -183,11 +180,7 @@ int cleanDir(const char *dir)
     return 0;
 }
 
-void renameFile(const char *oldName, const char *newName) {
-    rename(oldName, newName);
-}
-
 void replaceFile(const char *oldName, const char *newName) {
-    cleanDir(newName);
-    renameFile(oldName, newName);
+    cleanFiles(newName);
+    rename(oldName, newName);
 }

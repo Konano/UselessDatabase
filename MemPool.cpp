@@ -5,10 +5,6 @@ inline void MemPool::link(int a, int b) {
     pool[b].pre = a;
 }
 
-// inline void MemPool::dislink(int a, int b) {
-//     pool[a].next = pool[b].pre = 0;
-// }
-
 MemPool::MemPool() {
     num = 0;
     head = tail = -1;

@@ -2,7 +2,7 @@
 
 #include "BufPageManager.h"
 
-int Hash::hash(int fileID, int pageID) {
+inline int Hash::hash(int fileID, int pageID) {
     return pageID * HASH_PRIME + fileID;
 }
 

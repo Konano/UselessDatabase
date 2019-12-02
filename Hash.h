@@ -12,7 +12,7 @@ private:
     uint16_t table[MAX_BUF_NUM << 2];
     bool flag[MAX_BUF_NUM << 2];
     BufPageManager* bpm;
-    inline int hash(int fileID, int pageID);
+    int hash(int fileID, int pageID);
 
 public:
 

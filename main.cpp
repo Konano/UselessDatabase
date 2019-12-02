@@ -12,10 +12,10 @@ using namespace std;
 // #define NDEBUG
 #include <assert.h>
 
-extern int cleanDir(const char *dir);
+extern int cleanFiles(const char *dir);
 
 void test_0() { // Testcase: new database
-    assert(cleanDir("TestDatabase") == 0);
+    assert(cleanFiles("TestDatabase") == 0);
 
     Database *db = new Database("TestDatabase", true);
     Sheet *sheet = db->createSheet("TestSheet", 4, new Type[4]{Type("Number"), Type("Name", enumType::CHAR, 3), Type("Height"), Type("Weigh")});
@@ -202,7 +202,7 @@ void test_6() {
 }
 
 void init() { // Testcase: new database
-    assert(cleanDir("TestDatabase") == 0);
+    assert(cleanFiles("TestDatabase") == 0);
 
     Database *db = new Database("TestDatabase", true);
     db->createSheet("TestSheet", 4, new Type[4]{Type("Number"), Type("Name", enumType::CHAR, 3), Type("Height"), Type("Weigh")});
@@ -228,7 +228,7 @@ void test_7() { // add column, del column
 }
 
 void init_2sheets() { // Testcase: new database
-    assert(cleanDir("TestDatabase") == 0);
+    assert(cleanFiles("TestDatabase") == 0);
 
     Database *db = new Database("TestDatabase", true);
     assert(db->createSheet("StudentInfo", 4, new Type[4]{Type("ID", enumType::INT, 0, enumKeyType::Primary), Type("Name", enumType::CHAR, 3), Type("Height"), Type("Weigh")}));
