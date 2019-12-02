@@ -62,11 +62,14 @@ uint Sheet::calDataSize() {
 int Sheet::createSheet(Database* db, const char* name, int col_num, Type* col_ty, bool create) {
     for (int i = 0; i < col_num; i++) {
         if (col_ty[i].key == enumKeyType::Primary) {
+            pri_key = i;
             // TODO: when add primary, should ...
             // need unique, non-null, no-def
         }
         if (col_ty[i].key == enumKeyType::Foreign) {
-            if (db->sheet[col_ty[i].foreign_sheet]->pri_key == -1) return -1;
+            if (col_ty[i].foreign_sheet >= db->sheet_num || 
+                db->sheet[col_ty[i].foreign_sheet]->pri_key == -1) 
+                    return -1;
         }
     }
     this->db = db;
@@ -380,9 +383,11 @@ void Sheet::rebuild(int ty, uint key_index) {
 
 int Sheet::createForeignKey(uint key_index, uint sheet_id) {
     if (db->sheet[sheet_id]->pri_key == -1) return -1;
-    return col_ty[key_index].setForeignKey(sheet_id);
+    col_ty[key_index].setForeignKey(sheet_id);
+    return 0;
 }
 
 int Sheet::removeForeignKey(uint key_index) {
-    return col_ty[key_index].unsetForeignKey();
+    col_ty[key_index].unsetForeignKey();
+    return 0;
 }

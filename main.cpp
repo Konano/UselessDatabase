@@ -14,28 +14,6 @@ using namespace std;
 
 extern int cleanDir(const char *dir);
 
-void init() { // Testcase: new database
-    assert(cleanDir("TestDatabase") == 0);
-
-    Database *db = new Database("TestDatabase", true);
-    db->createSheet("TestSheet", 4, new Type[4]{Type("Number"), Type("Name", enumType::CHAR, 3), Type("Height"), Type("Weigh")});
-
-    delete db;
-    cout << "Database init" << endl;
-}
-
-void init_2sheets() { // Testcase: new database
-    assert(cleanDir("TestDatabase") == 0);
-
-    Database *db = new Database("TestDatabase", true);
-    db->createSheet("TestSheet", 4, new Type[4]{Type("ID", enumType::INT, 0, enumKeyType::Primary), Type("Name", enumType::CHAR, 3), Type("Height"), Type("Weigh")});
-    db->createSheet("TestSheet", 2, new Type[4]{Type("ID", enumType::INT, 0, enumKeyType::Primary), Type("Name", enumType::CHAR, 3)});
-    db->createSheet("TestSheet", 3, new Type[4]{Type("ClassID", enumType::INT, 0, enumKeyType::Foreign, 1), Type("StudentID", enumType::INT, 0, enumKeyType::Foreign, 0)});
-
-    delete db;
-    cout << "Database init" << endl;
-}
-
 void test_0() { // Testcase: new database
     assert(cleanDir("TestDatabase") == 0);
 
@@ -223,6 +201,16 @@ void test_6() {
     cout << "Pass Test 6" << endl;
 }
 
+void init() { // Testcase: new database
+    assert(cleanDir("TestDatabase") == 0);
+
+    Database *db = new Database("TestDatabase", true);
+    db->createSheet("TestSheet", 4, new Type[4]{Type("Number"), Type("Name", enumType::CHAR, 3), Type("Height"), Type("Weigh")});
+
+    delete db;
+    cout << "Database init" << endl;
+}
+
 void test_7() { // add column, del column
     init();
 
@@ -234,14 +222,32 @@ void test_7() { // add column, del column
     sheet->createColumn(Type("Height", enumType::INT, 0, enumKeyType::Common, 0, Any(5)));
     sheet->removeColumn(0);
     sheet->modifyColumn(0, Type("Height", enumType::INT, 0, enumKeyType::Common, 0, Any(5)));
+
+    delete db;
     cout << "Pass Test 7" << endl;
+}
+
+void init_2sheets() { // Testcase: new database
+    assert(cleanDir("TestDatabase") == 0);
+
+    Database *db = new Database("TestDatabase", true);
+    assert(db->createSheet("StudentInfo", 4, new Type[4]{Type("ID", enumType::INT, 0, enumKeyType::Primary), Type("Name", enumType::CHAR, 3), Type("Height"), Type("Weigh")}));
+    assert(db->createSheet("ClassInfo", 2, new Type[2]{Type("ID", enumType::INT, 0, enumKeyType::Primary), Type("Name", enumType::CHAR, 3)}));
+    assert(db->createSheet("Combine", 2, new Type[2]{Type("ClassID", enumType::INT, 0, enumKeyType::Foreign, 1), Type("StudentID", enumType::INT, 0, enumKeyType::Foreign, 0)}));
+
+    delete db;
+    cout << "Database init" << endl;
 }
 
 void test_8() {
     init_2sheets();
 
-    // Database *db = new Database("TestDatabase", false);
-    // Sheet *sheet = db->openSheet("TestSheet");
+    Database *db = new Database("TestDatabase", false);
+    Sheet *sheet_0 = db->openSheet("StudentInfo");
+    Sheet *sheet_1 = db->openSheet("ClassInfo");
+    Sheet *sheet_2 = db->openSheet("Combine");
+
+    delete db;
     cout << "Pass Test 8" << endl;
 }
 
@@ -254,5 +260,5 @@ int main() {
     // test_5();
     // test_6();
     // test_7();
-    test_8();
+    // test_8();
 }
