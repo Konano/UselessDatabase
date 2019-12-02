@@ -40,7 +40,12 @@ public:
 
     Any() :_pValue(nullptr) {}
 
-    Any(const Any &any) : _pValue(any._pValue->clone()) {}
+    Any(const Any &any) {
+        if (any._pValue)
+            _pValue = any._pValue->clone();
+        else 
+            _pValue = 0;
+    }
 
     ~Any()
     {

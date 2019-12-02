@@ -11,6 +11,7 @@
 using namespace std;
 
 extern char* dirPath(const char* dir, const char* filename, const char* suffix);
+extern void replaceFile(const char *oldName, const char *newName);
 
 // class Sheet {
 // public:
@@ -145,7 +146,7 @@ int Sheet::queryRecord(const int record_id, Any* &info) {
         memset(info, 0, col_num * sizeof(Any));
         for(uint i = 0; i < col_num; i++) {
             if (this->col_ty[i].ty == enumType::INT) {
-                info[i] = *(int*)buf;
+                info[i] = *(uint32_t*)buf;
                 buf += 4;
             }
             if (this->col_ty[i].ty == enumType::CHAR) {
@@ -256,6 +257,118 @@ void Sheet::removeIndex(uint index_id) {
     index[index_id] = index[--index_num];
 }
 
-// void Sheet::removeIndex(uint index_id) {
+void Sheet::createColumn(Type ty) {
+    col_ty[col_num++] = ty;
+    rebuild(1, col_num);
+}
 
-// }
+void Sheet::removeColumn(uint key_index) {
+    rebuild(0, key_index);
+    for (uint i = key_index; i < col_num - 1; i++) {
+        col_ty[i] = col_ty[i + 1];
+    }
+    col_num -= 1;
+}
+
+void Sheet::modifyColumn(uint key_index, Type ty) {
+    col_ty[key_index] = ty;
+}
+
+void Sheet::rebuild(int ty, uint key_index) {
+    switch (ty) {
+    case 0: {
+        int _main_file;
+        fm->createFile(dirPath(db->name, name, "_tmp.usid"));
+        fm->openFile(dirPath(db->name, name, "_tmp.usid"), _main_file);
+        uint _record_size = record_size - col_ty[key_index].size();
+        uint _record_onepg = 0;
+        while ((_record_onepg + 1) * _record_size + _record_onepg / 8 + 1 <= PAGE_SIZE) _record_onepg++;
+        int index, _index;
+        BufType buf, _buf, buf_st, _buf_st;
+        for (uint i = 0; i < record_num; i++) {
+            if (i % record_onepg == 0) {
+                buf_st = buf = bpm->getPage(main_file, i / record_onepg, index);
+                buf += (record_onepg - 1) / 8 + 1;
+            }
+            if (i % _record_onepg == 0) {
+                _buf_st = _buf = bpm->getPage(_main_file, i / _record_onepg, _index);
+                _buf += (_record_onepg - 1) / 8 + 1;
+            }
+            if (buf_st[(i % record_onepg) / 8] & (1 << (i % 8))) 
+                _buf_st[(i % _record_onepg) / 8] |= 1 << (i % 8);
+            for(uint i = 0; i < col_num; i++) {
+                if (col_ty[i].ty == enumType::INT) {
+                    if (i != key_index) *(uint32_t*)_buf = *(uint32_t*)buf;
+                    buf += 4; 
+                    if (i != key_index) _buf += 4; 
+                }
+                if (col_ty[i].ty == enumType::CHAR) {
+                    if (i != key_index) memcpy(_buf, buf, col_ty[i].len);
+                    buf += col_ty[i].len;
+                    if (i != key_index) _buf += col_ty[i].len;
+                }
+            }
+            bpm->markDirty(_index);
+        }
+        fm->closeFile(main_file);
+        fm->closeFile(_main_file);
+        replaceFile(dirPath(db->name, name, "_tmp.usid"), dirPath(db->name, name, ".usid"));
+
+        fm->openFile(dirPath(db->name, name, ".usid"), main_file);
+        record_size = _record_size;
+        record_onepg = _record_onepg;
+        break;
+    } case 1: { // add
+        int _main_file;
+        fm->createFile(dirPath(db->name, name, "_tmp.usid"));
+        fm->openFile(dirPath(db->name, name, "_tmp.usid"), _main_file);
+        uint _record_size = record_size + col_ty[key_index].size();
+        uint _record_onepg = 0;
+        while ((_record_onepg + 1) * _record_size + _record_onepg / 8 + 1 <= PAGE_SIZE) _record_onepg++;
+        int index, _index;
+        BufType buf, _buf, buf_st, _buf_st;
+        for (uint i = 0; i < record_num; i++) {
+            if (i % record_onepg == 0) {
+                buf_st = buf = bpm->getPage(main_file, i / record_onepg, index);
+                buf += (record_onepg - 1) / 8 + 1;
+            }
+            if (i % _record_onepg == 0) {
+                _buf_st = _buf = bpm->getPage(_main_file, i / _record_onepg, _index);
+                _buf += (_record_onepg - 1) / 8 + 1;
+            }
+            if (buf_st[(i % record_onepg) / 8] & (1 << (i % 8))) 
+                _buf_st[(i % _record_onepg) / 8] |= 1 << (i % 8);
+            for(uint i = 0; i < col_num - 1; i++) {
+                if (col_ty[i].ty == enumType::INT) {
+                    *(uint32_t*)_buf = *(uint32_t*)buf;
+                    buf += 4; _buf += 4; 
+                }
+                if (col_ty[i].ty == enumType::CHAR) {
+                    memcpy(_buf, buf, col_ty[i].len);
+                    buf += col_ty[i].len; _buf += col_ty[i].len;
+                }
+            }
+            Any info = col_ty[col_num - 1].def;
+            if (info.anyCast<int>() != NULL) {
+                *(uint32_t*)_buf = *info.anyCast<int>();
+                _buf += 4;
+            }
+            if (info.anyCast<char*>() != NULL) {
+                memcpy(_buf, *info.anyCast<char*>(), col_ty[col_num - 1].len);
+                _buf += col_ty[col_num - 1].len;
+            }
+            bpm->markDirty(_index);
+        }
+        fm->closeFile(main_file);
+        fm->closeFile(_main_file);
+        replaceFile(dirPath(db->name, name, "_tmp.usid"), dirPath(db->name, name, ".usid"));
+
+        fm->openFile(dirPath(db->name, name, ".usid"), main_file);
+        record_size = _record_size;
+        record_onepg = _record_onepg;
+        break;
+    } case 2: // modify
+        
+        break;
+    }
+}

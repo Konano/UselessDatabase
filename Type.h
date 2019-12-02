@@ -41,11 +41,10 @@ public:
         // if (ty == enumType::FLOAT) return 4;
         return -1;
     }
-    Type(const char* _name = "", enumType _ty = enumType::INT, uint8_t _len = 0) : ty(_ty) {
+    Type(const char* _name = "", enumType _ty = enumType::INT, uint8_t _len = 0, 
+         Any _def = Any(), bool _unique = false, bool _null = true) 
+    : unique(_unique), null(_null), ty(_ty), len(_len), def(_def) {
         memcpy(name, _name, strlen(_name));
-        if (_ty == enumType::CHAR) {
-            len = _len;
-        }
     }
     void del() { deleted = true; }
     bool isDelete() { return deleted; }

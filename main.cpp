@@ -20,6 +20,16 @@ extern int cleanDir(const char *dir);
 // TODO 修改一个 Key 后可能要修改外键 & Index
 // TODO VARCHAR
 
+void init() { // Testcase: new database
+    assert(cleanDir("TestDatabase") == 0);
+
+    Database *db = new Database("TestDatabase", true);
+    db->createSheet("TestSheet", 4, new Type[4]{Type("Number"), Type("Name", enumType::CHAR, 3), Type("Height"), Type("Weigh")});
+
+    delete db;
+    cout << "Database init" << endl;
+}
+
 void test_0() { // Testcase: new database
     assert(cleanDir("TestDatabase") == 0);
 
@@ -207,12 +217,27 @@ void test_6() {
     cout << "Pass Test 6" << endl;
 }
 
+void test_7() { // add column, del column
+    init();
+
+    Database *db = new Database("TestDatabase", false);
+    Sheet *sheet = db->openSheet("TestSheet");
+
+    sheet->insertRecord(new Any[4]{2017011475, (char*)"GGT", 345, 34});
+    sheet->insertRecord(new Any[4]{634645345, (char*)"KLE", 345, 34});
+    sheet->createColumn(Type("Height", enumType::INT, 0, Any(5)));
+    sheet->removeColumn(0);
+    sheet->modifyColumn(0, Type("Height", enumType::INT, 0, Any(5)));
+    cout << "Pass Test 7" << endl;
+}
+
 int main() {
     // test_0();
     // test_1();
     // test_2();
     // test_3();
     // test_4();
-    test_5(); // TODO
+    // test_5(); // TODO
     // test_6(); // TODO
+    test_7();
 }

@@ -43,6 +43,12 @@ public:
 
     void createIndex(uint key_index);
     void removeIndex(uint index_id);
+
+    void createColumn(Type ty);
+    void removeColumn(uint key_index);
+    void modifyColumn(uint key_index, Type ty);
+
+    void rebuild(int ty, uint key_index);
 };
 
 #endif

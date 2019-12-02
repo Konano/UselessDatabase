@@ -182,3 +182,12 @@ int cleanDir(const char *dir)
     
     return 0;
 }
+
+void renameFile(const char *oldName, const char *newName) {
+    rename(oldName, newName);
+}
+
+void replaceFile(const char *oldName, const char *newName) {
+    cleanDir(newName);
+    renameFile(oldName, newName);
+}
