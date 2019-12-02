@@ -28,6 +28,7 @@ json Sheet::toJson() {
         j["index"].push_back(index[i].toJson());
     }
     j["pri_key"] = pri_key;
+    j["pri_key_index"] = pri_key_index;
     return j;
 }
 
@@ -49,6 +50,7 @@ Sheet::Sheet(Database* db, json j) { // from JSON
         index[i] = Index(this, j["index"][i]);
     }
     pri_key = j["pri_key"];
+    pri_key_index = j["pri_key_index"];
 }
 
 uint Sheet::calDataSize() {
@@ -59,12 +61,24 @@ uint Sheet::calDataSize() {
     return size;
 }
 
-int Sheet::createSheet(Database* db, const char* name, int col_num, Type* col_ty, bool create) {
+int Sheet::createSheet(uint sheet_id, Database* db, const char* name, int col_num, Type* col_ty, bool create) {
+
+    this->sheet_id = sheet_id;
+    this->db = db;
+    this->fm = db->fm;
+    this->bpm = db->bpm;
+    strcpy(this->name, name);
+    this->col_num = col_num;
+    memcpy(this->col_ty, col_ty, sizeof(Type) * col_num);
+
+    bool flag = false;
     for (int i = 0; i < col_num; i++) {
         if (col_ty[i].key == enumKeyType::Primary) {
-            pri_key = i;
-            // TODO: when add primary, should ...
-            // need unique, non-null, no-def
+            this->createIndex(i);
+            this->pri_key = i;
+            this->pri_key_index = index_num - 1;
+            if (flag) return -1;
+            else { flag = true; }
         }
         if (col_ty[i].key == enumKeyType::Foreign) {
             if (col_ty[i].foreign_sheet >= db->sheet_num || 
@@ -72,12 +86,6 @@ int Sheet::createSheet(Database* db, const char* name, int col_num, Type* col_ty
                     return -1;
         }
     }
-    this->db = db;
-    this->fm = db->fm;
-    this->bpm = db->bpm;
-    strcpy(this->name, name);
-    this->col_num = col_num;
-    memcpy(this->col_ty, col_ty, sizeof(Type) * col_num);
     if (create) {
         fm->createFile(dirPath(db->name, name, ".usid"));
     }
@@ -105,7 +113,11 @@ int Sheet::insertRecord(Any* info) {
         }
         if (col_ty[i].key == enumKeyType::Primary) {
             // TODO: when add primary, should ...
-            // need unique, non-null, no-def
+            // need unique, non-null, 
+            //  no-def
+            if (info[i].isNull()) return -1;
+            int ans = this->index[pri_key_index].queryRecord(info);
+            if (ans != -1) return -1;
         }
         if (col_ty[i].key == enumKeyType::Foreign) {
             if (!info[i].isNull() && !db->sheet[col_ty[i].foreign_sheet]->queryPrimaryKey(info[i])) {
@@ -180,6 +192,9 @@ int Sheet::updateRecord(const int record_id, const int len, Any* info) {
         if (col_ty[i].key == enumKeyType::Primary) {
             // TODO: when add primary, should ...
             // need unique, non-null, no-def
+            if(info[i].isNull())return -1;
+            int ans = this->index[pri_key_index].queryRecord(info);
+            if (ans == -1)return -1;
         }
         if (col_ty[i].key == enumKeyType::Foreign) {
             if (!info[i].isNull() && !db->sheet[col_ty[i].foreign_sheet]->queryPrimaryKey(info[i])) {
@@ -241,7 +256,6 @@ inline char* getTime() {
 void Sheet::createIndex(uint key_index) {
     index[index_num] = Index(this, getTime(), key_index, 3);
     index[index_num].open();
-
     int _index;
     for (uint record_id = 0; record_id < record_num; record_id++) {
         BufType buf = bpm->getPage(main_file, record_id / record_onepg, _index);
@@ -379,6 +393,78 @@ void Sheet::rebuild(int ty, uint key_index) {
     fm->openFile(dirPath(db->name, name, ".usid"), main_file);
     record_size = _record_size;
     record_onepg = _record_onepg;
+}
+
+int Sheet::createPrimaryKey(uint key_index) {
+    if (this->pri_key != -1)return -1;
+
+    std::vector<Any> v;
+
+    int _index;
+    //TODO: use only one col
+    for (uint record_id = 0; record_id < record_num; record_id++) {
+        BufType buf = bpm->getPage(main_file, record_id / record_onepg, _index);
+        if (buf[(record_id % record_onepg) / 8] & (1 << (record_id % 8))) {
+
+            BufType _buf = buf + (record_onepg - 1) / 8 + 1 + record_size * (record_id % record_onepg);
+            Any* info = (Any*) malloc(col_num * sizeof(Any));
+            memset(info, 0, col_num * sizeof(Any));
+            for(uint i = 0; i < col_num; i++) {
+                if (this->col_ty[i].ty == enumType::INT) {
+                    info[i] = *(int*)_buf;
+                    _buf += 4;
+                }
+                if (this->col_ty[i].ty == enumType::CHAR) {
+                    char* str = (char *)malloc((col_ty[i].size()+1) * sizeof(char));
+                    memcpy(str, _buf, col_ty[i].size());
+                    str[col_ty[i].size()] = '\0';
+                    info[i] = str;
+                    _buf += col_ty[i].size();
+                }
+            }
+            bool flag = false;
+            for(auto a: v){
+                if (a == info[key_index])
+                {
+                    flag = true;
+                    break;
+                }
+            }
+            if (!flag) v.push_back(info[key_index]);
+            else return -1;
+            //index[index_num].insertRecord(&info[index[index_num].key], record_id);
+        }
+    }
+
+    this->pri_key = key_index;
+
+    bool index_flag = false;
+    for(uint i = 0;i < this->index_num;i ++){
+        if(this->index[i].key == key_index){
+            this->pri_key_index = i;
+            index_flag = true;
+            break;
+        }
+    }
+
+    if(!index_flag){
+        this->createIndex(key_index);
+        this->pri_key_index = index_num - 1;
+    }
+    return 1;
+}
+
+int Sheet::removePrimaryKey(uint key_index) {
+    if (this->pri_key == -1)return -1;
+    for(int i = 0; i < db->sheet_num;i ++){
+        for (uint j = 0;j < db->sheet[i]->col_num;j ++){
+            if (db->sheet[i]->col_ty[j].key == Foreign && (uint)db->sheet[i]->col_ty[j].foreign_sheet == sheet_id){
+                db->sheet[i]->removeForeignKey(j);
+            }
+        }
+    }
+    this->pri_key = -1;
+    return 0;
 }
 
 int Sheet::createForeignKey(uint key_index, uint sheet_id) {

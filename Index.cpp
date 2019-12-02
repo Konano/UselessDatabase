@@ -25,6 +25,7 @@ json Index::toJson() {
 
 Index::Index(Sheet* sheet, const char* name, uint key,int btree_max_per_node) : sheet(sheet), key(key), btree_max_per_node(btree_max_per_node) {
     strcpy(this->name, name);
+    cout << sheet->name << endl;
     sheet->fm->createFile(dirPath(sheet->db->name, sheet->name, name, ".usid"));
     page_num = 1;
     next_del_page = -1;
