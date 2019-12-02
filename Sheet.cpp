@@ -13,25 +13,21 @@ using namespace std;
 extern char* dirPath(const char* dir, const char* filename, const char* suffix);
 extern void replaceFile(const char *oldName, const char *newName);
 
-json Sheet::toJson() {
+json Sheet::toJson() { // assemble to JSON
     json j;
     j["name"] = name;
     j["col_num"] = col_num;
-    for (uint i = 0; i < col_num; i++) {
-        j["col_ty"].push_back(col_ty[i].toJson());
-    }
+    for (uint i = 0; i < col_num; i++) j["col_ty"].push_back(col_ty[i].toJson());
     j["record_num"] = record_num;
     j["record_size"] = record_size;
     j["record_onepg"] = record_onepg;
     j["index_num"] = index_num;
-    for (uint i = 0; i < index_num; i++) {
-        j["index"].push_back(index[i].toJson());
-    }
+    for (uint i = 0; i < index_num; i++) j["index"].push_back(index[i].toJson());
     j["pri_key"] = pri_key;
     return j;
 }
 
-Sheet::Sheet(Database* db, json j) { // from JSON
+Sheet::Sheet(Database* db, json j) { // disassemble from JSON
     this->db = db;
     this->fm = db->fm;
     this->bpm = db->bpm;
@@ -40,14 +36,10 @@ Sheet::Sheet(Database* db, json j) { // from JSON
     record_num = j["record_num"].get<int>();
     record_size = j["record_size"].get<int>();
     record_onepg = j["record_onepg"].get<int>();
-    for (uint i = 0; i < col_num; i++) {
-        col_ty[i] = Type(j["col_ty"][i]);
-    }
+    for (uint i = 0; i < col_num; i++) col_ty[i] = Type(j["col_ty"][i]);
     fm->openFile(dirPath(db->name, name, ".usid"), main_file);
     index_num = j["index_num"].get<int>();
-    for (uint i = 0; i < index_num; i++) {
-        index[i] = Index(this, j["index"][i]);
-    }
+    for (uint i = 0; i < index_num; i++) index[i] = Index(this, j["index"][i]);
     pri_key = j["pri_key"];
 }
 
@@ -88,6 +80,29 @@ int Sheet::createSheet(Database* db, const char* name, int col_num, Type* col_ty
     return 0;
 }
 
+inline void insert(Any& val, uint size, BufType& buf) {
+    if (val.anyCast<int>() != NULL) {
+        *(uint32_t*)buf = *val.anyCast<int>();
+    }
+    if (val.anyCast<char*>() != NULL) {
+        memcpy(buf, *val.anyCast<char*>(), size);
+    }
+    buf += size;
+}
+
+inline void fetch(BufType& buf, enumType ty, uint size, Any& val) {
+    if (ty == INT) {
+        val = *(uint32_t*)buf;
+    }
+    if (ty == CHAR) {
+        char* str = (char *)malloc((size + 1) * sizeof(char));
+        memcpy(str, buf, size);
+        str[size] = '\0';
+        val = str;
+    }
+    buf += size;
+}
+
 int Sheet::insertRecord(Any* info) {
     int index;
     BufType buf = bpm->getPage(main_file, record_num / record_onepg, index);
@@ -95,14 +110,6 @@ int Sheet::insertRecord(Any* info) {
     buf += (record_onepg - 1) / 8 + 1;
     buf += record_size * (record_num % record_onepg);
     for(uint i = 0; i < col_num; i++) {
-        if (info[i].anyCast<int>() != NULL) {
-            *(uint32_t*)buf = *info[i].anyCast<int>();
-            buf += 4;
-        }
-        if (info[i].anyCast<char*>() != NULL) {
-            memcpy(buf, *info[i].anyCast<char*>(), col_ty[i].size());
-            buf += col_ty[i].size();
-        }
         if (col_ty[i].key == enumKeyType::Primary) {
             // TODO: when add primary, should ...
             // need unique, non-null, no-def
@@ -112,6 +119,7 @@ int Sheet::insertRecord(Any* info) {
                 return -1;
             }
         }
+        insert(info[i], col_ty[i].size(), buf);
     }
     for (uint i = 0; i < index_num; i++) {
         this->index[i].insertRecord(&info[this->index[i].key], record_num);
@@ -146,17 +154,7 @@ int Sheet::queryRecord(const int record_id, Any* &info) {
         info = (Any*) malloc(col_num * sizeof(Any));
         memset(info, 0, col_num * sizeof(Any));
         for(uint i = 0; i < col_num; i++) {
-            if (this->col_ty[i].ty == enumType::INT) {
-                info[i] = *(uint32_t*)buf;
-                buf += 4;
-            }
-            if (this->col_ty[i].ty == enumType::CHAR) {
-                char* str = (char *)malloc((col_ty[i].size()+1) * sizeof(char));
-                memcpy(str, buf, col_ty[i].size());
-                str[col_ty[i].size()] = '\0';
-                info[i] = str;
-                buf += col_ty[i].size();
-            }
+            fetch(buf, col_ty[i].ty, col_ty[i].size(), info[i]);
         }
         return 0;
     }
@@ -169,14 +167,6 @@ int Sheet::updateRecord(const int record_id, const int len, Any* info) {
     buf += (record_onepg - 1) / 8 + 1;
     buf += record_size * (record_id % record_onepg);
     for(int i = 0; i < len; i++) {
-        if (info[i].anyCast<int>() != NULL) {
-            *(uint32_t*)buf = *info[i].anyCast<int>();
-            buf += 4;
-        }
-        if (info[i].anyCast<char*>() != NULL) {
-            memcpy(buf, *info[i].anyCast<char*>(), col_ty[i].size());
-            buf += col_ty[i].size();
-        }
         if (col_ty[i].key == enumKeyType::Primary) {
             // TODO: when add primary, should ...
             // need unique, non-null, no-def
@@ -186,6 +176,7 @@ int Sheet::updateRecord(const int record_id, const int len, Any* info) {
                 return -1;
             }
         }
+        insert(info[i], col_ty[i].size(), buf);
     }
     bpm->markDirty(index);
     return 0;
@@ -217,19 +208,6 @@ bool Sheet::queryPrimaryKey(Any query_val) {
     return false;
 }
 
-// json Sheet::toJson() {
-//     json j;
-//     j["name"] = name;
-//     j["col_num"] = col_num;
-//     for (uint i = 0; i < col_num; i++) {
-//         j["col_ty"].push_back(col_ty[i].toJson());
-//     }
-//     j["record_num"] = record_num;
-//     j["record_size"] = record_size;
-//     j["record_onepg"] = record_onepg;
-//     return j;
-// }
-
 inline char* getTime() {
     time_t rawtime;
     time( &rawtime );
@@ -246,24 +224,10 @@ void Sheet::createIndex(uint key_index) {
     for (uint record_id = 0; record_id < record_num; record_id++) {
         BufType buf = bpm->getPage(main_file, record_id / record_onepg, _index);
         if (buf[(record_id % record_onepg) / 8] & (1 << (record_id % 8))) {
-
             BufType _buf = buf + (record_onepg - 1) / 8 + 1 + record_size * (record_id % record_onepg);
-            Any* info = (Any*) malloc(col_num * sizeof(Any));
-            memset(info, 0, col_num * sizeof(Any));
-            for(uint i = 0; i < col_num; i++) {
-                if (this->col_ty[i].ty == enumType::INT) {
-                    info[i] = *(int*)_buf;
-                    _buf += 4;
-                }
-                if (this->col_ty[i].ty == enumType::CHAR) {
-                    char* str = (char *)malloc((col_ty[i].size()+1) * sizeof(char));
-                    memcpy(str, _buf, col_ty[i].size());
-                    str[col_ty[i].size()] = '\0';
-                    info[i] = str;
-                    _buf += col_ty[i].size();
-                }
-            }
-            index[index_num].insertRecord(&info[index[index_num].key], record_id);
+            Any val;
+            fetch(_buf, col_ty[index[index_num].key].ty, col_ty[index[index_num].key].size(), val);
+            index[index_num].insertRecord(&val, record_id);
         }
     }
     index_num++;
@@ -359,15 +323,7 @@ void Sheet::rebuild(int ty, uint key_index) {
                     buf += col_ty[j].size(); _buf += col_ty[j].size();
                 }
             }
-            Any info = col_ty[col_num - 1].def;
-            if (info.anyCast<int>() != NULL) {
-                *(uint32_t*)_buf = *info.anyCast<int>();
-                _buf += 4;
-            }
-            if (info.anyCast<char*>() != NULL) {
-                memcpy(_buf, *info.anyCast<char*>(), col_ty[col_num - 1].size());
-                _buf += col_ty[col_num - 1].size();
-            }
+            insert(col_ty[col_num - 1].def, col_ty[col_num - 1].size(), _buf);
             bpm->markDirty(_index);
         }
         break;

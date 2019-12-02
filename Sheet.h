@@ -29,6 +29,9 @@ public:
     uint record_size;
     uint record_onepg;
 
+    json toJson();
+    Sheet(Database* db, json j);
+
     Sheet() {}
     uint calDataSize();
     int createSheet(Database* db, const char* name, int col_num, Type* col_ty, bool create = false);
@@ -37,9 +40,6 @@ public:
     int removeRecord(const int record_id);
     int queryRecord(const int record_id, Any* &info);
     int updateRecord(const int record_id, const int len, Any* info);
-
-    json toJson();
-    Sheet(Database* db, json j);
 
     void createIndex(uint key_index);
     void removeIndex(uint index_id);

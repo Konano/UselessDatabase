@@ -10,9 +10,10 @@ using json = nlohmann::json;
 
 enum enumType {
     INT,
-    // TODO: FLOAT,
+    // TODO: FLOAT
     CHAR
     // TODO: VARCHAR
+    // need to modify size(), [sheet.cpp]insert(), [sheet.cpp]get()
 };
 
 enum enumKeyType {
