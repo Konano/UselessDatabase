@@ -21,14 +21,19 @@ enum enumKeyType {
 };
 
 struct Type {
+private:
+    bool unique = false;
+    bool null = true;
+    bool deleted = false;
+public:
     char name[MAX_NAME_LEN];
     // char comment[MAX_COMMENT_LEN];
     enumType ty = enumType::INT;
     uint8_t len = 0; // only CHAR will use it
     enumKeyType key = enumKeyType::Common;
-    bool unique = false;
-    bool null = true;
-    Any def; 
+    Any def;
+    bool isUnique() { return unique || key == enumKeyType::Primary; }
+    bool isNull() { return null && key == enumKeyType::Common; }
     uint size() {
         if (ty == enumType::INT) return 4;
         if (ty == enumType::CHAR) return len;
@@ -42,6 +47,8 @@ struct Type {
             len = _len;
         }
     }
+    void del() { deleted = true; }
+    bool isDelete() { return deleted; }
 
     json toJson() {
         json j;
