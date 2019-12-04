@@ -1,4 +1,5 @@
 #include "constants.h"
+#include "parser.h"
 #include "Any.h"
 #include "FileManager.h"
 #include "BufPageManager.h"
@@ -14,6 +15,8 @@ using namespace std;
 
 extern int cleanFiles(const char *dir);
 extern int cleanDir(const char *dir);
+
+int yyparse (void);
 
 void test_0() { // Testcase: new database
     assert(cleanFiles("TestDatabase") == 0);
@@ -261,5 +264,7 @@ int main() {
     // test_5();
     // test_6();
     // test_7();
-    test_8();
+    // test_8();
+    yyparse();
+    return 0;
 }

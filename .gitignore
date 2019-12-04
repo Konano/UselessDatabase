@@ -2,3 +2,5 @@
 useless
 *.udb
 *.usid
+lex.yy.*
+yacc.tab.*
