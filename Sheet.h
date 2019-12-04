@@ -19,9 +19,11 @@ public:
     Database* db;
     FileManager* fm;
     BufPageManager* bpm;
+    uint sheet_id;
     uint col_num = 0;
     Type col_ty[MAX_COL_NUM];
     int pri_key = -1;
+    int pri_key_index = -1;
     uint index_num = 0;
     Index index[MAX_INDEX_NUM];
     uint record_num = 0; // all record, include removed record
@@ -34,7 +36,7 @@ public:
 
     Sheet() {}
     uint calDataSize();
-    int createSheet(Database* db, const char* name, int col_num, Type* col_ty, bool create = false);
+    int createSheet(uint sheet_id,Database* db, const char* name, int col_num, Type* col_ty, bool create = false);
     int insertRecord(Any* info);
     // void removeRecord(const int len, Any* info);
     int removeRecord(const int record_id);
@@ -51,6 +53,8 @@ public:
     void rebuild(int ty, uint key_index);
     int createForeignKey(uint key_index, uint sheet_id);
     int removeForeignKey(uint key_index);
+    int createPrimaryKey(uint key_index);
+    int removePrimaryKey(uint key_index);
     bool queryPrimaryKey(Any query_val); 
 };
 

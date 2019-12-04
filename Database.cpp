@@ -70,7 +70,7 @@ Database::~Database() {
 
 Sheet* Database::createSheet(const char* name, int col_num, Type* col_ty) {
     Sheet* new_sheet = new Sheet();
-    if (new_sheet->createSheet(this, name, col_num, col_ty, true)) {
+    if (new_sheet->createSheet(sheet_num,this, name, col_num, col_ty, true)) {
         delete new_sheet;
         return nullptr;
     }
