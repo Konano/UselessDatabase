@@ -37,7 +37,12 @@ public:
     Any def; // TODO: maybe can be NULL, but now NULL means no-def
 
     bool isUnique() { return unique || key == Primary; }
+    void setUnique(bool _unique) { unique = _unique; }
     bool isNull() { return null && key == Common; }
+    void setNull(bool _null) { null = _null; }
+    bool isDelete() { return deleted; }
+    void del() { deleted = true; }
+    
     uint size() {
         if (ty == INT) return 4;
         if (ty == CHAR) return char_len;
@@ -48,8 +53,6 @@ public:
     : unique(_unique), null(_null), char_len(_char_len), ty(_ty), key(_key), foreign_sheet(_foreign_sheet), def(_def) {
         strcpy(name, _name);
     }
-    void del() { deleted = true; }
-    bool isDelete() { return deleted; }
 
     json toJson() {
         json j;

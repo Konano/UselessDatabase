@@ -1,17 +1,24 @@
-#ifndef __MAIN_HPP
-#define __MAIN_HPP
+#ifndef __PARSER
+#define __PARSER
+
+#include "Any.h"
+#include "Type.h"
 
 #include <iostream>
 #include <string>
+#include <vector>
 #include <stdio.h>
 
 using namespace std;
 
-struct YYType
-{
-	string m_sId;
-	int m_nInt;
-	char m_cOp;
+struct YYType {
+	string S;
+	int I;
+	// char C;
+	Type TY;
+	vector<Type> V_TY;
+	Any V;
+	vector<Any> V_V;
 };
 
 #define YYSTYPE YYType

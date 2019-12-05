@@ -8,7 +8,8 @@ extern "C"
 {
 	int yywrap(void);
 	int yylex(void);
-}
+};
+
 %}
 
 letter      ([A-Za-z])
@@ -20,6 +21,20 @@ blank_chars	([ \f\r\t\v]+)
 string      (’[^’]*’)
 %%
 
+{blank_chars} {}
+\( { return LB; }
+\) { return RB; }
+; { return SEMI; } 
+, { return COMMA; }
+\n {}
+\* { return STAR; }
+= { return EQ; }
+\<\> { return NEQ; }
+\<= { return LE; }
+\>= { return GE; }
+\< { return LS; }
+\< { return GT; }
+\. { return DOT; }
 DATABASE { return DATABASE; }
 DATABASES { return DATABASES; }
 TABLE { return TABLE; }
@@ -42,8 +57,9 @@ UPDATE { return UPDATE; }
 SET { return SET; }
 SELECT { return SELECT; }
 IS { return IS; }
-INT { return INT; }
-VARCHAR { return VARCHAR; }
+INT { return TYPE_INT; }
+VARCHAR { return TYPE_VARCHAR; }
+CHAR { return TYPE_CHAR; }
 DEFAULT { return DEFAULT; }
 CONSTRAINT { return CONSTRAINT; }
 CHANGE { return CHANGE; }
@@ -54,14 +70,24 @@ DESC { return DESC; }
 REFERENCES { return REFERENCES; }
 INDEX { return INDEX; }
 AND { return AND; }
-DATE { return DATE; }
-FLOAT { return FLOAT; }
+DATE { return TYPE_DATE; }
+FLOAT { return TYPE_FLOAT; }
 FOREIGN { return FOREIGN; }
 ON { return ON; }
 TO { return TO; }
-{identifier} { return IDENTIFIER; }
-{integer} { return VALUE_INT; }
-{string} { return VALUE_STRING; }
+EXIT { return EXIT; }
+{identifier} { 
+	yylval.S = yytext;
+	return IDENTIFIER; 
+}
+{integer} { 
+	yylval.I = atoi(yytext);
+	return VALUE_INT; 
+}
+{string} { 
+	yylval.S = yytext;
+	return VALUE_STRING;
+}
 %%
 
 int yywrap(void) { return 1; }

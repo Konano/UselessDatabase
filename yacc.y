@@ -1,11 +1,17 @@
 %{
 #include "parser.h"
+#include "Database.h"
+#include "Type.h"
+
+extern int cleanFiles(const char *dir);
 
 extern "C"
 {
     void yyerror(const char *s);
     extern int yylex(void);
-}
+};
+
+Database* db;
 
 %}
 
@@ -31,8 +37,9 @@ extern "C"
 %token SET
 %token SELECT
 %token IS
-%token INT
-%token VARCHAR
+%token TYPE_INT
+%token TYPE_VARCHAR
+%token TYPE_CHAR
 %token DEFAULT
 %token CONSTRAINT
 %token CHANGE
@@ -43,93 +50,165 @@ extern "C"
 %token REFERENCES
 %token INDEX
 %token AND
-%token DATE
-%token FLOAT
+%token TYPE_DATE
+%token TYPE_FLOAT
 %token FOREIGN
+%token EXIT
 %token ON
 %token TO
-%token IDENTIFIER
-%token VALUE_INT
-%token VALUE_STRING
+%token LB
+%token RB
+%token SEMI
+%token COMMA
+%token STAR
+%token EQ
+%token NEQ
+%token LE
+%token GE
+%token LS
+%token GT
+%token DOT
+%token <S> IDENTIFIER
+%token <I> VALUE_INT
+%token <S> VALUE_STRING
+%type <S> dbName
+%type <S> tbName
+%type <S> colName
+%type <S> pkName
+%type <S> fkName
+%type <S> idxName
+%type <TY> type
+%type <TY> field
+%type <V_TY> fieldList
+%type <V> value
+%type <V_V> valueList
 
 %%
 
 program:
-    | program stmt;
+    | EXIT {
+        return 0;
+    }
+    | stmt program
+    ;
 
 stmt:
-    sysStmt ";"
-    | dbStmt ";"
-    | tbStmt ";"
-    | idxStmt ";"
-    | alterStmt ";";
+    error
+    | sysStmt
+    | dbStmt
+    | tbStmt
+    | idxStmt
+    | alterStmt;
 
 sysStmt:
     SHOW DATABASES;
 
 dbStmt:
-    CREATE DATABASE dbName
-    | DROP DATABASE dbName
-    | USE dbName
-    | SHOW TABLES;
+    CREATE DATABASE dbName SEMI {
+        // TODO Error handling
+        new Database($3.c_str(), true);
+    }
+    | DROP DATABASE dbName SEMI {
+        // TODO Error handling
+        cleanFiles($3.c_str());
+    }
+    | USE dbName SEMI {
+        // TODO Error handling
+        if (db) delete db;
+        db = new Database($2.c_str(), false);
+    }
+    | SHOW TABLES SEMI {
+        // TODO Error handling
+        // TODO db->showSheets();
+    }
+    ;
 
 tbStmt:
-    CREATE TABLE tbName "(" fieldList ")"
-    | DROP TABLE tbName
-    | DESC tbName
-    | INSERT INTO tbName VALUES valueLists
-    | DELETE FROM tbName WHERE whereClause
-    | UPDATE tbName SET setClause WHERE whereClause
-    | SELECT selector FROM tableList WHERE whereClause;
+    CREATE TABLE tbName LB fieldList RB SEMI 
+    | DROP TABLE tbName SEMI 
+    | DESC tbName SEMI 
+    | INSERT INTO tbName VALUES valueLists SEMI 
+    | DELETE FROM tbName WHERE whereClause SEMI 
+    | UPDATE tbName SET setClause WHERE whereClause SEMI 
+    | SELECT selector FROM tableList WHERE whereClause SEMI;
 
 idxStmt:
-    CREATE INDEX idxName ON tbName " (" columnList ") "
-    | DROP INDEX idxName
-    | ALTER TABLE tbName ADD INDEX idxName "(" columnList ")"
-    | ALTER TABLE tbName DROP INDEX idxName;
+    CREATE INDEX idxName ON tbName LB columnList RB SEMI 
+    | DROP INDEX idxName SEMI 
+    | ALTER TABLE tbName ADD INDEX idxName LB columnList RB SEMI 
+    | ALTER TABLE tbName DROP INDEX idxName SEMI;
 
 alterStmt:
-    ALTER TABLE tbName ADD field
-    | ALTER TABLE tbName DROP colName
-    | ALTER TABLE tbName CHANGE colName field
-    | ALTER TABLE tbName RENAME TO tbName
-    | ALTER TABLE tbName ADD PRIMARY KEY " (" columnList ") "
-    | ALTER TABLE tbName DROP PRIMARY KEY
-    | ALTER TABLE tbName ADD CONSTRAINT pkName PRIMARY KEY " (" columnList ") "
-    | ALTER TABLE tbName DROP PRIMARY KEY pkName
-    | ALTER TABLE tbName ADD CONSTRAINT fkName FOREIGN KEY " (" columnList ") " REFERENCES tbName " (" columnList ") "
-    | ALTER TABLE tbName DROP FOREIGN KEY fkName;
+    ALTER TABLE tbName ADD field SEMI 
+    | ALTER TABLE tbName DROP colName SEMI 
+    | ALTER TABLE tbName CHANGE colName field SEMI 
+    | ALTER TABLE tbName RENAME TO tbName SEMI 
+    | ALTER TABLE tbName ADD PRIMARY KEY LB columnList RB SEMI 
+    | ALTER TABLE tbName DROP PRIMARY KEY SEMI 
+    | ALTER TABLE tbName ADD CONSTRAINT pkName PRIMARY KEY LB columnList RB SEMI 
+    | ALTER TABLE tbName DROP PRIMARY KEY pkName SEMI 
+    | ALTER TABLE tbName ADD CONSTRAINT fkName FOREIGN KEY LB columnList RB REFERENCES tbName LB columnList RB SEMI 
+    | ALTER TABLE tbName DROP FOREIGN KEY fkName SEMI;
 
 fieldList:
-    field
-    | fieldList "," field;
+    field {
+        $$.push_back($1);
+    }
+    | fieldList COMMA field {
+        $1.push_back($3);
+        $$ = $1;
+    };
 
-field:
-    colName type
-    | colName type NOT NL
+field: // TODO UNIQUE?
+    colName type {
+        strcpy($2.name, $1.c_str());
+        $$ = $2;
+    }
+    | colName type NOT NL {
+        strcpy($2.name, $1.c_str());
+        $2.setNull(false);
+        $$ = $2;
+    }
     | colName type DEFAULT value
     | colName type NOT NL DEFAULT value
-    | PRIMARY KEY "(" columnList ")"
-    | FOREIGN KEY "(" colName ")" REFERENCES tbName "(" colName ")";
+    | PRIMARY KEY LB columnList RB
+    | FOREIGN KEY LB colName RB REFERENCES tbName LB colName RB;
 
 type:
-    INT "(" VALUE_INT ")"
-    | VARCHAR "(" VALUE_INT ")"
-    | DATE
-    | FLOAT;
+    TYPE_INT {
+        $$ = Type("", INT);
+    }
+    | TYPE_VARCHAR LB VALUE_INT RB
+    | TYPE_CHAR LB VALUE_INT RB {
+        $$ = Type("", CHAR, $3);
+    }
+    | TYPE_DATE
+    | TYPE_FLOAT
+    ;
 
 valueLists:
-    "(" valueList ")"
-    | valueLists ", " " (" valueList ") ";
+    LB valueList RB
+    | valueLists COMMA LB valueList RB;
 
 valueList:
-    value
-    | valueList ", " value;
+    value { 
+        $$.push_back($1);
+    }
+    | valueList COMMA value {
+        $1.push_back($3);
+        $$ = $1;
+    };
 
 value:
-    VALUE_INT
-    | VALUE_STRING
-    | NL;
+    VALUE_INT {
+        $$ = Any($1);
+    }
+    | VALUE_STRING {
+        $$ = Any($1.c_str());
+    }
+    | NL {
+        $$ = Any();
+    };
 
 whereClause:
     col op expr
@@ -137,53 +216,53 @@ whereClause:
     | whereClause AND whereClause;
 
 col:
-    tbName "." colName
+    tbName DOT colName
     | colName;
 
 op:
-    "=" | "<>" | "<=" | ">=" | "<" | ">";
+    EQ | NEQ | LE | GE | LS | GT;
 
 expr:
     value
     | col;
 
 setClause:
-    colName "=" value
-    | setClause ", " colName "=" value;
+    colName EQ value
+    | setClause COMMA colName EQ value;
 
 selector:
-    "*"
+    STAR
     | selector_;
 
 selector_:
-    selector_ "," col 
+    selector_ COMMA col 
     | col;
 
 tableList:
     tbName
-    | tableList "," tbName;
+    | tableList COMMA tbName;
 
 columnList:
     colName
-    | columnList "," colName;
+    | columnList COMMA colName;
 
 dbName:
-    IDENTIFIER;
+    IDENTIFIER { $$ = $1; };
 
 tbName:
-    IDENTIFIER;
+    IDENTIFIER { $$ = $1; };
 
 colName:
-    IDENTIFIER;
+    IDENTIFIER { $$ = $1; };
 
 pkName:
-    IDENTIFIER;
+    IDENTIFIER { $$ = $1; };
 
 fkName:
-    IDENTIFIER;
+    IDENTIFIER { $$ = $1; };
 
 idxName:
-    IDENTIFIER;
+    IDENTIFIER { $$ = $1; };
 %%
 
 void yyerror(const char *s)
