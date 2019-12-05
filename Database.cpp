@@ -94,7 +94,7 @@ Sheet* Database::openSheet(const char* name) {
 
 void Database::showSheets() {
     std::vector<std::pair<std::string, int> > v;
-    v.push_back(std::pair<std::string, int>("table", 10));
+    v.push_back(std::pair<std::string, int>("table", 20));
     Print::title(v);
     std::vector<Any> d;
     for (int i = 0; i < sheet_num; i++) {
