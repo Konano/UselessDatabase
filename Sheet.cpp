@@ -101,7 +101,7 @@ inline void insert(Any& val, uint size, BufType& buf) {
 
 inline void fetch(BufType& buf, enumType ty, uint size, Any& val) {
     if (ty == INT) {
-        val = *(uint32_t*)buf;
+        val = (int)*(uint32_t*)buf;
     }
     if (ty == CHAR) {
         char* str = (char *)malloc((size + 1) * sizeof(char));
@@ -433,7 +433,7 @@ int Sheet::removeForeignKey(uint key_index) {
     return 0;
 }
 
-void Sheet::print() {
+void Sheet::printCol() {
     std::vector<std::pair<std::string, int> > v;
     v.push_back(std::pair<std::string, int>("Field", 20));
     v.push_back(std::pair<std::string, int>("Type", 15));
@@ -455,6 +455,22 @@ void Sheet::print() {
         d.push_back(Any((char*)(col_ty[i].isNull() ? "YES" : "NO")));
         d.push_back(Any((char*)(col_ty[i].key == Primary ? "Primary" : col_ty[i].key == Foreign ? "Foreign" : "")));
         d.push_back(col_ty[i].def);
+        Print::row(d);
+        d.clear();
+    }
+    Print::end();
+}
+
+void Sheet::print() {
+    std::vector<std::pair<std::string, int> > v;
+    for (uint i = 0; i < col_num; i++) v.push_back(std::pair<std::string, int>(col_ty[i].name, std::max(col_ty[i].printLen(), (int)strlen(col_ty[i].name))));
+    Print::title(v);
+    std::vector<Any> d;
+    for (uint i = 0; i < record_num; i++) {
+        Any* data;
+        if (queryRecord(i, data) == 0) {
+            for (uint j = 0; j < col_num; j++) d.push_back(data[j]);
+        }
         Print::row(d);
         d.clear();
     }

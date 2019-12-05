@@ -83,6 +83,7 @@ Database* db;
 %type <V_TY> fieldList
 %type <V> value
 %type <V_V> valueList
+%type <V_S> tableList
 
 %%
 
@@ -135,11 +136,15 @@ tbStmt:
     | DESC tbName SEMI {
         // TODO Error handling
         int idx = db->findSheet($2);
-        db->sheet[idx]->print();
+        db->sheet[idx]->printCol();
     }
     | INSERT INTO tbName VALUES valueLists SEMI 
     | DELETE FROM tbName WHERE whereClause SEMI 
-    | UPDATE tbName SET setClause WHERE whereClause SEMI 
+    | UPDATE tbName SET setClause WHERE whereClause SEMI
+    | SELECT selector FROM tableList SEMI {
+        int idx = db->findSheet($4[0]);
+        db->sheet[idx]->print();
+    }
     | SELECT selector FROM tableList WHERE whereClause SEMI;
 
 idxStmt:
@@ -249,8 +254,13 @@ selector_:
     | col;
 
 tableList:
-    tbName
-    | tableList COMMA tbName;
+    tbName {
+        $$.push_back($1);
+    }
+    | tableList COMMA tbName {
+        $1.push_back($3);
+        $$ = $1;
+    };
 
 columnList:
     colName

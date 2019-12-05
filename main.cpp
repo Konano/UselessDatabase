@@ -223,9 +223,9 @@ void test_7() { // add column, del column
 
     sheet->insertRecord(new Any[4]{2017011475, (char*)"GGT", 345, 34});
     sheet->insertRecord(new Any[4]{634645345, (char*)"KLE", 345, 34});
-    sheet->createColumn(Type("Height", enumType::INT, 0, enumKeyType::Common, 0, Any(5)));
+    sheet->createColumn(Type("Money", enumType::INT, 0, enumKeyType::Common, 0, Any(5)));
     sheet->removeColumn(0);
-    sheet->modifyColumn(0, Type("Height", enumType::INT, 0, enumKeyType::Common, 0, Any(5)));
+    sheet->modifyColumn(1, Type("Height", enumType::INT, 0, enumKeyType::Common, 0, Any(9)));
 
     delete db;
     cout << "Pass Test 7" << endl;
@@ -267,7 +267,7 @@ int main() {
     // test_4();
     // test_5();
     // test_6();
-    // test_7();
+    test_7();
     // test_8();
     yyparse();
     return 0;

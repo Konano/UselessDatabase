@@ -19,6 +19,7 @@ struct YYType {
 	vector<Type> V_TY;
 	Any V;
 	vector<Any> V_V;
+	vector<string> V_S;
 };
 
 #define YYSTYPE YYType

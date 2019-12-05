@@ -92,6 +92,12 @@ public:
     void setForeignKey(int sheet_id) { key = Foreign; foreign_sheet = sheet_id; }
     void unsetForeignKey() { key = Common; foreign_sheet = -1; }
 
+    int printLen() {
+        if (ty == INT) return 10;
+        if (ty == CHAR) return char_len;
+        return -1;
+    }
+
 };
 
 #endif
