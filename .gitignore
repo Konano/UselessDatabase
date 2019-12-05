@@ -4,3 +4,4 @@ useless
 *.usid
 lex.yy.*
 yacc.tab.*
+data

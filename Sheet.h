@@ -13,6 +13,10 @@ class FileManager;
 class BufPageManager;
 
 class Sheet {
+private:
+    void insert(Any& val, enumType ty, uint size, BufType& buf);
+    void fetch(BufType& buf, enumType ty, uint size, Any& val);
+    char* getStr(BufType buf, uint size);
 public:
     char name[MAX_NAME_LEN];
     // char comment[MAX_COMMENT_LEN];
@@ -35,6 +39,7 @@ public:
     Sheet(Database* db, json j);
 
     Sheet() {}
+    ~Sheet();
     uint calDataSize();
     int createSheet(uint sheet_id,Database* db, const char* name, int col_num, Type* col_ty, bool create = false);
     int insertRecord(Any* info);

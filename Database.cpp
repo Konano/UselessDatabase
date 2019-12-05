@@ -23,6 +23,7 @@ json Database::toJson() {
     json j;
     j["name"] = name;
     j["sheet_num"] = sheet_num;
+    j["mem"] = mem;
     for (int i = 0; i < sheet_num; i++) {
         j["sheet"].push_back(sheet[i]->toJson());
     }
@@ -32,6 +33,7 @@ json Database::toJson() {
 void Database::fromJson(json j) {
     strcpy(name, j["name"].get<std::string>().c_str());
     sheet_num = j["sheet_num"].get<int>();
+    mem = j["mem"].get<int>();
     for (int i = 0; i < sheet_num; i++) {
         sheet[i] = new Sheet(this, j["sheet"][i]);
     }
@@ -45,11 +47,11 @@ void Database::update() {
 Database::Database(const char* name, bool create) {
     fm = new FileManager();
     bpm = new BufPageManager(fm);
-
     if (create) {
         strcpy(this->name, name); 
         memset(sheet, 0, sizeof(sheet));
         sheet_num = 0;
+        mem = 0;
         if (access(this->name, 0) == -1) {
             #ifdef WIN32
             mkdir(this->name);
@@ -58,13 +60,16 @@ Database::Database(const char* name, bool create) {
             #endif
         }
         update();
+        fm->createFile(dirPath(name, ".storage"));
     } else {
         fromJson(json::parse(readFile(dirPath(name, "database.udb"))));
     }
+    fm->openFile(dirPath(name, ".storage"), mem_file);
 }
 
 Database::~Database() {
     update();
+    fm->closeFile(mem_file);
     delete fm;
     delete bpm;
     for (int i = 0; i < MAX_SHEET_NUM; i++) if (sheet[i] != nullptr) {
@@ -108,4 +113,14 @@ void Database::showSheets() {
 int Database::findSheet(std::string s) {
     for (int i = 0; i < sheet_num; i++) if (std::string(sheet[i]->name) == s) return i;
     return -1;
+}
+
+char* Database::getVarchar(uint64_t idx) {
+    int index; 
+    int size = (idx & 0xffff);
+    BufType buf = bpm->getPage(mem_file, idx >> 32, index) + ((idx & 0xffffffff) >> 16);
+    char* str = (char *)malloc((size + 1) * sizeof(char));
+    memcpy(str, buf, size);
+    str[size] = '\0';
+    return str;
 }

@@ -46,6 +46,10 @@ Sheet::Sheet(Database* db, json j) { // disassemble from JSON
     pri_key_index = j["pri_key_index"];
 }
 
+Sheet::~Sheet() {
+    fm->closeFile(main_file);
+}
+
 uint Sheet::calDataSize() {
     uint size = 0;
     for(uint i = 0; i < col_num; i++) {
@@ -89,30 +93,56 @@ int Sheet::createSheet(uint sheet_id, Database* db, const char* name, int col_nu
     return 0;
 }
 
-inline void insert(Any& val, uint size, BufType& buf) {
-    if (val.anyCast<int>() != NULL) {
-        *(uint32_t*)buf = *val.anyCast<int>();
-    }
-    if (val.anyCast<char*>() != NULL) {
-        memcpy(buf, *val.anyCast<char*>(), size);
+char* Sheet::getStr(BufType buf, uint size) {
+    char* str = (char *)malloc((size + 1) * sizeof(char));
+    memcpy(str, buf, size);
+    str[size] = '\0';
+    return str;
+}
+
+void Sheet::insert(Any& val, enumType ty, uint size, BufType& buf) {
+    switch (ty) {
+    case INT: 
+        *(int*)buf = *val.anyCast<int>(); 
+        break;
+    case CHAR: 
+        memcpy(buf, *val.anyCast<char*>(), size); 
+        break;
+    case VARCHAR: 
+        *(uint64_t*)buf = *val.anyCast<uint64_t>();
+        break;
+    case DATA: 
+        *(int*)buf = *val.anyCast<int>(); 
+        break;
+    case DECIMAL: 
+        *(long double*)buf = *val.anyCast<long double>(); 
+        break;
     }
     buf += size;
 }
 
-inline void fetch(BufType& buf, enumType ty, uint size, Any& val) {
-    if (ty == INT) {
-        val = (int)*(uint32_t*)buf;
-    }
-    if (ty == CHAR) {
-        char* str = (char *)malloc((size + 1) * sizeof(char));
-        memcpy(str, buf, size);
-        str[size] = '\0';
-        val = str;
+void Sheet::fetch(BufType& buf, enumType ty, uint size, Any& val) {
+    switch (ty) {
+    case INT: 
+        val = *(int*)buf; 
+        break;
+    case CHAR:
+        val = getStr(buf, size);
+        break;
+    case VARCHAR: 
+        val = *(uint64_t*)buf; 
+        break;
+    case DATA: 
+        val = *(int*)buf; 
+        break;
+    case DECIMAL: 
+        val = *(long double*)buf; 
+        break;
     }
     buf += size;
 }
 
-int Sheet::insertRecord(Any* info) {
+int Sheet::insertRecord(Any* info) { // TODO VARCHAR 已经被处理了
     int index;
     BufType buf = bpm->getPage(main_file, record_num / record_onepg, index);
     buf[(record_num % record_onepg) / 8] |= 1 << (record_num % 8);
@@ -133,7 +163,7 @@ int Sheet::insertRecord(Any* info) {
                 return -1;
             }
         }
-        insert(info[i], col_ty[i].size(), buf);
+        insert(info[i], col_ty[i].ty, col_ty[i].size(), buf);
     }
     for (uint i = 0; i < index_num; i++) {
         this->index[i].insertRecord(&info[this->index[i].key], record_num);
@@ -191,34 +221,47 @@ int Sheet::updateRecord(const int record_id, const int len, Any* info) {
                 return -1;
             }
         }
-        insert(info[i], col_ty[i].size(), buf);
+        insert(info[i], col_ty[i].ty, col_ty[i].size(), buf);
     }
     bpm->markDirty(index);
     return 0;
 }
 
-bool Sheet::queryPrimaryKey(Any query_val) {
+bool Sheet::queryPrimaryKey(Any query_val) { // TODO 为啥不能去 index 找呢？
     if (pri_key == -1) return false;
     int index;
     BufType buf, buf_st;
+    int size_pre = 0;
+    for (int i = 0; i < pri_key; i++) 
+        size_pre += col_ty[i].size();
     for (uint i = 0; i < record_num; i++) {
         if (i % record_onepg == 0) {
             buf_st = buf = bpm->getPage(main_file, i / record_onepg, index);
             buf += (record_onepg - 1) / 8 + 1;
         }
         if (buf_st[(i % record_onepg) / 8] & (1 << (i % 8))) {
-            if (this->col_ty[pri_key].ty == enumType::INT) {
-                if (Any(*(uint32_t*)buf) == query_val) return true;
-                buf += 4;
+            buf += size_pre;
+            switch (this->col_ty[pri_key].ty) {
+            case INT:
+                if (Any(*(int*)buf) == query_val) return true;
+                break;
+            case CHAR:
+                if (Any(getStr(buf, col_ty[pri_key].size())) == query_val) return true;
+                break;
+            case VARCHAR:
+                if (Any(db->getVarchar(*(uint64_t*)buf)) == query_val) return true;
+                break;
+            case DATA:
+                if (Any(*(int*)buf) == query_val) return true;
+                break;
+            case DECIMAL:
+                if (Any(*(long double*)buf) == query_val) return true;
+                break;
             }
-            if (this->col_ty[pri_key].ty == enumType::CHAR) {
-                char* str = (char *)malloc((col_ty[pri_key].size()+1) * sizeof(char));
-                memcpy(str, buf, col_ty[pri_key].size());
-                str[col_ty[pri_key].size()] = '\0';
-                if (Any(str) == query_val) return true;
-                buf += col_ty[pri_key].size();
-            }
+            buf -= size_pre;
+            buf += record_size;
         }
+        buf += record_size;
     }
     return false;
 }
@@ -270,7 +313,7 @@ void Sheet::modifyColumn(uint key_index, Type ty) {
     col_ty[key_index] = ty;
 }
 
-void Sheet::rebuild(int ty, uint key_index) {
+void Sheet::rebuild(int ty, uint key_index) { // TODO 需要顺便重构 index
     int _main_file;
     fm->createFile(dirPath(db->name, name, "_tmp.usid"));
     fm->openFile(dirPath(db->name, name, "_tmp.usid"), _main_file);
@@ -296,16 +339,9 @@ void Sheet::rebuild(int ty, uint key_index) {
             else if (_buf_st[(i % record_onepg) / 8] & (1 << (i % 8)))
                 _buf_st[(i % _record_onepg) / 8] -= 1 << (i % 8);
             for(uint j = 0; j < col_num; j++) {
-                if (col_ty[j].ty == enumType::INT) {
-                    if (j != key_index) *(uint32_t*)_buf = *(uint32_t*)buf;
-                    buf += 4; 
-                    if (j != key_index) _buf += 4; 
-                }
-                if (col_ty[j].ty == enumType::CHAR) {
-                    if (j != key_index) memcpy(_buf, buf, col_ty[j].size());
-                    buf += col_ty[j].size();
-                    if (j != key_index) _buf += col_ty[j].size();
-                }
+                if (j != key_index) memcpy(_buf, buf, col_ty[j].size());
+                buf += col_ty[j].size();
+                if (j != key_index) _buf += col_ty[j].size();
             }
             bpm->markDirty(_index);
         }
@@ -328,16 +364,11 @@ void Sheet::rebuild(int ty, uint key_index) {
             else if (_buf_st[(i % record_onepg) / 8] & (1 << (i % 8)))
                 _buf_st[(i % _record_onepg) / 8] -= 1 << (i % 8);
             for(uint j = 0; j < col_num - 1; j++) {
-                if (col_ty[j].ty == enumType::INT) {
-                    *(uint32_t*)_buf = *(uint32_t*)buf;
-                    buf += 4; _buf += 4; 
-                }
-                if (col_ty[j].ty == enumType::CHAR) {
-                    memcpy(_buf, buf, col_ty[j].size());
-                    buf += col_ty[j].size(); _buf += col_ty[j].size();
-                }
+                memcpy(_buf, buf, col_ty[j].size());
+                buf += col_ty[j].size(); 
+                _buf += col_ty[j].size();
             }
-            insert(col_ty[col_num - 1].def, col_ty[col_num - 1].size(), _buf);
+            insert(col_ty[col_num - 1].def, col_ty[col_num - 1].ty, col_ty[col_num - 1].size(), _buf);
             bpm->markDirty(_index);
         }
         break;
@@ -365,17 +396,7 @@ int Sheet::createPrimaryKey(uint key_index) {
             Any* info = (Any*) malloc(col_num * sizeof(Any));
             memset(info, 0, col_num * sizeof(Any));
             for(uint i = 0; i < col_num; i++) {
-                if (this->col_ty[i].ty == enumType::INT) {
-                    info[i] = *(int*)_buf;
-                    _buf += 4;
-                }
-                if (this->col_ty[i].ty == enumType::CHAR) {
-                    char* str = (char *)malloc((col_ty[i].size()+1) * sizeof(char));
-                    memcpy(str, _buf, col_ty[i].size());
-                    str[col_ty[i].size()] = '\0';
-                    info[i] = str;
-                    _buf += col_ty[i].size();
-                }
+                fetch(_buf, col_ty[i].ty, col_ty[i].size(), info[i]);
             }
             bool flag = false;
             for(auto a: v){
@@ -449,7 +470,16 @@ void Sheet::printCol() {
             d.push_back(Any((char*)"INT"));
             break;
         case CHAR:
-            d.push_back(Any((char*)(("CHAR(" + std::to_string(col_ty[i].size()) + ")").c_str())));
+            d.push_back(Any((char*)(("CHAR(" + std::to_string(col_ty[i].char_len) + ")").c_str())));
+            break;
+        case VARCHAR:
+            d.push_back(Any((char*)(("VARCHAR(" + std::to_string(col_ty[i].char_len) + ")").c_str())));
+            break;
+        case DATA:
+            d.push_back(Any((char*)"DATA"));
+            break;
+        case DECIMAL:
+            d.push_back(Any((char*)"DECIMAL"));
             break;
         };
         d.push_back(Any((char*)(col_ty[i].isNull() ? "YES" : "NO")));

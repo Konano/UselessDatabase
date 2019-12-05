@@ -24,6 +24,8 @@ public:
 
     FileManager* fm;
     BufPageManager* bpm;
+    int mem_file;
+    int mem;
 
     Database(const char* name, bool create);
     ~Database();
@@ -31,6 +33,8 @@ public:
     Sheet* openSheet(const char* name);
     void showSheets();
     int findSheet(std::string s);
+
+    char* getVarchar(uint64_t idx);
 
 };
 

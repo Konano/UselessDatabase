@@ -247,9 +247,9 @@ void test_8() {
     init_2sheets();
 
     Database *db = new Database("TestDatabase", false);
-    Sheet *sheet_0 = db->openSheet("StudentInfo");
-    Sheet *sheet_1 = db->openSheet("ClassInfo");
-    Sheet *sheet_2 = db->openSheet("Combine");
+    db->openSheet("StudentInfo");
+    db->openSheet("ClassInfo");
+    db->openSheet("Combine");
 
     delete db;
 
@@ -267,8 +267,9 @@ int main() {
     // test_4();
     // test_5();
     // test_6();
-    test_7();
+    // test_7();
     // test_8();
     yyparse();
+    // import_data();
     return 0;
 }

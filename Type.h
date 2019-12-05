@@ -10,16 +10,16 @@ using json = nlohmann::json;
 
 enum enumType {
     INT,
-    // TODO: FLOAT
-    CHAR
-    // TODO: VARCHAR
-    // need to modify size(), [sheet.cpp]insert(), [sheet.cpp]get()
+    CHAR,
+    VARCHAR,
+    DATA,
+    DECIMAL,
 };
 
 enum enumKeyType {
     Primary,
     Foreign,
-    Common
+    Common,
 };
 
 struct Type {
@@ -27,11 +27,11 @@ private:
     bool unique = false;
     bool null = true;
     bool deleted = false;
-    uint8_t char_len = 0; // only CHAR will use it
 public:
     char name[MAX_NAME_LEN];
     // TODO: char comment[MAX_COMMENT_LEN];
     enumType ty = INT;
+    uint8_t char_len = 0; // only CHAR will use it
     enumKeyType key = Common;
     int foreign_sheet = -1; // TODO: when delete other sheet, need modify
     Any def; // TODO: maybe can be NULL, but now NULL means no-def
@@ -44,13 +44,18 @@ public:
     void del() { deleted = true; }
     
     uint size() {
-        if (ty == INT) return 4;
-        if (ty == CHAR) return char_len;
-        return -1;
+        switch (ty) {
+        case INT: return 4;
+        case CHAR: return char_len;
+        case VARCHAR: return 8;
+        case DATA: return 4;
+        case DECIMAL: return 16;
+        default: return -1;
+        }
     }
     Type(const char* _name = "", enumType _ty = INT, uint8_t _char_len = 0, 
          enumKeyType _key = Common, int _foreign_sheet = 0, Any _def = Any(), bool _unique = false, bool _null = true) 
-    : unique(_unique), null(_null), char_len(_char_len), ty(_ty), key(_key), foreign_sheet(_foreign_sheet), def(_def) {
+    : unique(_unique), null(_null), ty(_ty), char_len(_char_len), key(_key), foreign_sheet(_foreign_sheet), def(_def) {
         strcpy(name, _name);
     }
 
@@ -78,10 +83,12 @@ public:
         unique = j["unique"].get<bool>();
         null = j["null"].get<bool>();
         if (j.count("def")) {
-            if (ty == enumType::INT) {
-                def = j["def"].get<int>();
-            } else if (ty == enumType::CHAR) {
-                def = j["def"].get<std::string>().c_str();
+            switch (ty) {
+            case INT: { def = j["def"].get<int>(); break; }
+            case DATA: { def = j["def"].get<int>(); break; }
+            case CHAR: { def = j["def"].get<std::string>().c_str(); break; }
+            case VARCHAR: { def = j["def"].get<std::string>().c_str(); break; }
+            case DECIMAL: { def = j["def"].get<long double>(); break; }
             }
         } else {
             def = Any();
@@ -93,11 +100,15 @@ public:
     void unsetForeignKey() { key = Common; foreign_sheet = -1; }
 
     int printLen() {
-        if (ty == INT) return 10;
-        if (ty == CHAR) return char_len;
-        return -1;
+        switch (ty) {
+        case INT: return 10;
+        case CHAR: return std::min(char_len, (uint8_t)20);
+        case VARCHAR: return std::min(char_len, (uint8_t)20);
+        case DATA: return 10;
+        case DECIMAL: return 10;
+        default: return -1;
+        }
     }
-
 };
 
 #endif
