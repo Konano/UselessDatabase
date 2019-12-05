@@ -56,6 +56,8 @@ public:
     int createPrimaryKey(uint key_index);
     int removePrimaryKey(uint key_index);
     bool queryPrimaryKey(Any query_val); 
+
+    void print();
 };
 
 #endif

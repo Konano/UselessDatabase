@@ -38,7 +38,7 @@ public:
 
     bool isUnique() { return unique || key == Primary; }
     void setUnique(bool _unique) { unique = _unique; }
-    bool isNull() { return null && key == Common; }
+    bool isNull() { return null && key != Primary; }
     void setNull(bool _null) { null = _null; }
     bool isDelete() { return deleted; }
     void del() { deleted = true; }

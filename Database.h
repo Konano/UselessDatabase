@@ -30,6 +30,7 @@ public:
     Sheet* createSheet(const char* name, int col_num, Type* col_ty);
     Sheet* openSheet(const char* name);
     void showSheets();
+    int findSheet(std::string s);
 
 };
 

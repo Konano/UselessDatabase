@@ -1,5 +1,6 @@
 %{
 #include "parser.h"
+#include "Sheet.h"
 #include "Database.h"
 #include "Type.h"
 
@@ -125,12 +126,17 @@ dbStmt:
 
 tbStmt:
     CREATE TABLE tbName LB fieldList RB SEMI {
+        // TODO Error handling
         Type* ty = new Type[$5.size()];
         for (uint i = 0; i < $5.size(); i++) ty[i] = $5[i];
         db->createSheet($3.c_str(), $5.size(), ty);
     }
     | DROP TABLE tbName SEMI 
-    | DESC tbName SEMI 
+    | DESC tbName SEMI {
+        // TODO Error handling
+        int idx = db->findSheet($2);
+        db->sheet[idx]->print();
+    }
     | INSERT INTO tbName VALUES valueLists SEMI 
     | DELETE FROM tbName WHERE whereClause SEMI 
     | UPDATE tbName SET setClause WHERE whereClause SEMI 

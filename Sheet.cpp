@@ -5,6 +5,7 @@
 #include "BufPageManager.h"
 #include "Type.h"
 #include "Index.h"
+#include "Print.h"
 
 #include <time.h>
 #include <iostream>
@@ -118,10 +119,11 @@ int Sheet::insertRecord(Any* info) {
     buf += (record_onepg - 1) / 8 + 1;
     buf += record_size * (record_num % record_onepg);
     for(uint i = 0; i < col_num; i++) {
+        if (col_ty[i].isNull() == false && info[i].isNull()) return -1;
+        if (col_ty[i].isUnique()) {
+            // TODO
+        }
         if (col_ty[i].key == enumKeyType::Primary) {
-            // TODO: when add primary, should ...
-            // need unique, non-null, 
-            //  no-def
             if (info[i].isNull()) return -1;
             int ans = this->index[pri_key_index].queryRecord(info);
             if (ans != -1) return -1;
@@ -180,11 +182,9 @@ int Sheet::updateRecord(const int record_id, const int len, Any* info) {
     buf += record_size * (record_id % record_onepg);
     for(int i = 0; i < len; i++) {
         if (col_ty[i].key == enumKeyType::Primary) {
-            // TODO: when add primary, should ...
-            // need unique, non-null, no-def
-            if(info[i].isNull())return -1;
+            if (info[i].isNull()) return -1;
             int ans = this->index[pri_key_index].queryRecord(info);
-            if (ans == -1)return -1;
+            if (ans == -1) return -1;
         }
         if (col_ty[i].key == enumKeyType::Foreign) {
             if (!info[i].isNull() && !db->sheet[col_ty[i].foreign_sheet]->queryPrimaryKey(info[i])) {
@@ -352,12 +352,11 @@ void Sheet::rebuild(int ty, uint key_index) {
 }
 
 int Sheet::createPrimaryKey(uint key_index) {
-    if (this->pri_key != -1)return -1;
+    if (this->pri_key != -1) return -1;
 
     std::vector<Any> v;
 
     int _index;
-    //TODO: use only one col
     for (uint record_id = 0; record_id < record_num; record_id++) {
         BufType buf = bpm->getPage(main_file, record_id / record_onepg, _index);
         if (buf[(record_id % record_onepg) / 8] & (1 << (record_id % 8))) {
@@ -432,4 +431,32 @@ int Sheet::createForeignKey(uint key_index, uint sheet_id) {
 int Sheet::removeForeignKey(uint key_index) {
     col_ty[key_index].unsetForeignKey();
     return 0;
+}
+
+void Sheet::print() {
+    std::vector<std::pair<std::string, int> > v;
+    v.push_back(std::pair<std::string, int>("Field", 20));
+    v.push_back(std::pair<std::string, int>("Type", 15));
+    v.push_back(std::pair<std::string, int>("Null", 4));
+    v.push_back(std::pair<std::string, int>("Key", 7));
+    v.push_back(std::pair<std::string, int>("Default", 20));
+    Print::title(v);
+    std::vector<Any> d;
+    for (uint i = 0; i < col_num; i++) {
+        d.push_back(Any((char*)col_ty[i].name));
+        switch (col_ty[i].ty) {
+        case INT:
+            d.push_back(Any((char*)"INT"));
+            break;
+        case CHAR:
+            d.push_back(Any((char*)(("CHAR(" + std::to_string(col_ty[i].size()) + ")").c_str())));
+            break;
+        };
+        d.push_back(Any((char*)(col_ty[i].isNull() ? "YES" : "NO")));
+        d.push_back(Any((char*)(col_ty[i].key == Primary ? "Primary" : col_ty[i].key == Foreign ? "Foreign" : "")));
+        d.push_back(col_ty[i].def);
+        Print::row(d);
+        d.clear();
+    }
+    Print::end();
 }
