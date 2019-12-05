@@ -119,12 +119,16 @@ dbStmt:
     }
     | SHOW TABLES SEMI {
         // TODO Error handling
-        // TODO db->showSheets();
+        db->showSheets();
     }
     ;
 
 tbStmt:
-    CREATE TABLE tbName LB fieldList RB SEMI 
+    CREATE TABLE tbName LB fieldList RB SEMI {
+        Type* ty = new Type[$5.size()];
+        for (uint i = 0; i < $5.size(); i++) ty[i] = $5[i];
+        db->createSheet($3.c_str(), $5.size(), ty);
+    }
     | DROP TABLE tbName SEMI 
     | DESC tbName SEMI 
     | INSERT INTO tbName VALUES valueLists SEMI 

@@ -3,6 +3,10 @@
 #include "Sheet.h"
 #include "FileManager.h"
 #include "BufPageManager.h"
+#include "Print.h"
+
+#include <vector>
+#include <string>
 
 #ifdef WIN32
 #include <direct.h>
@@ -70,7 +74,7 @@ Database::~Database() {
 
 Sheet* Database::createSheet(const char* name, int col_num, Type* col_ty) {
     Sheet* new_sheet = new Sheet();
-    if (new_sheet->createSheet(sheet_num,this, name, col_num, col_ty, true)) {
+    if (new_sheet->createSheet(sheet_num, this, name, col_num, col_ty, true)) {
         delete new_sheet;
         return nullptr;
     }
@@ -87,3 +91,17 @@ Sheet* Database::openSheet(const char* name) {
     }
     return nullptr;
 }
+
+void Database::showSheets() {
+    std::vector<std::pair<std::string, int> > v;
+    v.push_back(std::pair<std::string, int>("table", 10));
+    Print::title(v);
+    std::vector<Any> d;
+    for (int i = 0; i < sheet_num; i++) {
+        d.push_back(Any((char*)sheet[i]->name));
+        Print::row(d);
+        d.clear();
+    }
+    Print::end();
+}
+    

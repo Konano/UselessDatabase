@@ -252,6 +252,10 @@ void test_8() {
     Sheet *sheet_2 = db->openSheet("Combine");
 
     delete db;
+
+    db = new Database("TestDatabase", false);
+    delete db;
+
     cout << "Pass Test 8" << endl;
 }
 
