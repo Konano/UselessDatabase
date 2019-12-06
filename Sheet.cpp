@@ -133,7 +133,7 @@ void Sheet::fetch(BufType& buf, enumType ty, uint size, Any& val) {
         val = db->getVarchar(*(uint64_t*)buf); 
         break;
     case DATE: 
-        val = *(int*)buf; 
+        val = *(uint32_t*)buf; 
         break;
     case DECIMAL: 
         val = *(long double*)buf; 

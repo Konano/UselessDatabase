@@ -273,9 +273,6 @@ void test_9() { // varchar data decimal
 
     sheet->insertRecord(new Any[4]{2017011475, (char*)"NanoApe", (long double)160.34, (uint32_t)20170101});
     sheet->insertRecord(new Any[4]{634645345, (char*)"Konano", (long double)177, (uint32_t)19990501});
-    // sheet->createColumn(Type("Money", enumType::INT, 0, enumKeyType::Common, 0, Any(5)));
-    // sheet->removeColumn(0);
-    // sheet->modifyColumn(1, Type("Height", enumType::INT, 0, enumKeyType::Common, 0, Any(9)));
 
     delete db;
     cout << "Pass Test 9" << endl;
@@ -291,8 +288,8 @@ int main() {
     // test_6();
     // test_7();
     // test_8();
-    test_9();
-    // yyparse();
+    // test_9();
+    yyparse();
     // import_data();
     return 0;
 }
