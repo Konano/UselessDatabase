@@ -12,7 +12,7 @@ enum enumType {
     INT, // int
     CHAR, // char*
     VARCHAR, // char*
-    DATA, // uint32_t
+    DATE, // uint32_t
     DECIMAL, // long double
 };
 
@@ -48,7 +48,7 @@ public:
         case INT: return 4;
         case CHAR: return char_len;
         case VARCHAR: return 8;
-        case DATA: return 4;
+        case DATE: return 4;
         case DECIMAL: return 16;
         default: return -1;
         }
@@ -85,7 +85,7 @@ public:
         if (j.count("def")) {
             switch (ty) {
             case INT: { def = j["def"].get<int>(); break; }
-            case DATA: { def = j["def"].get<int>(); break; }
+            case DATE: { def = j["def"].get<int>(); break; }
             case CHAR: { def = j["def"].get<std::string>().c_str(); break; }
             case VARCHAR: { def = j["def"].get<std::string>().c_str(); break; }
             case DECIMAL: { def = j["def"].get<long double>(); break; }
@@ -104,7 +104,7 @@ public:
         case INT: return 10;
         case CHAR: return std::min(char_len, (uint8_t)20);
         case VARCHAR: return std::min(char_len, (uint8_t)20);
-        case DATA: return 10;
+        case DATE: return 10;
         case DECIMAL: return 10;
         default: return -1;
         }

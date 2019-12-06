@@ -111,7 +111,7 @@ void Sheet::insert(Any& val, enumType ty, uint size, BufType& buf) {
     case VARCHAR: 
         *(uint64_t*)buf = db->storeVarchar(*val.anyCast<char*>()); 
         break;
-    case DATA: 
+    case DATE: 
         *(int*)buf = *val.anyCast<int>(); 
         break;
     case DECIMAL: 
@@ -132,7 +132,7 @@ void Sheet::fetch(BufType& buf, enumType ty, uint size, Any& val) {
     case VARCHAR: 
         val = db->getVarchar(*(uint64_t*)buf); 
         break;
-    case DATA: 
+    case DATE: 
         val = *(int*)buf; 
         break;
     case DECIMAL: 
@@ -251,7 +251,7 @@ bool Sheet::queryPrimaryKey(Any query_val) { // TODO 为啥不能去 index 找�
             case VARCHAR:
                 if (Any(db->getVarchar(*(uint64_t*)buf)) == query_val) return true;
                 break;
-            case DATA:
+            case DATE:
                 if (Any(*(int*)buf) == query_val) return true;
                 break;
             case DECIMAL:
@@ -475,8 +475,8 @@ void Sheet::printCol() {
         case VARCHAR:
             d.push_back(Any((char*)(("VARCHAR(" + std::to_string(col_ty[i].char_len) + ")").c_str())));
             break;
-        case DATA:
-            d.push_back(Any((char*)"DATA"));
+        case DATE:
+            d.push_back(Any((char*)"DATE"));
             break;
         case DECIMAL:
             d.push_back(Any((char*)"DECIMAL"));
