@@ -33,7 +33,7 @@ json Database::toJson() {
 void Database::fromJson(json j) {
     strcpy(name, j["name"].get<std::string>().c_str());
     sheet_num = j["sheet_num"].get<int>();
-    mem = j["mem"].get<int>();
+    mem = j["mem"].get<uint64_t>();
     for (int i = 0; i < sheet_num; i++) {
         sheet[i] = new Sheet(this, j["sheet"][i]);
     }
@@ -70,11 +70,11 @@ Database::Database(const char* name, bool create) {
 Database::~Database() {
     update();
     fm->closeFile(mem_file);
-    delete fm;
-    delete bpm;
     for (int i = 0; i < MAX_SHEET_NUM; i++) if (sheet[i] != nullptr) {
         delete sheet[i];
     }
+    delete fm;
+    delete bpm;
 }
 
 Sheet* Database::createSheet(const char* name, int col_num, Type* col_ty) {
@@ -123,4 +123,32 @@ char* Database::getVarchar(uint64_t idx) {
     memcpy(str, buf, size);
     str[size] = '\0';
     return str;
+}
+
+uint64_t Database::storeVarchar(char* str) {
+    uint size = strlen(str);
+    uint64_t out = (mem << 16) + size;
+
+    int index;
+    uint page = mem >> 16;
+    uint offset = mem & 0xffff;
+    BufType buf = bpm->getPage(mem_file, page, index) + offset;
+    while (true) {
+        if (0x10000 - offset > size) {
+            memcpy(buf, str, size * sizeof(char));
+            offset += size;
+            break;
+        } else {
+            memcpy(buf, str, (0x10000 - offset) * sizeof(char));
+            page += 1;
+            offset = 0;
+            bpm->markDirty(index);
+            buf = bpm->getPage(mem_file, page, index) + offset;
+            str += 0x10000 - offset;
+            size -= 0x10000 - offset;
+        }
+    }
+    bpm->markDirty(index);
+    mem = ((uint64_t)page << 16) + offset;
+    return out;
 }

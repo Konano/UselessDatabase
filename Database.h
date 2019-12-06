@@ -24,8 +24,8 @@ public:
 
     FileManager* fm;
     BufPageManager* bpm;
-    int mem_file;
-    int mem;
+    int mem_file; // the lable of '.storage' 
+    uint64_t mem; // mem_file's end offset
 
     Database(const char* name, bool create);
     ~Database();
@@ -34,7 +34,8 @@ public:
     void showSheets();
     int findSheet(std::string s);
 
-    char* getVarchar(uint64_t idx);
+    char* getVarchar(uint64_t idx); // get varchar from '.storage'
+    uint64_t storeVarchar(char* str); // store varchar into '.storage'
 
 };
 

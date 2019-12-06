@@ -268,8 +268,8 @@ int main() {
     // test_5();
     // test_6();
     // test_7();
-    // test_8();
-    yyparse();
+    test_8();
+    // yyparse();
     // import_data();
     return 0;
 }

@@ -9,11 +9,11 @@ using json = nlohmann::json;
 
 
 enum enumType {
-    INT,
-    CHAR,
-    VARCHAR,
-    DATA,
-    DECIMAL,
+    INT, // int
+    CHAR, // char*
+    VARCHAR, // char*
+    DATA, // uint32_t
+    DECIMAL, // long double
 };
 
 enum enumKeyType {

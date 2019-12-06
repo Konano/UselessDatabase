@@ -12,11 +12,14 @@ std::string lenLimit(std::string str, uint len) {
 std::string toString(Any val) {
     if (val.anyCast<int>() != NULL) {
         return std::to_string(*val.anyCast<int>());
-    }
-    if (val.anyCast<char*>() != NULL) {
+    } else if (val.anyCast<char*>() != NULL) {
         return std::string(*val.anyCast<char*>());
-    }
-    return "NULL";
+    } else if (val.anyCast<uint32_t>() != NULL) {
+        uint32_t d = *val.anyCast<uint32_t>();
+        return std::to_string(d / 10000) + "/" + std::to_string(d / 100 % 100) + "/" + std::to_string(d % 100);
+    } else if (val.anyCast<long double>() != NULL) {
+        return std::to_string(*val.anyCast<long double>());
+    } else return "NULL";
 }
 
 std::vector<std::pair<std::string,int> >Print::t;

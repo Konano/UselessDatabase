@@ -109,7 +109,7 @@ void Sheet::insert(Any& val, enumType ty, uint size, BufType& buf) {
         memcpy(buf, *val.anyCast<char*>(), size); 
         break;
     case VARCHAR: 
-        *(uint64_t*)buf = *val.anyCast<uint64_t>();
+        *(uint64_t*)buf = db->storeVarchar(*val.anyCast<char*>()); 
         break;
     case DATA: 
         *(int*)buf = *val.anyCast<int>(); 
@@ -130,7 +130,7 @@ void Sheet::fetch(BufType& buf, enumType ty, uint size, Any& val) {
         val = getStr(buf, size);
         break;
     case VARCHAR: 
-        val = *(uint64_t*)buf; 
+        val = db->getVarchar(*(uint64_t*)buf); 
         break;
     case DATA: 
         val = *(int*)buf; 
