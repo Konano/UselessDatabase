@@ -268,7 +268,7 @@ void test_9() { // varchar data decimal
     delete db;
     cout << "Database init" << endl;
 
-    Database *db = new Database("TestDatabase", false);
+    db = new Database("TestDatabase", false);
     Sheet *sheet = db->openSheet("TestSheet");
 
     sheet->insertRecord(new Any[4]{2017011475, (char*)"NanoApe", (long double)160.34, (uint32_t)20170101});
