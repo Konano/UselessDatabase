@@ -5,3 +5,4 @@ useless
 lex.yy.*
 yacc.tab.*
 data
+.storage
