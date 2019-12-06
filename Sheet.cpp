@@ -112,7 +112,7 @@ void Sheet::insert(Any& val, enumType ty, uint size, BufType& buf) {
         *(uint64_t*)buf = db->storeVarchar(*val.anyCast<char*>()); 
         break;
     case DATE: 
-        *(int*)buf = *val.anyCast<int>(); 
+        *(uint32_t*)buf = *val.anyCast<uint32_t>(); 
         break;
     case DECIMAL: 
         *(long double*)buf = *val.anyCast<long double>(); 
