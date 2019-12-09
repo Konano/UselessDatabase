@@ -33,6 +33,7 @@ public:
     Sheet* openSheet(const char* name);
     void showSheets();
     int findSheet(std::string s);
+    Sheet* findSheetPointer(std::string s);
 
     char* getVarchar(uint64_t idx); // get varchar from '.storage'
     uint64_t storeVarchar(char* str); // store varchar into '.storage'

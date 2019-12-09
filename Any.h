@@ -47,8 +47,7 @@ public:
             _pValue = 0;
     }
 
-    ~Any()
-    {
+    ~Any() {
         if (_pValue)
             delete _pValue;
     }
@@ -73,7 +72,7 @@ public:
     }
 
     template <typename ValueType>
-    ValueType *anyCast()
+    ValueType *anyCast() const
     {
         Holder<ValueType> *p = dynamic_cast<Holder<ValueType> *>(_pValue);
         return p ? &p->_value : nullptr;
@@ -85,7 +84,7 @@ public:
         return (dynamic_cast<Holder<ValueType> &>(*_pValue))._value;
     }
 
-    bool operator<(const char* value)
+    bool operator<(const char* value) const
     {
         if (this->anyCast<char*>() != nullptr) {
             return strcmp(*this->anyCast<char*>(), value) < 0;
@@ -93,7 +92,7 @@ public:
         return false;
     }
 
-    bool operator>(const char* value)
+    bool operator>(const char* value) const
     {
         if (this->anyCast<char*>() != nullptr) {
             return strcmp(*this->anyCast<char*>(), value) > 0;
@@ -101,7 +100,7 @@ public:
         return false;
     }
 
-    bool operator==(const char* value)
+    bool operator==(const char* value) const
     {
         if (this->anyCast<char*>() != nullptr) {
             return strcmp(*this->anyCast<char*>(), value) == 0;
@@ -109,7 +108,7 @@ public:
         return false;
     }
 
-    bool operator<=(const char* value)
+    bool operator<=(const char* value) const
     {
         if (this->anyCast<char*>() != nullptr) {
             return strcmp(*this->anyCast<char*>(), value) <= 0;
@@ -117,7 +116,7 @@ public:
         return false;
     }
 
-    bool operator>=(const char* value)
+    bool operator>=(const char* value) const
     {
         if (this->anyCast<char*>() != nullptr) {
             return strcmp(*this->anyCast<char*>(), value) >= 0;
@@ -126,7 +125,7 @@ public:
     }
 
     template <typename ValueType>
-    bool operator<(const ValueType &value)
+    bool operator<(const ValueType &value) const
     {
         if (this->anyCast<ValueType>() != nullptr) {
             return *this->anyCast<ValueType>() < value;
@@ -135,7 +134,7 @@ public:
     }
 
     template <typename ValueType>
-    bool operator>(const ValueType &value)
+    bool operator>(const ValueType &value) const
     {
         if (this->anyCast<ValueType>() != nullptr) {
             return *this->anyCast<ValueType>() > value;
@@ -144,7 +143,7 @@ public:
     }
 
     template <typename ValueType>
-    bool operator==(const ValueType &value)
+    bool operator==(const ValueType &value) const
     {
         if (this->anyCast<ValueType>() != nullptr) {
             return *this->anyCast<ValueType>() == value;
@@ -153,7 +152,7 @@ public:
     }
 
     template <typename ValueType>
-    bool operator<=(const ValueType &value)
+    bool operator<=(const ValueType &value) const
     {
         if (this->anyCast<ValueType>() != nullptr) {
             return *this->anyCast<ValueType>() <= value;
@@ -162,14 +161,14 @@ public:
     }
 
     template <typename ValueType>
-    bool operator>=(const ValueType &value)
+    bool operator>=(const ValueType &value) const
     {
         if (this->anyCast<ValueType>() != nullptr) {
             return *this->anyCast<ValueType>() >= value;
         }
         return false;
     }
-    bool isNull() { return _pValue == nullptr; }
+    bool isNull() const { return _pValue == nullptr; }
 
 private:
     BaseHolder *_pValue;

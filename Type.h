@@ -7,7 +7,6 @@
 #include "json.hpp"
 using json = nlohmann::json;
 
-
 enum enumType {
     INT, // int
     CHAR, // char*
@@ -33,12 +32,11 @@ public:
     enumType ty = INT;
     uint8_t char_len = 0; // only CHAR will use it
     enumKeyType key = Common;
-    int foreign_sheet = -1; // TODO: when delete other sheet, need modify
     Any def; // TODO: maybe can be NULL, but now NULL means no-def
 
-    bool isUnique() { return unique || key == Primary; }
+    bool isUnique() { return unique; }
     void setUnique(bool _unique) { unique = _unique; }
-    bool isNull() { return null && key != Primary; }
+    bool isNull() { return null; }
     void setNull(bool _null) { null = _null; }
     bool isDelete() { return deleted; }
     void del() { deleted = true; }
@@ -54,8 +52,8 @@ public:
         }
     }
     Type(const char* _name = "", enumType _ty = INT, uint8_t _char_len = 0, 
-         enumKeyType _key = Common, int _foreign_sheet = 0, Any _def = Any(), bool _unique = false, bool _null = true) 
-    : unique(_unique), null(_null), ty(_ty), char_len(_char_len), key(_key), foreign_sheet(_foreign_sheet), def(_def) {
+         Any _def = Any(), bool _unique = false, bool _null = true) 
+    : unique(_unique), null(_null), ty(_ty), char_len(_char_len), def(_def) {
         strcpy(name, _name);
     }
 
@@ -72,7 +70,6 @@ public:
         } else if (def.anyCast<char*>() != nullptr) {
             j["def"] = def.anyRefCast<char*>();
         }
-        j["foreign_sheet"] = foreign_sheet;
         return j;
     }
     Type(json j) {
@@ -93,11 +90,7 @@ public:
         } else {
             def = Any();
         }
-        foreign_sheet = j["foreign_sheet"];
     }
-
-    void setForeignKey(int sheet_id) { key = Foreign; foreign_sheet = sheet_id; }
-    void unsetForeignKey() { key = Common; foreign_sheet = -1; }
 
     int printLen() {
         switch (ty) {

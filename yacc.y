@@ -142,7 +142,7 @@ tbStmt:
     | DELETE FROM tbName WHERE whereClause SEMI 
     | UPDATE tbName SET setClause WHERE whereClause SEMI
     | SELECT selector FROM tableList SEMI {
-        int idx = db->findSheet($4[0]);
+        int idx = db->findSheet($4[0]); // TODO if I can't find?
         db->sheet[idx]->print();
     }
     | SELECT selector FROM tableList WHERE whereClause SEMI;

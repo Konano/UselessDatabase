@@ -8,6 +8,8 @@
 #include "Type.h"
 #include "Index.h"
 #include <iostream>
+#include <fstream>
+#include <sstream>
 using namespace std;
 
 // #define NDEBUG
@@ -223,9 +225,9 @@ void test_7() { // add column, del column
 
     sheet->insertRecord(new Any[4]{2017011475, (char*)"GGT", 345, 34});
     sheet->insertRecord(new Any[4]{634645345, (char*)"KLE", 345, 34});
-    sheet->createColumn(Type("Money", enumType::INT, 0, enumKeyType::Common, 0, Any(5)));
+    // sheet->createColumn(Type("Money", enumType::INT, 0, enumKeyType::Common, 0, Any(5)));
     sheet->removeColumn(0);
-    sheet->modifyColumn(1, Type("Height", enumType::INT, 0, enumKeyType::Common, 0, Any(9)));
+    // sheet->modifyColumn(1, Type("Height", enumType::INT, 0, enumKeyType::Common, 0, Any(9)));
 
     delete db;
     cout << "Pass Test 7" << endl;
@@ -235,9 +237,9 @@ void init_2sheets() { // Testcase: new database
     assert(cleanFiles("TestDatabase") == 0);
 
     Database *db = new Database("TestDatabase", true);
-    assert(db->createSheet("StudentInfo", 4, new Type[4]{Type("ID", enumType::INT, 0, enumKeyType::Primary), Type("Name", enumType::CHAR, 3), Type("Height"), Type("Weigh")}));
-    assert(db->createSheet("ClassInfo", 2, new Type[2]{Type("ID", enumType::INT, 0, enumKeyType::Primary), Type("Name", enumType::CHAR, 3)}));
-    assert(db->createSheet("Combine", 2, new Type[2]{Type("ClassID", enumType::INT, 0, enumKeyType::Foreign, 1), Type("StudentID", enumType::INT, 0, enumKeyType::Foreign, 0)}));
+    // assert(db->createSheet("StudentInfo", 4, new Type[4]{Type("ID", enumType::INT, 0, enumKeyType::Primary), Type("Name", enumType::CHAR, 3), Type("Height"), Type("Weigh")}));
+    // assert(db->createSheet("ClassInfo", 2, new Type[2]{Type("ID", enumType::INT, 0, enumKeyType::Primary), Type("Name", enumType::CHAR, 3)}));
+    // assert(db->createSheet("Combine", 2, new Type[2]{Type("ClassID", enumType::INT, 0, enumKeyType::Foreign, 1), Type("StudentID", enumType::INT, 0, enumKeyType::Foreign, 0)}));
 
     delete db;
     cout << "Database init" << endl;
@@ -278,6 +280,114 @@ void test_9() { // varchar data decimal
     cout << "Pass Test 9" << endl;
 }
 
+inline uint32_t date_to_uint(string str) {
+    str = str.substr(0,4) + str.substr(5,2) + str.substr(8,2);
+    return (uint32_t)atoi(str.c_str());
+}
+
+char* copyStr(const char* _str) {
+    uint size = strlen(_str);
+    char* str = (char *)malloc((size + 1) * sizeof(char));
+    strcpy(str, _str);
+    str[size] = '\0';
+    return str;
+}
+
+void import_data(Sheet* sheet, const char* filename) {
+    ifstream inFile(filename, ios::in);
+    string line;
+    string field;
+    int cnt = 0;
+    Any* data = (Any*) malloc(sheet->col_num * sizeof(Any));
+    // while (getline(inFile, line)) {
+    //     istringstream sin(line); 
+    // }
+    // return;
+    while (getline(inFile, line)) {
+        istringstream sin(line); 
+        memset(data, 0, sheet->col_num * sizeof(Any));
+        for (uint i = 0; i < sheet->col_num; i++) {
+            getline(sin, field, ',');  
+            switch (sheet->col_ty[i].ty) {
+            case INT:
+                data[i] = atoi(field.c_str());
+                break;
+            case CHAR:
+            case VARCHAR:
+                data[i] = copyStr(field.c_str());
+                break;
+            case DATE:
+                data[i] = date_to_uint(field);
+                break;
+            case DECIMAL:
+                data[i] = strtold(field.c_str(), NULL);
+                break;
+            }
+        }
+        sheet->insertRecord(data);
+        cnt++;
+        // printf(" %d\n", cnt);
+        // if (cnt == 1) break;
+    }
+    inFile.close();
+}
+
+void import_data() {
+    assert(cleanFiles("orderdb") == 0);
+
+    Database *db = new Database("orderdb", true);
+    Sheet* sheet;
+
+    sheet = db->createSheet("part", 9, new Type[9]{
+        Type("p_partkey", INT), 
+        Type("p_name", VARCHAR, 55), 
+        Type("p_mfgr", CHAR, 25),
+        Type("p_brand", CHAR, 10), 
+        Type("p_type", VARCHAR, 25), 
+        Type("p_size", INT), 
+        Type("p_container", CHAR, 10), 
+        Type("p_retailprice", DECIMAL), 
+        Type("p_comment", VARCHAR, 23),
+    });
+    sheet->createPrimaryKey(new PrimaryKey(sheet, 1, new int[1]{0}));
+    import_data(sheet, "data/part.csv");
+
+    sheet = db->createSheet("region", 3, new Type[3]{
+        Type("r_regionkey", INT), 
+        Type("r_name", CHAR, 25), 
+        Type("r_comment", VARCHAR, 152),
+    });
+    sheet->createPrimaryKey(new PrimaryKey(sheet, 1, new int[1]{0}));
+    import_data(sheet, "data/region.csv");
+
+    sheet = db->createSheet("nation", 4, new Type[4]{
+        Type("N_NATIONKEY", INT), 
+        Type("N_NAME", CHAR, 25), 
+        Type("N_REGIONKEY", INT, 0, NULL, false, false),
+        Type("N_COMMENT", VARCHAR, 152),
+    });
+    sheet->createPrimaryKey(new PrimaryKey(sheet, 1, new int[1]{0}));
+    sheet->createForeignKey(new ForeignKey(sheet, 1, new int[1]{2}), db->sheet[1]->p_key);
+    import_data(sheet, "data/nation.csv");
+
+    sheet = db->createSheet("partsupp", 5, new Type[5]{
+        Type("PS_PARTKEY", INT, 0, NULL, false, false), 
+        Type("PS_SUPPKEY", INT, 0, NULL, false, false), 
+        Type("PS_AVAILQTY", INT),
+        Type("PS_SUPPLYCOST", DECIMAL), 
+        Type("PS_COMMENT", VARCHAR, 199),
+    });
+    sheet->createPrimaryKey(new PrimaryKey(sheet, 2, new int[2]{0, 1}));
+    import_data(sheet, "data/partsupp.csv");
+
+    // import_data("data/customer.csv");
+    // import_data("data/lineitem.csv");
+    // import_data("data/nation.csv");
+    // import_data("data/orders.csv");
+    // import_data("data/supplier.csv");
+    delete db;
+}
+
 int main() {
     // test_0();
     // test_1();
@@ -289,7 +399,7 @@ int main() {
     // test_7();
     // test_8();
     // test_9();
+    import_data();
     yyparse();
-    // import_data();
     return 0;
 }

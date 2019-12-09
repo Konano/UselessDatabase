@@ -48,6 +48,8 @@
         "iterator": "cpp",
         "valarray": "cpp",
         "forward_list": "cpp",
-        "numeric": "cpp"
+        "numeric": "cpp",
+        "ctime": "cpp",
+        "iomanip": "cpp"
     }
 }

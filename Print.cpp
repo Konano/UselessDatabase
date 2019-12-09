@@ -16,7 +16,7 @@ std::string toString(Any val) {
         return std::string(*val.anyCast<char*>());
     } else if (val.anyCast<uint32_t>() != NULL) {
         std::string str = std::to_string(*val.anyCast<uint32_t>());
-        return str.substr(0, 4) + "/" + str.substr(4, 2) + "/" + str.substr(6, 2);
+        return str.substr(0, 4) + "-" + str.substr(4, 2) + "-" + str.substr(6, 2);
     } else if (val.anyCast<long double>() != NULL) {
         return std::to_string(*val.anyCast<long double>());
     } else return "NULL";

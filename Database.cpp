@@ -115,6 +115,11 @@ int Database::findSheet(std::string s) {
     return -1;
 }
 
+Sheet* Database::findSheetPointer(std::string s) {
+    int idx = findSheet(s);
+    if (idx < 0) return nullptr; else return sheet[idx];
+}
+
 char* Database::getVarchar(uint64_t idx) {
     int index; 
     int size = (idx & 0xffff);
@@ -134,18 +139,18 @@ uint64_t Database::storeVarchar(char* str) {
     uint offset = mem & 0xffff;
     BufType buf = bpm->getPage(mem_file, page, index) + offset;
     while (true) {
-        if (0x10000 - offset > size) {
+        if (PAGE_SIZE - offset > size) {
             memcpy(buf, str, size * sizeof(char));
             offset += size;
             break;
         } else {
-            memcpy(buf, str, (0x10000 - offset) * sizeof(char));
+            memcpy(buf, str, (PAGE_SIZE - offset) * sizeof(char));
+            str += PAGE_SIZE - offset;
+            size -= PAGE_SIZE - offset;
             page += 1;
             offset = 0;
             bpm->markDirty(index);
             buf = bpm->getPage(mem_file, page, index) + offset;
-            str += 0x10000 - offset;
-            size -= 0x10000 - offset;
         }
     }
     bpm->markDirty(index);
