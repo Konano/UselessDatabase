@@ -174,7 +174,7 @@ fieldList:
         $$ = $1;
     };
 
-field: // TODO UNIQUE?
+field:
     colName type {
         strcpy($2.name, $1.c_str());
         $$ = $2;

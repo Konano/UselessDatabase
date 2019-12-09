@@ -23,19 +23,15 @@ enum enumKeyType {
 
 struct Type {
 private:
-    bool unique = false;
     bool null = true;
     bool deleted = false;
 public:
     char name[MAX_NAME_LEN];
-    // TODO: char comment[MAX_COMMENT_LEN];
     enumType ty = INT;
     uint8_t char_len = 0; // only CHAR will use it
     enumKeyType key = Common;
-    Any def; // TODO: maybe can be NULL, but now NULL means no-def
+    Any def;
 
-    bool isUnique() { return unique; }
-    void setUnique(bool _unique) { unique = _unique; }
     bool isNull() { return null; }
     void setNull(bool _null) { null = _null; }
     bool isDelete() { return deleted; }
@@ -52,8 +48,8 @@ public:
         }
     }
     Type(const char* _name = "", enumType _ty = INT, uint8_t _char_len = 0, 
-         Any _def = Any(), bool _unique = false, bool _null = true) 
-    : unique(_unique), null(_null), ty(_ty), char_len(_char_len), def(_def) {
+         Any _def = Any(), bool _null = true) 
+    : null(_null), ty(_ty), char_len(_char_len), def(_def) {
         strcpy(name, _name);
     }
 
@@ -63,7 +59,6 @@ public:
         j["ty"] = ty;
         j["char_len"] = char_len;
         j["key"] = key;
-        j["unique"] = unique;
         j["null"] = null;
         if (def.anyCast<int>() != nullptr) {
             j["def"] = def.anyRefCast<int>();
@@ -77,7 +72,6 @@ public:
         ty = (enumType)j["ty"].get<int>();
         char_len = j["char_len"].get<int>();
         key = (enumKeyType)j["key"].get<int>();
-        unique = j["unique"].get<bool>();
         null = j["null"].get<bool>();
         if (j.count("def")) {
             switch (ty) {

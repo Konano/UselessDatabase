@@ -366,7 +366,7 @@ void import_data() {
     sheet = db->createSheet("nation", 4, new Type[4]{
         Type("N_NATIONKEY", INT), 
         Type("N_NAME", CHAR, 25), 
-        Type("N_REGIONKEY", INT, 0, NULL, false, false),
+        Type("N_REGIONKEY", INT, 0, NULL, false),
         Type("N_COMMENT", VARCHAR, 152),
     });
     assert(sheet->createPrimaryKey(new PrimaryKey(sheet, 1, new int[1]{0})) == 0);
@@ -379,7 +379,7 @@ void import_data() {
         Type("S_SUPPKEY", INT), 
         Type("S_NAME", CHAR, 25), 
         Type("S_ADDRESS", VARCHAR, 40),
-        Type("S_NATIONKEY", INT, 0, NULL, false, false),
+        Type("S_NATIONKEY", INT, 0, NULL, false),
         Type("S_PHONE", CHAR, 15),
         Type("S_ACCTBAL", DECIMAL),
         Type("S_COMMENT", VARCHAR, 101),
@@ -394,7 +394,7 @@ void import_data() {
         Type("C_CUSTKEY", INT), 
         Type("C_NAME", CHAR, 25), 
         Type("C_ADDRESS", VARCHAR, 40),
-        Type("C_NATIONKEY", INT, 0, NULL, false, false),
+        Type("C_NATIONKEY", INT, 0, NULL, false),
         Type("C_PHONE", CHAR, 15),
         Type("C_ACCTBAL", DECIMAL),
         Type("C_MKTSEGMENT", CHAR, 10),
@@ -406,8 +406,8 @@ void import_data() {
 
     // id = 5
     sheet = db->createSheet("partsupp", 5, new Type[5]{
-        Type("PS_PARTKEY", INT, 0, NULL, false, false), 
-        Type("PS_SUPPKEY", INT, 0, NULL, false, false), 
+        Type("PS_PARTKEY", INT, 0, NULL, false), 
+        Type("PS_SUPPKEY", INT, 0, NULL, false), 
         Type("PS_AVAILQTY", INT),
         Type("PS_SUPPLYCOST", DECIMAL), 
         Type("PS_COMMENT", VARCHAR, 199),
@@ -421,7 +421,7 @@ void import_data() {
     // id = 6
     sheet = db->createSheet("orders", 9, new Type[9]{
         Type("O_ORDERKEY", INT), 
-        Type("O_CUSTKEY", INT, 0, NULL, false, false), 
+        Type("O_CUSTKEY", INT, 0, NULL, false), 
         Type("O_ORDERSTATUS", CHAR, 1),
         Type("O_TOTALPRICE", DECIMAL), 
         Type("O_ORDERDATE", DATE),
@@ -436,9 +436,9 @@ void import_data() {
 
     // id = 7
     sheet = db->createSheet("lineitem", 16, new Type[16]{
-        Type("L_ORDERKEY", INT, 0, NULL, false, false), 
-        Type("L_PARTKEY", INT, 0, NULL, false, false), 
-        Type("L_SUPPKEY", INT, 0, NULL, false, false),
+        Type("L_ORDERKEY", INT, 0, NULL, false), 
+        Type("L_PARTKEY", INT, 0, NULL, false), 
+        Type("L_SUPPKEY", INT, 0, NULL, false),
         Type("L_LINENUMBER", INT), 
         Type("L_QUANTITY", DECIMAL),
         Type("L_EXTENDEDPRICE", DECIMAL),

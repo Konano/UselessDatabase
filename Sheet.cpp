@@ -152,7 +152,7 @@ void Sheet::fetch(BufType& buf, enumType ty, uint size, Any& val) {
 }
 
 int Sheet::insertRecord(Any* info) {
-    if (this->constraintRow(info, true)) return -1;
+    if (this->constraintRow(info, record_num, true)) return -1;
     int index;
     BufType buf = bpm->getPage(main_file, record_num / record_onepg, index);
     buf[(record_num % record_onepg) / 8] |= 1 << (record_num % 8);
@@ -169,7 +169,7 @@ int Sheet::insertRecord(Any* info) {
     return 0;
 }
 
-int Sheet::removeRecord(const int record_id) { // TODO 数据完整性检查
+int Sheet::removeRecord(const int record_id) { // TODO when remove some p_key data....
     int index;
     BufType buf = bpm->getPage(main_file, record_id / record_onepg, index);
     if (buf[(record_id % record_onepg) / 8] & (1 << (record_id % 8))) {
@@ -200,23 +200,13 @@ int Sheet::queryRecord(const int record_id, Any* &info) {
     } else return -1;
 }
 
-int Sheet::updateRecord(const int record_id, const int len, Any* info) { // TODO 数据完整性检查
+int Sheet::updateRecord(const int record_id, const int len, Any* info) { // TODO when update some p_key data....
+    if (this->constraintRow(info, record_id, true)) return -1;
     int index;
     BufType buf = bpm->getPage(main_file, record_id / record_onepg, index);
     buf += (record_onepg - 1) / 8 + 1;
     buf += record_size * (record_id % record_onepg);
     for (int i = 0; i < len; i++) {
-        // TODO check
-        // if (col_ty[i].key == enumKeyType::Primary) {
-        //     if (info[i].isNull()) return -1;
-        //     int ans = this->index[p_key_index].queryRecord(info);
-        //     if (ans == -1) return -1;
-        // }
-        // if (col_ty[i].key == enumKeyType::Foreign) {
-        //     if (!info[i].isNull() && !db->sheet[col_ty[i].foreign_sheet]->queryPrimaryKey(info)) {
-        //         return -1;
-        //     }
-        // }
         insert(info[i], col_ty[i].ty, col_ty[i].size(), buf);
     }
     bpm->markDirty(index);
@@ -294,10 +284,7 @@ void Sheet::removeIndex(uint index_id) {
 }
 
 int Sheet::createColumn(Type ty) {
-    if (record_num > 0) {
-        if (ty.isNull() == false) return -1;
-        if (ty.isUnique()) return -2;
-    }
+    if (record_num > 0 && ty.isNull() == false) return -1;
     col_ty[col_num++] = ty;
     rebuild(1, col_num);
     return 0;
@@ -353,7 +340,7 @@ void Sheet::updateColumns() {
     for (auto _it: f_key) for (auto it: _it->v) col_ty[it].key = Foreign;
 }
 
-void Sheet::rebuild(int ty, uint key_index) { // TODO 需要顺便重构 index
+void Sheet::rebuild(int ty, uint key_index) { // TODO rebuild index
     if (record_num == 0) return;
     int _main_file;
     fm->createFile(dirPath(db->name, name, "_tmp.usid"));
@@ -428,7 +415,7 @@ int Sheet::createPrimaryKey(PrimaryKey* pk) {
     if (constraintKey(pk)) return -2;
     p_key = pk;
     updateColumns();
-    // TODO 新建 p_key_index
+    // TODO new p_key_index
     return 0;
 
     // std::vector<Any> v;
@@ -482,7 +469,7 @@ int Sheet::createPrimaryKey(PrimaryKey* pk) {
 int Sheet::removePrimaryKey() {
     if (p_key == nullptr) return -1;
     for (auto it: p_key->f) it->p = nullptr;
-    // TODO 删除 p_key_index
+    // TODO delete p_key_index
     delete p_key;
     p_key = nullptr;
     return 0;
@@ -578,10 +565,6 @@ int Sheet::constraintCol(uint col_id) {
     for (uint record_id = 0; record_id < record_num; record_id++) {
         if (queryRecord(record_id, data)) continue;
         if (col_ty[col_id].isNull() == false && data[col_id].isNull()) return -1;
-        if (col_ty[col_id].isUnique()) {
-            if (m.count(data[col_id])) return -2;
-            m[data[col_id]] = true;
-        }
     }
     return 0;
 }
@@ -612,19 +595,15 @@ int Sheet::constraintKey(Key* key) {
                 as.v.push_back(data[i]);
             }
             if (null == false && non_null == false) return -1;
-            // TODO check exist
+            // TODO check exist(find p_key_index)
         }
     }
     return 0;
 }
 
-int Sheet::constraintRow(Any* data, bool ck_unique) {
+int Sheet::constraintRow(Any* data, uint record_id, bool ck_unique) {
     for (uint i = 0; i < col_num; i++) {
         if (col_ty[i].isNull() == false && data[i].isNull()) return -1;
-        if (ck_unique && col_ty[i].isUnique()) {
-            // TODO check unique(one col)
-            // return -2;
-        }
     }
     if (constraintRowKey(data, p_key)) return -3;
     for (auto it: f_key) if (constraintRowKey(data, it)) return -4;
@@ -634,9 +613,9 @@ int Sheet::constraintRow(Any* data, bool ck_unique) {
 int Sheet::constraintRowKey(Any* data, Key* key) {
     if (key->ty() == 1) {
         for (auto i: key->v) if (data[i].isNull()) return -1;
-        // TODO check unique(one col)
+        // TODO check unique(find p_key_index)
     } else {
-        // TODO check exist
+        // TODO check exist(find p_key_index)
     }
     return 0;
 }

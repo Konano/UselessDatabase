@@ -72,7 +72,7 @@ public:
 
     int constraintCol(uint col_id);
     int constraintKey(Key* key);
-    int constraintRow(Any* data, bool ck_unique);
+    int constraintRow(Any* data, uint record_id, bool ck_unique);
     int constraintRowKey(Any* data, Key* key);
 };
 
