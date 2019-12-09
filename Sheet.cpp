@@ -169,7 +169,7 @@ int Sheet::insertRecord(Any* info) {
     return 0;
 }
 
-int Sheet::removeRecord(const int record_id) { // TODO when remove some p_key data....
+int Sheet::removeRecord(const int record_id) { // TODO when remove some p_key data, need to check f_key...
     int index;
     BufType buf = bpm->getPage(main_file, record_id / record_onepg, index);
     if (buf[(record_id % record_onepg) / 8] & (1 << (record_id % 8))) {
@@ -200,7 +200,7 @@ int Sheet::queryRecord(const int record_id, Any* &info) {
     } else return -1;
 }
 
-int Sheet::updateRecord(const int record_id, const int len, Any* info) { // TODO when update some p_key data....
+int Sheet::updateRecord(const int record_id, const int len, Any* info) { // TODO when update some p_key data, need to check f_key... // TODO need to modify index
     if (this->constraintRow(info, record_id, true)) return -1;
     int index;
     BufType buf = bpm->getPage(main_file, record_id / record_onepg, index);
@@ -290,7 +290,7 @@ int Sheet::createColumn(Type ty) {
     return 0;
 }
 
-int Sheet::removeColumn(uint col_id) {
+int Sheet::removeColumn(uint col_id) { // TODO need to modify index
     rebuild(0, col_id);
     for (uint i = col_id; i < col_num - 1; i++) col_ty[i] = col_ty[i + 1];
     col_num -= 1;
@@ -310,7 +310,7 @@ int Sheet::removeColumn(uint col_id) {
     return 0;
 }
 
-int Sheet::modifyColumn(uint col_id, Type ty) { // 对于 Key 的检查需要在之前完成，对于 Key 的修改需要在之后完成
+int Sheet::modifyColumn(uint col_id, Type ty) { // TODO 对于 Key 和 index 的维护
     switch (col_ty[col_id].ty) {
     case INT: 
     case DATE: 
@@ -475,7 +475,7 @@ int Sheet::removePrimaryKey() {
     return 0;
 }
 
-int Sheet::createForeignKey(ForeignKey* fk, PrimaryKey* pk) { // TODO 当返回 -1 时记得 delete 参数
+int Sheet::createForeignKey(ForeignKey* fk, PrimaryKey* pk) {
     if (*pk->sheet->p_key != *pk) return -1;
     fk->p = pk->sheet->p_key;
     if (fk->size() != pk->size()) return -3;
@@ -619,3 +619,7 @@ int Sheet::constraintRowKey(Any* data, Key* key) {
     }
     return 0;
 }
+
+// TODO Key 名字，还不能重复
+
+// TODO Foreign Key 需要索引吗
