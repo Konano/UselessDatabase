@@ -491,6 +491,13 @@ int Sheet::removePrimaryKey() {
 int Sheet::createForeignKey(ForeignKey* fk, PrimaryKey* pk) { // TODO 当返回 -1 时记得 delete 参数
     if (*pk->sheet->p_key != *pk) return -1;
     fk->p = pk->sheet->p_key;
+    if (fk->size() != pk->size()) return -3;
+    for (uint i = 0; i < fk->size(); i++) {
+        if (col_ty[fk->v[i]].ty == CHAR || col_ty[fk->v[i]].ty == VARCHAR) {
+            if (pk->sheet->col_ty[pk->v[i]].ty != CHAR && pk->sheet->col_ty[pk->v[i]].ty != VARCHAR) return -5;
+        }
+        else if (col_ty[fk->v[i]].ty != pk->sheet->col_ty[pk->v[i]].ty) return -5;
+    }
     if (constraintKey(fk)) return -2;
     f_key.push_back(fk);
     updateColumns();
