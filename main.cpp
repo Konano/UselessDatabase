@@ -338,6 +338,7 @@ void import_data() {
     Database *db = new Database("orderdb", true);
     Sheet* sheet;
 
+    // id = 0
     sheet = db->createSheet("part", 9, new Type[9]{
         Type("p_partkey", INT), 
         Type("p_name", VARCHAR, 55), 
@@ -352,6 +353,7 @@ void import_data() {
     sheet->createPrimaryKey(new PrimaryKey(sheet, 1, new int[1]{0}));
     import_data(sheet, "data/part.csv");
 
+    // id = 1
     sheet = db->createSheet("region", 3, new Type[3]{
         Type("r_regionkey", INT), 
         Type("r_name", CHAR, 25), 
@@ -360,6 +362,7 @@ void import_data() {
     sheet->createPrimaryKey(new PrimaryKey(sheet, 1, new int[1]{0}));
     import_data(sheet, "data/region.csv");
 
+    // id = 2
     sheet = db->createSheet("nation", 4, new Type[4]{
         Type("N_NATIONKEY", INT), 
         Type("N_NAME", CHAR, 25), 
@@ -369,7 +372,39 @@ void import_data() {
     sheet->createPrimaryKey(new PrimaryKey(sheet, 1, new int[1]{0}));
     sheet->createForeignKey(new ForeignKey(sheet, 1, new int[1]{2}), db->sheet[1]->p_key);
     import_data(sheet, "data/nation.csv");
+    import_data(sheet, "data/region.csv");
 
+    // id = 3
+    sheet = db->createSheet("supplier", 7, new Type[7]{
+        Type("S_SUPPKEY", INT), 
+        Type("S_NAME", CHAR, 25), 
+        Type("S_ADDRESS", VARCHAR, 40),
+        Type("S_NATIONKEY", INT, 0, NULL, false, false),
+        Type("S_PHONE", CHAR, 15),
+        Type("S_ACCTBAL", DECIMAL),
+        Type("S_COMMENT", VARCHAR, 101),
+    });
+    sheet->createPrimaryKey(new PrimaryKey(sheet, 1, new int[1]{0}));
+    sheet->createForeignKey(new ForeignKey(sheet, 1, new int[1]{3}), db->sheet[2]->p_key);
+    import_data(sheet, "data/supplier.csv");
+    import_data(sheet, "data/region.csv");
+
+    // id = 4
+    sheet = db->createSheet("customer", 8, new Type[8]{
+        Type("C_CUSTKEY", INT), 
+        Type("C_NAME", CHAR, 25), 
+        Type("C_ADDRESS", VARCHAR, 40),
+        Type("C_NATIONKEY", INT, 0, NULL, false, false),
+        Type("C_PHONE", CHAR, 15),
+        Type("C_ACCTBAL", DECIMAL),
+        Type("C_MKTSEGMENT", CHAR, 10),
+        Type("C_COMMENT", VARCHAR, 117),
+    });
+    sheet->createPrimaryKey(new PrimaryKey(sheet, 1, new int[1]{0}));
+    sheet->createForeignKey(new ForeignKey(sheet, 1, new int[1]{3}), db->sheet[2]->p_key);
+    import_data(sheet, "data/customer.csv");
+
+    // id = 5
     sheet = db->createSheet("partsupp", 5, new Type[5]{
         Type("PS_PARTKEY", INT, 0, NULL, false, false), 
         Type("PS_SUPPKEY", INT, 0, NULL, false, false), 
@@ -378,13 +413,51 @@ void import_data() {
         Type("PS_COMMENT", VARCHAR, 199),
     });
     sheet->createPrimaryKey(new PrimaryKey(sheet, 2, new int[2]{0, 1}));
+    sheet->createForeignKey(new ForeignKey(sheet, 1, new int[1]{0}), db->sheet[0]->p_key);
+    sheet->createForeignKey(new ForeignKey(sheet, 1, new int[1]{1}), db->sheet[3]->p_key);
     import_data(sheet, "data/partsupp.csv");
+    import_data(sheet, "data/customer.csv");
 
-    // import_data("data/customer.csv");
-    // import_data("data/lineitem.csv");
-    // import_data("data/nation.csv");
-    // import_data("data/orders.csv");
-    // import_data("data/supplier.csv");
+    // id = 6
+    sheet = db->createSheet("orders", 9, new Type[9]{
+        Type("O_ORDERKEY", INT), 
+        Type("O_CUSTKEY", INT, 0, NULL, false, false), 
+        Type("O_ORDERSTATUS", CHAR, 1),
+        Type("O_TOTALPRICE", DECIMAL), 
+        Type("O_ORDERDATE", DATE),
+        Type("O_ORDERPRIORITY", CHAR, 15),
+        Type("O_CLERK", CHAR, 15),
+        Type("O_SHIPPRIORITY", INT),
+        Type("O_COMMENT", VARCHAR, 79),
+    });
+    sheet->createPrimaryKey(new PrimaryKey(sheet, 1, new int[1]{0}));
+    sheet->createForeignKey(new ForeignKey(sheet, 1, new int[1]{1}), db->sheet[4]->p_key);
+    import_data(sheet, "data/orders.csv");
+
+    // id = 7
+    sheet = db->createSheet("lineitem", 16, new Type[16]{
+        Type("L_ORDERKEY", INT, 0, NULL, false, false), 
+        Type("L_PARTKEY", INT, 0, NULL, false, false), 
+        Type("L_SUPPKEY", INT, 0, NULL, false, false),
+        Type("L_LINENUMBER", INT), 
+        Type("L_QUANTITY", DECIMAL),
+        Type("L_EXTENDEDPRICE", DECIMAL),
+        Type("L_DISCOUNT", DECIMAL),
+        Type("L_TAX", DECIMAL),
+        Type("L_RETURNFLAG", CHAR, 1),
+        Type("L_LINESTATUS", CHAR, 1),
+        Type("L_SHIPDATE", DATE),
+        Type("L_COMMITDATE", DATE),
+        Type("L_RECEIPTDATE", DATE),
+        Type("L_SHIPINSTRUCT", CHAR, 25),
+        Type("L_SHIPMODE", CHAR, 10),
+        Type("L_COMMENT", VARCHAR, 44),
+    });
+    sheet->createPrimaryKey(new PrimaryKey(sheet, 2, new int[2]{0, 3}));
+    sheet->createForeignKey(new ForeignKey(sheet, 1, new int[1]{0}), db->sheet[6]->p_key);
+    sheet->createForeignKey(new ForeignKey(sheet, 2, new int[2]{1, 2}), db->sheet[5]->p_key);
+    import_data(sheet, "data/lineitem.csv");
+    
     delete db;
 }
 
