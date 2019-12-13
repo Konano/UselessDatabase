@@ -36,6 +36,9 @@ public:
     int main_file;
     uint record_size;
     uint record_onepg;
+    
+    bool sel = false;
+    std::vector<std::vector<Any> > data;
 
     json toJson();
     Sheet(Database* db, json j);
@@ -44,8 +47,8 @@ public:
     ~Sheet();
     uint calDataSize();
     int createSheet(uint sheet_id,Database* db, const char* name, uint col_num, Type* col_ty, bool create = false);
-    int insertRecord(Any* info); // TODO info -> data
-    // void removeRecord(const int len, Any* info);
+    int insertRecord(Any* data);
+    // TODO void removeRecord(const int len, Any* info);
     int removeRecord(const int record_id);
     int queryRecord(const int record_id, Any* &info);
     int updateRecord(const int record_id, const int len, Any* info);
@@ -74,6 +77,8 @@ public:
     int constraintKey(Key* key);
     int constraintRow(Any* data, uint record_id, bool ck_unique);
     int constraintRowKey(Any* data, Key* key);
+
+    int findCol(std::string s);
 };
 
 #endif

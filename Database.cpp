@@ -24,7 +24,7 @@ json Database::toJson() {
     j["name"] = name;
     j["sheet_num"] = sheet_num;
     j["mem"] = mem;
-    for (int i = 0; i < sheet_num; i++) {
+    for (uint i = 0; i < sheet_num; i++) {
         j["sheet"].push_back(sheet[i]->toJson());
     }
     return j;
@@ -34,7 +34,7 @@ void Database::fromJson(json j) {
     strcpy(name, j["name"].get<std::string>().c_str());
     sheet_num = j["sheet_num"].get<int>();
     mem = j["mem"].get<uint64_t>();
-    for (int i = 0; i < sheet_num; i++) {
+    for (uint i = 0; i < sheet_num; i++) {
         sheet[i] = new Sheet(this, j["sheet"][i]);
     }
 }
@@ -89,7 +89,7 @@ Sheet* Database::createSheet(const char* name, int col_num, Type* col_ty) {
 }
 
 Sheet* Database::openSheet(const char* name) {
-    for (int i = 0; i < sheet_num; i++) {
+    for (uint i = 0; i < sheet_num; i++) {
         if (strcmp(sheet[i]->name, name) == 0) {
             return sheet[i];
         }
@@ -102,7 +102,7 @@ void Database::showSheets() {
     v.push_back(std::pair<std::string, int>("Table", 20));
     Print::title(v);
     std::vector<Any> d;
-    for (int i = 0; i < sheet_num; i++) {
+    for (uint i = 0; i < sheet_num; i++) {
         d.push_back(Any((char*)sheet[i]->name));
         Print::row(d);
         d.clear();
@@ -111,7 +111,7 @@ void Database::showSheets() {
 }
     
 int Database::findSheet(std::string s) {
-    for (int i = 0; i < sheet_num; i++) if (std::string(sheet[i]->name) == s) return i;
+    for (uint i = 0; i < sheet_num; i++) if (std::string(sheet[i]->name) == s) return i;
     return -1;
 }
 
@@ -156,4 +156,8 @@ uint64_t Database::storeVarchar(char* str) {
     bpm->markDirty(index);
     mem = ((uint64_t)page << 16) + offset;
     return out;
+}
+
+void Database::querySel(uint idx) {
+
 }

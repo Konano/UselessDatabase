@@ -14,6 +14,24 @@ extern "C"
 
 Database* db;
 
+vector<Piu> dealCol(vector<Pss> cols, vector<Pis> from) {
+	vector<Piu> v; 
+	for (auto it: cols) {
+		for (auto _it: from) if (it.first == _it.second) {
+			int col;
+			if (_it.first < 0) {
+				col = db->sel_sheet[-1-_it.first]->findCol(it.second);
+			} else {
+				col = db->sheet[_it.first]->findCol(it.second);
+			}
+			// TODO if (col < 0)
+			v.push_back(make_pair(_it.first, (uint)col));
+			break;
+		}
+	}
+	return v;
+}
+
 %}
 
 %token DATABASE
@@ -57,33 +75,31 @@ Database* db;
 %token EXIT
 %token ON
 %token TO
-%token LB
-%token RB
+%token LB RB
 %token SEMI
 %token COMMA
 %token STAR
-%token EQ
-%token NEQ
-%token LE
-%token GE
-%token LS
-%token GT
+%token EQ NEQ LE GE LS GT
 %token DOT
+%token IN ANY ALL
+%token AS
 %token <S> IDENTIFIER
 %token <I> VALUE_INT
 %token <S> VALUE_STRING
-%type <S> dbName
-%type <S> tbName
-%type <S> colName
-%type <S> pkName
-%type <S> fkName
-%type <S> idxName
+%type <S> dbName tbName colName pkName fkName idxName aliasName
 %type <TY> type
 %type <TY> field
 %type <V_TY> fieldList
 %type <V> value
 %type <V_V> valueList
-%type <V_S> tableList
+%type <P_SS> col
+%type <V_P_SS> selector cols _cols
+%type <I> seleStmt
+%type <P_IS> fromClause
+%type <V_P_IS> fromClauses
+%type <W> whereClause
+%type <V_W> whereClauses
+%type <eOP> op
 
 %%
 
@@ -122,8 +138,7 @@ dbStmt:
     | SHOW TABLES SEMI {
         // TODO Error handling
         db->showSheets();
-    }
-    ;
+    };
 
 tbStmt:
     CREATE TABLE tbName LB fieldList RB SEMI {
@@ -139,13 +154,67 @@ tbStmt:
         db->sheet[idx]->printCol();
     }
     | INSERT INTO tbName VALUES valueLists SEMI 
-    | DELETE FROM tbName WHERE whereClause SEMI 
-    | UPDATE tbName SET setClause WHERE whereClause SEMI
-    | SELECT selector FROM tableList SEMI {
-        int idx = db->findSheet($4[0]); // TODO if I can't find?
-        db->sheet[idx]->print();
+    | DELETE FROM tbName WHERE whereClauses SEMI 
+    | UPDATE tbName SET setClause WHERE whereClauses SEMI
+    | seleStmt SEMI {
+        db->querySel(-1 - $1);
+        db->sel_sheet[-1 - $1]->print();
+        db->sel_num = 0;
+    };
+
+seleStmt:
+    SELECT selector FROM fromClauses {
+        uint idx = db->sel_num++;
+        db->sel_sheet[idx]->sel = true;
+        db->sel[idx].select = dealCol($2, $4);
+        db->sel[idx].form = $4;
+        for (auto it: $4) if (it.first < 0) {
+            db->sel[idx].recursion.push_back(it.first);
+        }
+        $$ = -1 - idx;
     }
-    | SELECT selector FROM tableList WHERE whereClause SEMI;
+    | SELECT selector FROM fromClauses WHERE whereClauses {
+        uint idx = db->sel_num++;
+        db->sel[idx].select = dealCol($2, $4);
+        db->sel[idx].form = $4;
+        for (auto it: $4) if (it.first < 0) {
+            db->sel[idx].recursion.push_back(it.first);
+        }
+
+        for (auto it: $6) {
+            WhereStmt where;
+            where.cols = dealCol(it.cols, $4);
+            where.op = it.op;
+            where.rvalue = it.rvalue;
+            where.rvalue_cols = dealCol(it.rvalue_cols, $4);
+            where.rvalue_sheet = it.rvalue_sheet;
+            where.any = (it.ty == 5);
+            where.all = (it.ty == 6);
+            switch (it.ty) {
+            case 0:
+                where.rvalue_ty = 1;
+                break;
+            case 1:
+                where.rvalue_ty = 2;
+                break;
+            case 2:
+            case 3:
+                break;
+            case 4:
+            case 5:
+            case 6:
+            case 7:
+                where.rvalue_ty = 3;
+                break;
+            }
+            if (where.rvalue_sheet < 0) {
+                db->sel[idx].recursion.push_back(where.rvalue_sheet);
+            }
+            db->sel[idx].where.push_back(where);
+        }
+
+        $$ = -1 - idx;
+    };
 
 idxStmt:
     CREATE INDEX idxName ON tbName LB columnList RB SEMI 
@@ -185,9 +254,7 @@ field:
         $$ = $2;
     }
     | colName type DEFAULT value
-    | colName type NOT NL DEFAULT value
-    | PRIMARY KEY LB columnList RB
-    | FOREIGN KEY LB colName RB REFERENCES tbName LB colName RB;
+    | colName type NOT NL DEFAULT value;
 
 type:
     TYPE_INT {
@@ -225,41 +292,129 @@ value:
         $$ = Any();
     };
 
+fromClauses:
+    fromClause {
+        $$.push_back($1);
+    }
+    | fromClauses COMMA fromClause {
+        $1.push_back($3);
+        $$ = $1;
+    };
+
+fromClause:
+    tbName {
+        int idx = db->findSheet($1);
+        // TODO if (idx < 0) ...
+        $$ = make_pair(idx, $1);
+    }
+    | tbName AS aliasName {
+        int idx = db->findSheet($1);
+        // TODO if (idx < 0) ...
+        $$ = make_pair(idx, $3);
+    }
+    | LB seleStmt RB AS aliasName {
+        $$ = make_pair($2, $5);
+    };
+
+aliasName:
+    IDENTIFIER { $$ = $1; };
+
+whereClauses:
+    whereClause {
+        $$.push_back($1);
+    }
+    | whereClauses AND whereClause {
+        $1.push_back($3);
+        $$ = $1;
+    };
+
 whereClause:
-    col op expr
-    | col IS [NOT] NL
-    | whereClause AND whereClause;
+    _cols op value {
+        $$.ty = 0;
+        $$.cols = $1;
+        $$.op = $2;
+        $$.rvalue = $3;
+    }
+    | _cols op _cols {
+        $$.ty = 1;
+        $$.cols = $1;
+        $$.op = $2;
+        $$.rvalue_cols = $3;
+    }
+    | _cols IS NL {
+        $$.ty = 2;
+        $$.cols = $1;
+        $$.op = OP_NL;
+    }
+    | _cols IS NOT NL {
+        $$.ty = 3;
+        $$.cols = $1;
+        $$.op = OP_NNL;
+    }
+    | _cols op LB seleStmt RB {
+        $$.ty = 4;
+        $$.cols = $1;
+        $$.op = $2;
+        $$.rvalue_sheet = $4;
+    }
+    | _cols op ANY LB seleStmt RB {
+        $$.ty = 5;
+        $$.cols = $1;
+        $$.op = $2;
+        $$.rvalue_sheet = $5;
+    }
+    | _cols op ALL LB seleStmt RB {
+        $$.ty = 6;
+        $$.cols = $1;
+        $$.op = $2;
+        $$.rvalue_sheet = $5;
+    }
+    | _cols IN LB seleStmt RB {
+        $$.ty = 7;
+        $$.cols = $1;
+        $$.op = OP_IN;
+        $$.rvalue_sheet = $4;
+    };
+
+_cols:
+    LB cols RB {
+        $$ = $2;
+    }
+    | col {
+        $$.push_back($1);
+    };
 
 col:
-    tbName DOT colName
-    | colName;
+    tbName DOT colName {
+        $$ = make_pair($1, $3);
+    }
+    | colName {
+        $$ = make_pair(string(), $1);
+    };
 
 op:
-    EQ | NEQ | LE | GE | LS | GT;
-
-expr:
-    value
-    | col;
+    EQ { $$ = OP_EQ; }
+    | NEQ { $$ = OP_NEQ; }
+    | LE { $$ = OP_LE; }
+    | GE { $$ = OP_GE; }
+    | LS { $$ = OP_LS; }
+    | GT { $$ = OP_GT; };
 
 setClause:
     colName EQ value
     | setClause COMMA colName EQ value;
 
 selector:
-    STAR
-    | selector_;
+    STAR {}
+    | cols;
 
-selector_:
-    selector_ COMMA col 
-    | col;
-
-tableList:
-    tbName {
-        $$.push_back($1);
-    }
-    | tableList COMMA tbName {
+cols:
+    cols COMMA col {
         $1.push_back($3);
         $$ = $1;
+    }
+    | col {
+        $$.push_back($1);
     };
 
 columnList:

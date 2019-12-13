@@ -151,18 +151,18 @@ void Sheet::fetch(BufType& buf, enumType ty, uint size, Any& val) {
     buf += size;
 }
 
-int Sheet::insertRecord(Any* info) {
-    if (this->constraintRow(info, record_num, true)) return -1;
+int Sheet::insertRecord(Any* data) {
+    if (this->constraintRow(data, record_num, true)) return -1;
     int index;
     BufType buf = bpm->getPage(main_file, record_num / record_onepg, index);
     buf[(record_num % record_onepg) / 8] |= 1 << (record_num % 8);
     buf += (record_onepg - 1) / 8 + 1;
     buf += record_size * (record_num % record_onepg);
     for (uint i = 0; i < col_num; i++) {
-        insert(info[i], col_ty[i].ty, col_ty[i].size(), buf);
+        insert(data[i], col_ty[i].ty, col_ty[i].size(), buf);
     }
     for (uint i = 0; i < index_num; i++) {
-        this->index[i].insertRecord(&info[this->index[i].key], record_num);
+        this->index[i].insertRecord(&data[this->index[i].key], record_num);
     }
     bpm->markDirty(index);
     record_num++;
@@ -618,6 +618,11 @@ int Sheet::constraintRowKey(Any* data, Key* key) {
         // TODO check exist(find p_key_index)
     }
     return 0;
+}
+    
+int Sheet::findCol(std::string s) {
+    for (uint i = 0; i < col_num; i++) if (std::string(col_ty[i].name) == s) return i;
+    return -1;
 }
 
 // TODO Key 名字，还不能重复

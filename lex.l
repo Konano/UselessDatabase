@@ -33,7 +33,7 @@ string      (’[^’]*’)
 \<= { return LE; }
 \>= { return GE; }
 \< { return LS; }
-\< { return GT; }
+\> { return GT; }
 \. { return DOT; }
 DATABASE { return DATABASE; }
 DATABASES { return DATABASES; }
@@ -76,6 +76,10 @@ FOREIGN { return FOREIGN; }
 ON { return ON; }
 TO { return TO; }
 EXIT { return EXIT; }
+IN { return IN; }
+ANY { return ANY; }
+ALL { return ALL; }
+AS { return AS; }
 {identifier} { 
 	yylval.S = yytext;
 	return IDENTIFIER; 
