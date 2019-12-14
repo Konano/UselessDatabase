@@ -14,7 +14,9 @@
 #include <iostream>
 using namespace std; // TODO remove
 
-#define exist(buf, offset) (buf[(offset) / 8] & (1 << ((offset) % 8))) // TODO modify all
+#define exist(buf, offset) (buf[(offset) / 8] & (1 << ((offset) % 8)))
+#define exist_set(buf, offset) (buf[(offset) / 8] |= (1 << ((offset) % 8)))
+#define exist_reset(buf, offset) (buf[(offset) / 8] -= (1 << ((offset) % 8)))
 
 extern char* dirPath(const char* dir, const char* filename, const char* suffix);
 extern void replaceFile(const char *oldName, const char *newName);
@@ -158,7 +160,7 @@ int Sheet::insertRecord(Any* data) {
 int Sheet::removeRecord(const int record_id) { // TODO when remove some p_key data, need to check f_key...
     int index;
     BufType buf = bpm->getPage(main_file, record_id / record_onepg, index);
-    if (buf[(record_id % record_onepg) / 8] & (1 << (record_id % 8))) {
+    if (exist(buf, record_id % record_onepg)) {
         Any* data;
         queryRecord(record_id, data);
         for (uint i = 0; i < index_num; i++) {
@@ -174,7 +176,7 @@ int Sheet::removeRecord(const int record_id) { // TODO when remove some p_key da
 int Sheet::queryRecord(const int record_id, Any* &data) {
     int index;
     BufType buf = bpm->getPage(main_file, record_id / record_onepg, index);
-    if (buf[(record_id % record_onepg) / 8] & (1 << (record_id % 8))) {
+    if (exist(buf, record_id % record_onepg)) {
         buf += (record_onepg - 1) / 8 + 1;
         buf += record_size * (record_id % record_onepg);
         data = new Any[col_num];
@@ -253,7 +255,7 @@ uint Sheet::createIndex(uint key_index) {
     int _index;
     for (uint record_id = 0; record_id < record_num; record_id++) {
         BufType buf = bpm->getPage(main_file, record_id / record_onepg, _index);
-        if (buf[(record_id % record_onepg) / 8] & (1 << (record_id % 8))) {
+        if (exist(buf, record_id % record_onepg)) {
             BufType _buf = buf + (record_onepg - 1) / 8 + 1 + record_size * (record_id % record_onepg);
             Any val;
             fetch(_buf, col_ty[index[index_num].key].ty, col_ty[index[index_num].key].size(), val);
@@ -348,10 +350,11 @@ void Sheet::rebuild(int ty, uint key_index) { // TODO rebuild index
                 _buf_st = _buf = bpm->getPage(_main_file, i / _record_onepg, _index);
                 _buf += (_record_onepg - 1) / 8 + 1;
             }
-            if (buf_st[(i % record_onepg) / 8] & (1 << (i % 8))) 
-                _buf_st[(i % _record_onepg) / 8] |= 1 << (i % 8);
-            else if (_buf_st[(i % record_onepg) / 8] & (1 << (i % 8)))
-                _buf_st[(i % _record_onepg) / 8] -= 1 << (i % 8);
+            
+            if (exist(buf_st, i % record_onepg))
+                exist_set(_buf_st, i % _record_onepg);
+            else if (exist(_buf_st, i % _record_onepg))
+                exist_reset(_buf_st, i % _record_onepg);
             for (uint j = 0; j < col_num; j++) {
                 if (j != key_index) memcpy(_buf, buf, col_ty[j].size());
                 buf += col_ty[j].size();
@@ -373,10 +376,10 @@ void Sheet::rebuild(int ty, uint key_index) { // TODO rebuild index
                 _buf_st = _buf = bpm->getPage(_main_file, i / _record_onepg, _index);
                 _buf += (_record_onepg - 1) / 8 + 1;
             }
-            if (buf_st[(i % record_onepg) / 8] & (1 << (i % 8))) 
-                _buf_st[(i % _record_onepg) / 8] |= 1 << (i % 8);
-            else if (_buf_st[(i % record_onepg) / 8] & (1 << (i % 8)))
-                _buf_st[(i % _record_onepg) / 8] -= 1 << (i % 8);
+            if (exist(buf_st, i % record_onepg)) 
+                exist_set(_buf_st, i % _record_onepg);
+            else if (exist(_buf_st, i % _record_onepg))
+                exist_reset(_buf_st, i % _record_onepg);
             for (uint j = 0; j < col_num - 1; j++) {
                 memcpy(_buf, buf, col_ty[j].size());
                 buf += col_ty[j].size(); 
