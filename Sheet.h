@@ -5,6 +5,7 @@
 #include "Type.h"
 #include "Index.h"
 #include "Key.h"
+#include "Anys.h"
 
 #include "json.hpp"
 using json = nlohmann::json;
@@ -38,20 +39,21 @@ public:
     uint record_onepg;
     
     bool sel = false;
-    std::vector<std::vector<Any> > data;
+    std::vector<Anys> data;
 
     json toJson();
     Sheet(Database* db, json j);
 
     Sheet() {}
+    Sheet(bool _sel) : sel(_sel) {}
     ~Sheet();
     uint calDataSize();
     int createSheet(uint sheet_id,Database* db, const char* name, uint col_num, Type* col_ty, bool create = false);
     int insertRecord(Any* data);
     // TODO void removeRecord(const int len, Any* info);
     int removeRecord(const int record_id);
-    int queryRecord(const int record_id, Any* &info);
-    int updateRecord(const int record_id, const int len, Any* info);
+    int queryRecord(const int record_id, Any* &data);
+    int updateRecord(const int record_id, const int len, Any* data);
 
     uint createIndex(uint key_index);
     uint createKeyIndex(Key* key); // TODO
@@ -79,6 +81,12 @@ public:
     int constraintRowKey(Any* data, Key* key);
 
     int findCol(std::string s);
+
+    int pointer;
+    void setPointer(int pointer);
+    bool movePointer();
+    Any getPointerColData(uint idx);
+    Anys getPointerData();
 };
 
 #endif

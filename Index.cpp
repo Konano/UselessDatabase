@@ -131,7 +131,7 @@ BtreeNode* Index::convert_buf_to_BtreeNode(int index) {
             temp.key = *(int*)(buf + 22 + i * record_size + 4);
         }
         if (this->ty == enumType::CHAR) {
-            char* str = (char *)malloc((record_size - 8 + 1) * sizeof(char));
+            char* str = new char[record_size - 8 + 1];
             memcpy(str, buf + 22 + i * record_size + 4 , record_size - 8);
             str[record_size - 8] = '\0';
             temp.key = str;

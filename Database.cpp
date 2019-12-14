@@ -15,6 +15,8 @@
 #include <sys/stat.h>
 #endif
 
+#define filterSheet(it) ((it) < 0 ? sel_sheet[-1-it] : sheet[it])
+
 extern char* readFile(const char* path);
 extern void writeFile(const char* path, const char* data, const int length);
 extern char* dirPath(const char* dir, const char* path);
@@ -101,7 +103,7 @@ void Database::showSheets() {
     std::vector<std::pair<std::string, int> > v;
     v.push_back(std::pair<std::string, int>("Table", 20));
     Print::title(v);
-    std::vector<Any> d;
+    Anys d;
     for (uint i = 0; i < sheet_num; i++) {
         d.push_back(Any((char*)sheet[i]->name));
         Print::row(d);
@@ -124,7 +126,7 @@ char* Database::getVarchar(uint64_t idx) {
     int index; 
     int size = (idx & 0xffff);
     BufType buf = bpm->getPage(mem_file, idx >> 32, index) + ((idx & 0xffffffff) >> 16);
-    char* str = (char *)malloc((size + 1) * sizeof(char));
+    char* str = new char[size + 1];
     memcpy(str, buf, size);
     str[size] = '\0';
     return str;
@@ -158,6 +160,89 @@ uint64_t Database::storeVarchar(char* str) {
     return out;
 }
 
-void Database::querySel(uint idx) {
+bool Database::cmpCol(enumOp op, Anys a, Anys b) {
+    switch (op) {
+    case OP_EQ:
+        return a == b;
+    case OP_NEQ:
+        return a != b;
+    case OP_LE:
+        return a <= b;
+    case OP_GE:
+        return a >= b;
+    case OP_LS:
+        return a < b;
+    case OP_GT:
+        return a > b;
+    default:
+        return false; // TODO
+    }
+}
 
+bool Database::checkWhere(WhereStmt w) {
+    Anys data, _data;
+    for (auto it: w.cols) {
+        data.push_back(filterSheet(it.first)->getPointerColData(it.second));
+    }
+    switch (w.rvalue_ty) {
+    case 0: {
+        bool nl = true, nnl = true;
+        for (uint i = 0; i < w.cols.size(); i++) {
+            nl &= data[i].isNull();
+            nnl &= !data[i].isNull();
+        }
+        return (w.op == OP_NL && nl) && (w.op == OP_NNL && nnl);
+    }
+    case 1: {
+        for (auto it: w.rvalue) {
+            _data.push_back(it);
+        }
+        return cmpCol(w.op, data, _data);
+    }
+    case 2: {
+        for (auto it: w.rvalue_cols) {
+            _data.push_back(filterSheet(it.first)->getPointerColData(it.second));
+        }
+        return cmpCol(w.op, data, _data);
+    }
+    // case 3:
+    //     return false; // TODO
+    //     break;
+    default:
+        return false;
+    }
+}
+
+void Database::storeData(uint idx) {
+    Anys data;
+    if (sel[idx].select.size() == 0) {
+        for (auto it: sel[idx].from) {
+            data.concatenate(filterSheet(it.first)->getPointerData());
+        }
+    } else {
+        for (auto it: sel[idx].select) {
+            data.push_back(filterSheet(it.first)->getPointerColData(it.second));
+        }
+    }
+    sel_sheet[idx]->data.push_back(data);
+    sel_sheet[idx]->record_num += 1;
+}
+
+void Database::dfsCross(uint idx, uint f_idx) {
+    if (f_idx == sel[idx].from.size()) {
+        for (auto it: sel[idx].where) {
+            if (checkWhere(it) == false) return;
+        }
+        storeData(idx);
+    } else {
+        filterSheet(sel[idx].from[f_idx].first)->setPointer(-1);
+        while (filterSheet(sel[idx].from[f_idx].first)->movePointer()) {
+            dfsCross(idx, f_idx + 1);
+        }
+    }
+}
+
+void Database::buildSel(uint idx) {
+    for (auto it: sel[idx].recursion) buildSel(-1-it);
+    dfsCross(idx, 0);
 }

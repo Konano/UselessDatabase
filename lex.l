@@ -18,7 +18,7 @@ digit       ([0-9])
 integer     ({digit}+)
 identifier  ({letter}({nondigit}|{digit})*)
 blank_chars	([ \f\r\t\v]+)
-string      (’[^’]*’)
+string      ('[^']*')
 %%
 
 {blank_chars} {}
@@ -90,6 +90,7 @@ AS { return AS; }
 }
 {string} { 
 	yylval.S = yytext;
+	yylval.S = yylval.S.substr(1, yylval.S.length()-2);
 	return VALUE_STRING;
 }
 %%

@@ -14,22 +14,34 @@ extern "C"
 
 Database* db;
 
+#define filterSheet(it) ((it) < 0 ? db->sel_sheet[-1-it] : db->sheet[it])
+
 vector<Piu> dealCol(vector<Pss> cols, vector<Pis> from) {
 	vector<Piu> v; 
 	for (auto it: cols) {
-		for (auto _it: from) if (it.first == _it.second) {
-			int col;
-			if (_it.first < 0) {
-				col = db->sel_sheet[-1-_it.first]->findCol(it.second);
-			} else {
-				col = db->sheet[_it.first]->findCol(it.second);
-			}
+		for (auto _it: from) if ((it.first == _it.second) || (it.first == string() && from.size() == 1)) {
+			int col = filterSheet(_it.first)->findCol(it.second);
 			// TODO if (col < 0)
 			v.push_back(make_pair(_it.first, (uint)col));
 			break;
 		}
 	}
 	return v;
+}
+
+void dealTy(uint idx) {
+	if (db->sel[idx].select.size() == 0) {
+        for (auto it: db->sel[idx].from) {
+            Sheet* st = filterSheet(it.first);
+            for (uint i = 0; i < st->col_num; i++) {
+                db->sel_sheet[idx]->col_ty[db->sel_sheet[idx]->col_num++] = st->col_ty[i];
+            }
+        }
+    } else {
+        for (auto it: db->sel[idx].select) {
+            db->sel_sheet[idx]->col_ty[db->sel_sheet[idx]->col_num++] = filterSheet(it.first)->col_ty[it.second];
+        }
+    }
 }
 
 %}
@@ -91,7 +103,7 @@ vector<Piu> dealCol(vector<Pss> cols, vector<Pis> from) {
 %type <TY> field
 %type <V_TY> fieldList
 %type <V> value
-%type <V_V> valueList
+%type <V_V> valueList _values
 %type <P_SS> col
 %type <V_P_SS> selector cols _cols
 %type <I> seleStmt
@@ -157,30 +169,35 @@ tbStmt:
     | DELETE FROM tbName WHERE whereClauses SEMI 
     | UPDATE tbName SET setClause WHERE whereClauses SEMI
     | seleStmt SEMI {
-        db->querySel(-1 - $1);
+        db->buildSel(-1 - $1);
         db->sel_sheet[-1 - $1]->print();
-        db->sel_num = 0;
+        while (db->sel_num) delete db->sel_sheet[--(db->sel_num)];
     };
 
 seleStmt:
     SELECT selector FROM fromClauses {
         uint idx = db->sel_num++;
-        db->sel_sheet[idx]->sel = true;
+        db->sel_sheet[idx] = new Sheet(true);
         db->sel[idx].select = dealCol($2, $4);
-        db->sel[idx].form = $4;
+        db->sel[idx].from = $4;
+        db->sel[idx].recursion.clear();
         for (auto it: $4) if (it.first < 0) {
             db->sel[idx].recursion.push_back(it.first);
         }
+        db->sel[idx].where.clear();
+        dealTy(idx);
         $$ = -1 - idx;
     }
     | SELECT selector FROM fromClauses WHERE whereClauses {
         uint idx = db->sel_num++;
+        db->sel_sheet[idx] = new Sheet(true);
         db->sel[idx].select = dealCol($2, $4);
-        db->sel[idx].form = $4;
+        db->sel[idx].from = $4;
+        db->sel[idx].recursion.clear();
         for (auto it: $4) if (it.first < 0) {
             db->sel[idx].recursion.push_back(it.first);
         }
-
+        db->sel[idx].where.clear();
         for (auto it: $6) {
             WhereStmt where;
             where.cols = dealCol(it.cols, $4);
@@ -199,6 +216,7 @@ seleStmt:
                 break;
             case 2:
             case 3:
+                where.rvalue_ty = 0;
                 break;
             case 4:
             case 5:
@@ -212,7 +230,7 @@ seleStmt:
             }
             db->sel[idx].where.push_back(where);
         }
-
+        dealTy(idx);
         $$ = -1 - idx;
     };
 
@@ -283,10 +301,10 @@ valueList:
 
 value:
     VALUE_INT {
-        $$ = Any($1);
+        $$ = Any((int)$1);
     }
     | VALUE_STRING {
-        $$ = Any($1.c_str());
+        $$ = Any((char*)$1.c_str());
     }
     | NL {
         $$ = Any();
@@ -329,7 +347,7 @@ whereClauses:
     };
 
 whereClause:
-    _cols op value {
+    _cols op _values {
         $$.ty = 0;
         $$.cols = $1;
         $$.op = $2;
@@ -384,12 +402,29 @@ _cols:
         $$.push_back($1);
     };
 
+cols:
+    cols COMMA col {
+        $1.push_back($3);
+        $$ = $1;
+    }
+    | col {
+        $$.push_back($1);
+    };
+
 col:
     tbName DOT colName {
         $$ = make_pair($1, $3);
     }
     | colName {
         $$ = make_pair(string(), $1);
+    };
+
+_values:
+    LB valueList RB {
+        $$ = $2;
+    }
+    | value {
+        $$.push_back($1);
     };
 
 op:
@@ -407,15 +442,6 @@ setClause:
 selector:
     STAR {}
     | cols;
-
-cols:
-    cols COMMA col {
-        $1.push_back($3);
-        $$ = $1;
-    }
-    | col {
-        $$.push_back($1);
-    };
 
 columnList:
     colName

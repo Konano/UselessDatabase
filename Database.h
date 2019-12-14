@@ -3,6 +3,7 @@
 
 #include "constants.h"
 #include "Type.h"
+#include "Anys.h"
 
 #include "json.hpp"
 using json = nlohmann::json;
@@ -33,14 +34,14 @@ struct WhereStmt {
     bool any = false;
     bool all = false;
     uint rvalue_ty = 0;
-    Any rvalue;                                     // rvalue_ty = 1
+    std::vector<Any> rvalue;       // rvalue_ty = 1
     std::vector<Piu> rvalue_cols;  // rvalue_ty = 2
-    int rvalue_sheet;                               // rvalue_ty = 3
+    int rvalue_sheet;              // rvalue_ty = 3
 };
 
 struct SelectStmt {
     std::vector<Piu> select;
-    std::vector<Pis> form; 
+    std::vector<Pis> from; 
     std::vector<WhereStmt> where;
     std::vector<int> recursion;
 };
@@ -76,7 +77,11 @@ public:
     char* getVarchar(uint64_t idx); // get varchar from '.storage'
     uint64_t storeVarchar(char* str); // store varchar into '.storage'
 
-    void querySel(uint idx);
+    void buildSel(uint idx);
+    void dfsCross(uint idx, uint f_idx);
+    bool checkWhere(WhereStmt w);
+    void storeData(uint idx);
+    bool cmpCol(enumOp op, Anys a, Anys b);
 };
 
 #endif

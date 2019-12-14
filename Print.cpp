@@ -42,7 +42,7 @@ void Print::title(std::vector<std::pair<std::string,int> > v) {
     std::cout << str << std::endl;
 }
 
-void Print::row(std::vector<Any> v) {
+void Print::row(Anys v) {
     std::string str = "|";
     for (int i = 0; i < col_num; i++) str += ' ' + lenLimit(toString(v[i]), t[i].second) + " |";
     std::cout << str << std::endl;

@@ -1,6 +1,7 @@
 #ifndef __ANY
 #define __ANY
 
+#include "constants.h"
 #include <string.h>
 
 class BaseHolder
@@ -84,6 +85,54 @@ public:
         return (dynamic_cast<Holder<ValueType> &>(*_pValue))._value;
     }
 
+    bool operator<(const Any &b) const
+    {
+        if (b.anyCast<char*>() != nullptr) {
+            return *this < (const char*)*b.anyCast<char*>();
+        } else if (b.anyCast<int>() != nullptr) {
+            return *this < *b.anyCast<int>();
+        } else if (b.anyCast<long double>() != nullptr) {
+            return *this < *b.anyCast<long double>();
+        } else if (b.anyCast<uint32_t>() != nullptr) {
+            return *this < *b.anyCast<uint32_t>();
+        }
+        return false;
+    }
+
+    bool operator>(const Any &b) const
+    {
+        if (b.anyCast<char*>() != nullptr) {
+            return *this > (const char*)*b.anyCast<char*>();
+        } else if (b.anyCast<int>() != nullptr) {
+            return *this > *b.anyCast<int>();
+        } else if (b.anyCast<long double>() != nullptr) {
+            return *this > *b.anyCast<long double>();
+        } else if (b.anyCast<uint32_t>() != nullptr) {
+            return *this > *b.anyCast<uint32_t>();
+        }
+        return false;
+    }
+
+    bool operator==(const Any &b) const
+    {
+        if (b.anyCast<char*>() != nullptr) {
+            return *this == (const char*)*b.anyCast<char*>();
+        } else if (b.anyCast<int>() != nullptr) {
+            return *this == *b.anyCast<int>();
+        } else if (b.anyCast<long double>() != nullptr) {
+            return *this == *b.anyCast<long double>();
+        } else if (b.anyCast<uint32_t>() != nullptr) {
+            return *this == *b.anyCast<uint32_t>();
+        }
+        return false;
+    }
+
+    bool operator<=(const Any &b) const { return !(*this > b); }
+
+    bool operator>=(const Any &b) const { return !(*this < b); }
+
+    bool operator!=(const Any &b) const { return !(*this == b); }
+
     bool operator<(const char* value) const
     {
         if (this->anyCast<char*>() != nullptr) {
@@ -108,21 +157,11 @@ public:
         return false;
     }
 
-    bool operator<=(const char* value) const
-    {
-        if (this->anyCast<char*>() != nullptr) {
-            return strcmp(*this->anyCast<char*>(), value) <= 0;
-        }
-        return false;
-    }
+    bool operator<=(const char* value) const { return !(*this > value); }
 
-    bool operator>=(const char* value) const
-    {
-        if (this->anyCast<char*>() != nullptr) {
-            return strcmp(*this->anyCast<char*>(), value) >= 0;
-        }
-        return false;
-    }
+    bool operator>=(const char* value) const { return !(*this < value); }
+
+    bool operator!=(const char* value) const { return !(*this == value); }
 
     template <typename ValueType>
     bool operator<(const ValueType &value) const
@@ -152,22 +191,14 @@ public:
     }
 
     template <typename ValueType>
-    bool operator<=(const ValueType &value) const
-    {
-        if (this->anyCast<ValueType>() != nullptr) {
-            return *this->anyCast<ValueType>() <= value;
-        }
-        return false;
-    }
+    bool operator<=(const ValueType &value) const { return !(*this > value); }
 
     template <typename ValueType>
-    bool operator>=(const ValueType &value) const
-    {
-        if (this->anyCast<ValueType>() != nullptr) {
-            return *this->anyCast<ValueType>() >= value;
-        }
-        return false;
-    }
+    bool operator>=(const ValueType &value) const { return !(*this < value); }
+
+    template <typename ValueType>
+    bool operator!=(const ValueType &value) const { return !(*this == value); }
+
     bool isNull() const { return _pValue == nullptr; }
 
 private:

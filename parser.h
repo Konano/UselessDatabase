@@ -18,7 +18,7 @@ struct YYType_Where {
 	uint ty;
 	vector<Pss> cols;
 	enumOp op;
-	Any rvalue;
+	vector<Any> rvalue;
 	vector<Pss> rvalue_cols;
 	int rvalue_sheet;
 };

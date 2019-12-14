@@ -94,7 +94,7 @@ char* readFile(const char* path) {
     }
     fseek(file, 0, SEEK_END);
     length = ftell(file);
-    char* data = (char *)malloc((length + 1) * sizeof(char));
+    char* data = new char[length + 1];
     rewind(file);
     length = fread(data, 1, length, file);
     data[length] = '\0';
@@ -110,7 +110,7 @@ void writeFile(const char* path, const char* data, const int length) {
 
 char* dirPath(const char* dir, const char* path) { // dir / path
     int length = strlen(dir) + 1 + strlen(path);
-    char* data = (char *)malloc((length + 1) * sizeof(char));
+    char* data = new char[length + 1];
     strcpy(data, dir);
     strcpy(data + strlen(dir), "/");
     strcpy(data + strlen(dir) + 1, path);
@@ -119,7 +119,7 @@ char* dirPath(const char* dir, const char* path) { // dir / path
 
 char* dirPath(const char* dir, const char* filename, const char* suffix) { // dir / filename suffix
     int length = strlen(dir) + 1 + strlen(filename) + strlen(suffix);
-    char* data = (char *)malloc((length + 1) * sizeof(char));
+    char* data = new char[length + 1];
     strcpy(data, dir);
     strcpy(data + strlen(dir), "/");
     strcpy(data + strlen(dir) + 1, filename);
@@ -129,7 +129,7 @@ char* dirPath(const char* dir, const char* filename, const char* suffix) { // di
 
 char* dirPath(const char* dir, const char* filename, const char* name, const char* suffix) { // dir / filename _ name suffix
     int length = strlen(dir) + 1 + strlen(filename) + 1 + strlen(name) + strlen(suffix);
-    char* data = (char *)malloc((length + 1) * sizeof(char));
+    char* data = new char[length + 1];
     strcpy(data, dir);
     strcpy(data + strlen(dir), "/");
     strcpy(data + strlen(dir) + 1, filename);

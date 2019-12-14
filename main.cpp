@@ -287,7 +287,7 @@ inline uint32_t date_to_uint(string str) {
 
 char* copyStr(const char* _str) {
     uint size = strlen(_str);
-    char* str = (char *)malloc((size + 1) * sizeof(char));
+    char* str = new char[size + 1];
     strcpy(str, _str);
     str[size] = '\0';
     return str;
@@ -298,7 +298,7 @@ void import_data(Sheet* sheet, const char* filename) {
     string line;
     string field;
     int cnt = 0;
-    Any* data = (Any*) malloc(sheet->col_num * sizeof(Any));
+    Any* data = new Any[sheet->col_num];
     // while (getline(inFile, line)) {
     //     istringstream sin(line); 
     // }
@@ -329,6 +329,7 @@ void import_data(Sheet* sheet, const char* filename) {
         // printf(" %d\n", cnt);
         // if (cnt == 1) break;
     }
+    delete []data;
     inFile.close();
 }
 
@@ -340,24 +341,24 @@ void import_data() {
 
     // id = 0
     sheet = db->createSheet("part", 9, new Type[9]{
-        Type("p_partkey", INT), 
-        Type("p_name", VARCHAR, 55), 
-        Type("p_mfgr", CHAR, 25),
-        Type("p_brand", CHAR, 10), 
-        Type("p_type", VARCHAR, 25), 
-        Type("p_size", INT), 
-        Type("p_container", CHAR, 10), 
-        Type("p_retailprice", DECIMAL), 
-        Type("p_comment", VARCHAR, 23),
+        Type("P_PARTKEY", INT), 
+        Type("P_NAME", VARCHAR, 55), 
+        Type("P_MFGR", CHAR, 25),
+        Type("P_BRAND", CHAR, 10), 
+        Type("P_TYPE", VARCHAR, 25), 
+        Type("P_SIZE", INT), 
+        Type("P_CONTAINER", CHAR, 10), 
+        Type("P_RETAILPRICE", DECIMAL), 
+        Type("P_COMMENT", VARCHAR, 23),
     });
     assert(sheet->createPrimaryKey(new PrimaryKey(sheet, 1, new int[1]{0})) == 0);
     import_data(sheet, "data/part.csv");
 
     // id = 1
     sheet = db->createSheet("region", 3, new Type[3]{
-        Type("r_regionkey", INT), 
-        Type("r_name", CHAR, 25), 
-        Type("r_comment", VARCHAR, 152),
+        Type("R_REGIONKEY", INT), 
+        Type("R_NAME", CHAR, 25), 
+        Type("R_COMMENT", VARCHAR, 152),
     });
     assert(sheet->createPrimaryKey(new PrimaryKey(sheet, 1, new int[1]{0})) == 0);
     import_data(sheet, "data/region.csv");
@@ -372,7 +373,6 @@ void import_data() {
     assert(sheet->createPrimaryKey(new PrimaryKey(sheet, 1, new int[1]{0})) == 0);
     assert(sheet->createForeignKey(new ForeignKey(sheet, 1, new int[1]{2}), db->sheet[1]->p_key) == 0);
     import_data(sheet, "data/nation.csv");
-    import_data(sheet, "data/region.csv");
 
     // id = 3
     sheet = db->createSheet("supplier", 7, new Type[7]{
@@ -472,7 +472,7 @@ int main() {
     // test_7();
     // test_8();
     // test_9();
-    import_data();
+    // import_data();
     yyparse();
     return 0;
 }
