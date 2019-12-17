@@ -135,35 +135,105 @@ sysStmt:
 
 dbStmt:
     CREATE DATABASE dbName SEMI {
-        // TODO Error handling
-        new Database($3.c_str(), true);
+        int length = strlen($3.c_str()) + 1 + strlen(".storage");
+        char* data = (char *)malloc((length + 1) * sizeof(char));
+        strcpy(data, $3.c_str());
+        strcpy(data + strlen($3.c_str()), "/.storage");
+        FILE* file = fopen(data, "rb");
+        if (file == nullptr) {
+            new Database($3.c_str(), true);   
+        }
+        else {
+            printf("DATABASE %s exists\n",$3.c_str());
+        }
     }
     | DROP DATABASE dbName SEMI {
-        // TODO Error handling
-        cleanFiles($3.c_str());
+        int length = strlen($3.c_str()) + 1 + strlen(".storage");
+        char* data = (char *)malloc((length + 1) * sizeof(char));
+        strcpy(data, $3.c_str());
+        strcpy(data + strlen($3.c_str()), "/.storage");
+        FILE* file = fopen(data, "rb");
+        if(file == nullptr){
+            printf("DATABASE %s doesn't exist\n",$3.c_str());
+        }
+        else{
+            cleanFiles($3.c_str());
+        }
     }
     | USE dbName SEMI {
-        // TODO Error handling
-        if (db) delete db;
-        db = new Database($2.c_str(), false);
+        int length = strlen($2.c_str()) + 1 + strlen(".storage");
+        char* data = (char *)malloc((length + 1) * sizeof(char));
+        strcpy(data, $2.c_str());
+        strcpy(data + strlen($2.c_str()), "/.storage");
+        FILE* file = fopen(data, "rb");
+        if(file == nullptr){
+            printf("DATABASE %s doesn't exist\n",$2.c_str());
+        }
+        else{
+            if (db) delete db;
+            db = new Database($2.c_str(), false);
+        }
     }
     | SHOW TABLES SEMI {
-        // TODO Error handling
-        db->showSheets();
+        if(db == nullptr){
+            printf("Select a database first\n");
+        }
+        else{
+            db->showSheets();
+        }
     };
 
 tbStmt:
     CREATE TABLE tbName LB fieldList RB SEMI {
-        // TODO Error handling
-        Type* ty = new Type[$5.size()];
-        for (uint i = 0; i < $5.size(); i++) ty[i] = $5[i];
-        db->createSheet($3.c_str(), $5.size(), ty);
+        if(db == nullptr){
+            printf("Select a database first\n");
+        }
+        else{
+            int tableID = db->findSheet($3);
+            if(tableID != -1){
+                Type* ty = new Type[$5.size()];
+                bool flag = true;
+                for (uint i = 0; i < $5.size(); i++) {
+                    ty[i] = $5[i];
+                    for(uint j = 0;j < i;j ++){
+                        if(std::string(ty[i].name) == std::string(ty[j].name)){
+                            flag = false;break;
+                        }
+                    }
+                    if(!flag)break;
+                }
+                if(flag)db->createSheet($3.c_str(), $5.size(), ty);
+                else printf("Column name conflict\n");
+            }
+            else printf("TABLE %s doesn't exist\n",$3.c_str());
+            db->update();
+        }
     }
-    | DROP TABLE tbName SEMI 
+    | DROP TABLE tbName SEMI{
+        if(db == nullptr){
+            printf("Select a database first\n");
+        }
+        else{
+            int tableID = db->findSheet($3);
+            if(tableID != -1){
+                db->deleteSheet($3.c_str());
+            }
+            else printf("TABLE %s doesn't exist\n",$3.c_str());
+            db->update();
+        }
+    }
     | DESC tbName SEMI {
-        // TODO Error handling
-        int idx = db->findSheet($2);
-        db->sheet[idx]->printCol();
+        if(db == nullptr){
+            printf("Select a database first\n");
+        }
+        else{
+            int tableID = db->findSheet($2);
+            if(tableID != -1){
+                db->sheet[tableID]->printCol();
+            }
+            else printf("TABLE %s doesn't exist\n",$2.c_str());
+            db->update();
+        }
     }
     | INSERT INTO tbName VALUES valueLists SEMI 
     | DELETE FROM tbName WHERE whereClauses SEMI 
@@ -236,15 +306,109 @@ seleStmt:
 
 idxStmt:
     CREATE INDEX idxName ON tbName LB columnList RB SEMI 
-    | DROP INDEX idxName SEMI 
+    | DROP INDEX idxName SEMI {
+        if(db == nullptr){
+            printf("Select a database first\n");
+        }
+        else{
+            bool flag = false;
+            for(uint i = 0;i < db->sheet_num;i ++){
+                int indexID = db->sheet[i]->findIndex($3);
+                if(indexID != -1){
+                    db->sheet[i]->removeIndex(indexID);
+                    flag = true;
+                    break;
+                }
+            }
+            if(!flag)printf("INDEX %s doesn't exist\n", $3.c_str());
+            db->update();
+        }
+    }
     | ALTER TABLE tbName ADD INDEX idxName LB columnList RB SEMI 
-    | ALTER TABLE tbName DROP INDEX idxName SEMI;
+    | ALTER TABLE tbName DROP INDEX idxName SEMI{
+        if(db == nullptr){
+            printf("Select a database first\n");
+        }
+        else{
+            int tableID = db->findSheet($3);
+            if(tableID != -1){
+                int indexID = db->sheet[tableID]->findIndex($6);
+                if(indexID != -1){
+                    db->sheet[tableID]->removeIndex(indexID);
+                }
+                else printf("INDEX %s doesn't exist\n", $6.c_str());
+            }
+            else printf("TABLE %s doesn't exist\n",$3.c_str());
+            db->update();
+        }
+    };
 
 alterStmt:
-    ALTER TABLE tbName ADD field SEMI 
-    | ALTER TABLE tbName DROP colName SEMI 
-    | ALTER TABLE tbName CHANGE colName field SEMI 
-    | ALTER TABLE tbName RENAME TO tbName SEMI 
+    ALTER TABLE tbName ADD field SEMI{
+        if(db == nullptr){
+            printf("Select a database first\n");
+        }
+        else{
+            int tableID = db->findSheet($3);
+            if(tableID != -1){
+                if(db->sheet[tableID]->findKey(std::string($5.name)) != -1){
+                    printf("Column %s is used\n",$5.name);
+                }
+                else {
+                    db->sheet[tableID]->createColumn($5);
+                }
+            }
+            else printf("TABLE %s doesn't exist\n",$3.c_str());
+            db->update();
+        }
+    }
+    | ALTER TABLE tbName DROP colName SEMI {
+        if(db == nullptr){
+            printf("Select a database first\n");
+        }
+        else{
+            int tableID = db->findSheet($3);
+            if(tableID != -1){
+                if(db->sheet[tableID]->findKey($5) != -1)db->sheet[tableID]->removeColumn(db->sheet[tableID]->findKey($5));
+                else printf("Column %s doesn't exist\n",$5.c_str());
+            }
+            else printf("TABLE %s doesn't exist\n",$3.c_str());
+            db->update();
+        }
+    }
+    | ALTER TABLE tbName CHANGE colName field SEMI {
+        if(db == nullptr){
+            printf("Select a database first\n");
+        }
+        else{
+            int tableID = db->findSheet($3);
+            if(tableID != -1){
+                if(db->sheet[tableID]->findKey($5) != -1){
+                    if(db->sheet[tableID]->findKey(std::string($6.name)) == -1 || $5 == std::string($6.name))db->sheet[tableID]->modifyColumn(db->sheet[tableID]->findKey($5), $6);
+                    else printf("Column %s is used\n",$6.name);
+                }
+                else printf("Column %s doesn't exist\n",$5.c_str());
+            }
+            else printf("TABLE %s doesn't exist\n",$3.c_str());
+            db->update();
+        }
+    }
+    | ALTER TABLE tbName RENAME TO tbName SEMI {
+        if(db == nullptr){
+            printf("Select a database first\n");
+        }
+        else{
+            int tableID = db->findSheet($3);
+            if(tableID != -1){
+                for(uint i = 0;i < $6.length();i ++){
+                    db->sheet[tableID]->name[i] = $6[i];
+                }
+                db->sheet[tableID]->name[$6.length()] = '\0';
+            }
+            else printf("TABLE %s doesn't exist\n",$3.c_str());
+            db->update();
+        }
+    }
     | ALTER TABLE tbName ADD PRIMARY KEY LB columnList RB SEMI 
     | ALTER TABLE tbName DROP PRIMARY KEY SEMI 
     | ALTER TABLE tbName ADD CONSTRAINT pkName PRIMARY KEY LB columnList RB SEMI 

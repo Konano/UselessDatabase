@@ -20,6 +20,7 @@
 extern char* readFile(const char* path);
 extern void writeFile(const char* path, const char* data, const int length);
 extern char* dirPath(const char* dir, const char* path);
+extern char* dirPath(const char* dir, const char* filename, const char* suffix);
 
 json Database::toJson() {
     json j;
@@ -77,6 +78,14 @@ Database::~Database() {
     }
     delete fm;
     delete bpm;
+}
+
+int Database::deleteSheet(const char* name){
+    int num = this->findSheet(std::string(name));
+    if(num == -1)return -1;
+    sheet[num] = sheet[sheet_num];
+    sheet[sheet_num --] = nullptr;
+    return fm->deleteFile(dirPath(this->name, name, ".usid"));
 }
 
 Sheet* Database::createSheet(const char* name, int col_num, Type* col_ty) {

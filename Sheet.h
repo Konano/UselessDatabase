@@ -55,6 +55,7 @@ public:
     int queryRecord(const int record_id, Any* &data);
     int updateRecord(const int record_id, const int len, Any* data);
 
+    int findIndex(std::string s);
     uint createIndex(uint key_index);
     uint createKeyIndex(Key* key); // TODO
     void removeIndex(uint index_id);
@@ -66,6 +67,7 @@ public:
 
     void rebuild(int ty, uint key_index);
 
+    int findKey(std::string s);
     int createForeignKey(ForeignKey* fk, PrimaryKey* pk);
     int removeForeignKey(ForeignKey* fk);
     int createPrimaryKey(PrimaryKey* pk);

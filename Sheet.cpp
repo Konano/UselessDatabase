@@ -249,6 +249,11 @@ inline char* getTime() {
     return buffer;
 }
 
+int Sheet::findIndex(std::string s){
+    for(uint i = 0;i < index_num;i ++)if(s == std::string(this->index[i].name)) return i;
+    return -1;
+}
+
 uint Sheet::createIndex(uint key_index) {
     index[index_num] = Index(this, getTime(), key_index, 3);
     index[index_num].open();
@@ -397,6 +402,11 @@ void Sheet::rebuild(int ty, uint key_index) { // TODO rebuild index
     fm->openFile(dirPath(db->name, name, ".usid"), main_file);
     record_size = _record_size;
     record_onepg = _record_onepg;
+}
+
+int Sheet::findKey(std::string s){
+    for (uint i = 0; i < col_num; i++) if (std::string(this->col_ty[i].name) == s) return i;
+    return -1;
 }
 
 int Sheet::createPrimaryKey(PrimaryKey* pk) {
