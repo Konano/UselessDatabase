@@ -3,8 +3,11 @@
 
 #include "constants.h"
 #include "Any.h"
+#include "Anys.h"
 #include "Type.h"
 #include "BtreeNode.h"
+#include <vector>
+using namespace std;
 
 #include "json.hpp"
 using json = nlohmann::json;
@@ -16,7 +19,9 @@ class Index {
 public:
     Sheet* sheet;
     char name[MAX_NAME_LEN];
-    uint key; // TODO: Finally will be index_cal, Tree, Pointer, to support combine index
+    uint key_num;
+    vector<uint> key; // TODO: Finally will be index_cal, Tree, Pointer, to support combine index
+    vector<uint> offset;
     uint page_num;
     uint root_page;
     uint next_del_page;
@@ -25,8 +30,7 @@ public:
     BtreeNode* root;
     int fileID;
 
-    //TODO: 索引header的类型,现在默认是Int
-    enumType ty = enumType::INT;
+    vector<enumType> ty;
 
     int btree_max_per_node;
     int btree_root_index;
@@ -37,13 +41,13 @@ private:
 
     void overflow_upstream(BtreeNode* now);
     void overflow_downstream(BtreeNode* now);
-    std::vector<int> queryRecord(Any* info, int index);
-    void insertRecord(Any* info, int record_id, BtreeNode* now);
-    void removeRecord(Any* info, int record_id, BtreeNode* now);
+    vector<int> queryRecord(Anys* info, int index);
+    void insertRecord(Anys* info, int record_id, BtreeNode* now);
+    void removeRecord(Anys* info, int record_id, BtreeNode* now);
 
 public:
     Index() {}
-    Index(Sheet* sheet, const char* name, uint key,int btree_max_per_node);
+    Index(Sheet* sheet, const char* name, vector<uint> key,int btree_max_per_node);
     Index(Sheet* sheet, json j);
     json toJson();
 
@@ -55,9 +59,9 @@ public:
     void convert_BtreeNode_to_buf(BtreeNode* node);
     void Btree_remove(BtreeNode* node);
 
-    std::vector<int> queryRecord(Any* info);
-    void insertRecord(Any* info, int record_id);
-    void removeRecord(Any* info, int record_id);
+    vector<int> queryRecord(Anys* info);
+    void insertRecord(Anys* info, int record_id);
+    void removeRecord(Anys* info, int record_id);
 
     void Debug();
     void debug(BtreeNode* node);

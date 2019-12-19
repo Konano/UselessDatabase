@@ -60,7 +60,7 @@ void test_1() { // Testcase: record manager
     delete db;
     cout << "Pass Test 1" << endl;
 }
-
+/*
 void test_2() {
     test_1();
 
@@ -89,17 +89,6 @@ void test_2() {
     ax.convert_BtreeNode_to_buf(&a);
     ax.convert_buf_to_BtreeNode(a.index);
 
-    /*
-    printf("%d\n", b.index);
-    for (auto i: b.child){
-        printf("%d\n",i);
-    }
-    for (int i = 0;i < 2;i ++){
-        if (b.record[i].key.anyCast<int>() != NULL){
-            cout << *b.record[i].key.anyCast<int>() << endl;
-        }
-    }
-    */
     delete db;
     cout << "Pass Test 2" << endl;
 }
@@ -205,7 +194,7 @@ void test_6() {
     delete db;
     cout << "Pass Test 6" << endl;
 }
-
+*/
 void init() { // Testcase: new database
     assert(cleanFiles("TestDatabase") == 0);
 
@@ -292,7 +281,7 @@ char* copyStr(const char* _str) {
     return str;
 }
 
-void import_data(Sheet* sheet, const char* filename) {
+void import_data(Sheet* sheet, const char* filename, char separator) {
     ifstream inFile(filename, ios::in);
     string line;
     string field;
@@ -306,7 +295,7 @@ void import_data(Sheet* sheet, const char* filename) {
         istringstream sin(line); 
         memset(data, 0, sheet->col_num * sizeof(Any));
         for (uint i = 0; i < sheet->col_num; i++) {
-            getline(sin, field, ',');  
+            getline(sin, field, separator);  
             switch (sheet->col_ty[i].ty) {
             case INT:
                 data[i] = atoi(field.c_str());
@@ -332,8 +321,8 @@ void import_data(Sheet* sheet, const char* filename) {
     inFile.close();
 }
 
-void import_data() {
-    assert(cleanFiles("orderdb") == 0);
+void import_data_tbl() {
+        assert(cleanFiles("orderdb") == 0);
 
     Database *db = new Database("orderdb", true);
     Sheet* sheet;
@@ -351,7 +340,7 @@ void import_data() {
         Type("P_COMMENT", VARCHAR, 23),
     });
     assert(sheet->createPrimaryKey(new PrimaryKey(sheet, 1, new int[1]{0})) == 0);
-    import_data(sheet, "data/part.csv");
+    import_data(sheet, "data/part.tbl",'|');
 
     // id = 1
     sheet = db->createSheet("region", 3, new Type[3]{
@@ -360,7 +349,7 @@ void import_data() {
         Type("R_COMMENT", VARCHAR, 152),
     });
     assert(sheet->createPrimaryKey(new PrimaryKey(sheet, 1, new int[1]{0})) == 0);
-    import_data(sheet, "data/region.csv");
+    import_data(sheet, "data/region.tbl",'|');
 
     // id = 2
     sheet = db->createSheet("nation", 4, new Type[4]{
@@ -371,7 +360,7 @@ void import_data() {
     });
     assert(sheet->createPrimaryKey(new PrimaryKey(sheet, 1, new int[1]{0})) == 0);
     assert(sheet->createForeignKey(new ForeignKey(sheet, 1, new int[1]{2}), db->sheet[1]->p_key) == 0);
-    import_data(sheet, "data/nation.csv");
+    import_data(sheet, "data/nation.tbl",'|');
 
     // id = 3
     sheet = db->createSheet("supplier", 7, new Type[7]{
@@ -385,8 +374,8 @@ void import_data() {
     });
     assert(sheet->createPrimaryKey(new PrimaryKey(sheet, 1, new int[1]{0})) == 0);
     assert(sheet->createForeignKey(new ForeignKey(sheet, 1, new int[1]{3}), db->sheet[2]->p_key) == 0);
-    import_data(sheet, "data/supplier.csv");
-    import_data(sheet, "data/region.csv");
+    import_data(sheet, "data/supplier.tbl",'|');
+    import_data(sheet, "data/region.tbl",'|');
 
     // id = 4
     sheet = db->createSheet("customer", 8, new Type[8]{
@@ -401,7 +390,7 @@ void import_data() {
     });
     assert(sheet->createPrimaryKey(new PrimaryKey(sheet, 1, new int[1]{0})) == 0);
     assert(sheet->createForeignKey(new ForeignKey(sheet, 1, new int[1]{3}), db->sheet[2]->p_key) == 0);
-    import_data(sheet, "data/customer.csv");
+    import_data(sheet, "data/customer.tbl",'|');
 
     // id = 5
     sheet = db->createSheet("partsupp", 5, new Type[5]{
@@ -414,8 +403,8 @@ void import_data() {
     assert(sheet->createPrimaryKey(new PrimaryKey(sheet, 2, new int[2]{0, 1})) == 0);
     assert(sheet->createForeignKey(new ForeignKey(sheet, 1, new int[1]{0}), db->sheet[0]->p_key) == 0);
     assert(sheet->createForeignKey(new ForeignKey(sheet, 1, new int[1]{1}), db->sheet[3]->p_key) == 0);
-    import_data(sheet, "data/partsupp.csv");
-    import_data(sheet, "data/customer.csv");
+    import_data(sheet, "data/partsupp.tbl",'|');
+    import_data(sheet, "data/customer.tbl",'|');
 
     // id = 6
     sheet = db->createSheet("orders", 9, new Type[9]{
@@ -431,7 +420,7 @@ void import_data() {
     });
     assert(sheet->createPrimaryKey(new PrimaryKey(sheet, 1, new int[1]{0})) == 0);
     assert(sheet->createForeignKey(new ForeignKey(sheet, 1, new int[1]{1}), db->sheet[4]->p_key) == 0);
-    import_data(sheet, "data/orders.csv");
+    import_data(sheet, "data/orders.tbl",'|');
 
     // id = 7
     sheet = db->createSheet("lineitem", 16, new Type[16]{
@@ -455,7 +444,135 @@ void import_data() {
     assert(sheet->createPrimaryKey(new PrimaryKey(sheet, 2, new int[2]{0, 3})) == 0);
     assert(sheet->createForeignKey(new ForeignKey(sheet, 1, new int[1]{0}), db->sheet[6]->p_key) == 0);
     assert(sheet->createForeignKey(new ForeignKey(sheet, 2, new int[2]{1, 2}), db->sheet[5]->p_key) == 0);
-    import_data(sheet, "data/lineitem.csv");
+    import_data(sheet, "data/lineitem.tbl",'|');
+
+    delete db;
+}
+
+void import_data_csv() {
+    assert(cleanFiles("orderdb") == 0);
+
+    Database *db = new Database("orderdb", true);
+    Sheet* sheet;
+
+    // id = 0
+    sheet = db->createSheet("part", 9, new Type[9]{
+        Type("P_PARTKEY", INT), 
+        Type("P_NAME", VARCHAR, 55), 
+        Type("P_MFGR", CHAR, 25),
+        Type("P_BRAND", CHAR, 10), 
+        Type("P_TYPE", VARCHAR, 25), 
+        Type("P_SIZE", INT), 
+        Type("P_CONTAINER", CHAR, 10), 
+        Type("P_RETAILPRICE", DECIMAL), 
+        Type("P_COMMENT", VARCHAR, 23),
+    });
+    assert(sheet->createPrimaryKey(new PrimaryKey(sheet, 1, new int[1]{0})) == 0);
+    import_data(sheet, "data/part.csv",',');
+
+    // id = 1
+    sheet = db->createSheet("region", 3, new Type[3]{
+        Type("R_REGIONKEY", INT), 
+        Type("R_NAME", CHAR, 25), 
+        Type("R_COMMENT", VARCHAR, 152),
+    });
+    assert(sheet->createPrimaryKey(new PrimaryKey(sheet, 1, new int[1]{0})) == 0);
+    import_data(sheet, "data/region.csv",',');
+
+    // id = 2
+    sheet = db->createSheet("nation", 4, new Type[4]{
+        Type("N_NATIONKEY", INT), 
+        Type("N_NAME", CHAR, 25), 
+        Type("N_REGIONKEY", INT, 0, NULL, false),
+        Type("N_COMMENT", VARCHAR, 152),
+    });
+    assert(sheet->createPrimaryKey(new PrimaryKey(sheet, 1, new int[1]{0})) == 0);
+    assert(sheet->createForeignKey(new ForeignKey(sheet, 1, new int[1]{2}), db->sheet[1]->p_key) == 0);
+    import_data(sheet, "data/nation.csv",',');
+
+    // id = 3
+    sheet = db->createSheet("supplier", 7, new Type[7]{
+        Type("S_SUPPKEY", INT), 
+        Type("S_NAME", CHAR, 25), 
+        Type("S_ADDRESS", VARCHAR, 40),
+        Type("S_NATIONKEY", INT, 0, NULL, false),
+        Type("S_PHONE", CHAR, 15),
+        Type("S_ACCTBAL", DECIMAL),
+        Type("S_COMMENT", VARCHAR, 101),
+    });
+    assert(sheet->createPrimaryKey(new PrimaryKey(sheet, 1, new int[1]{0})) == 0);
+    assert(sheet->createForeignKey(new ForeignKey(sheet, 1, new int[1]{3}), db->sheet[2]->p_key) == 0);
+    import_data(sheet, "data/supplier.csv",',');
+    import_data(sheet, "data/region.csv",',');
+
+    // id = 4
+    sheet = db->createSheet("customer", 8, new Type[8]{
+        Type("C_CUSTKEY", INT), 
+        Type("C_NAME", CHAR, 25), 
+        Type("C_ADDRESS", VARCHAR, 40),
+        Type("C_NATIONKEY", INT, 0, NULL, false),
+        Type("C_PHONE", CHAR, 15),
+        Type("C_ACCTBAL", DECIMAL),
+        Type("C_MKTSEGMENT", CHAR, 10),
+        Type("C_COMMENT", VARCHAR, 117),
+    });
+    assert(sheet->createPrimaryKey(new PrimaryKey(sheet, 1, new int[1]{0})) == 0);
+    assert(sheet->createForeignKey(new ForeignKey(sheet, 1, new int[1]{3}), db->sheet[2]->p_key) == 0);
+    import_data(sheet, "data/customer.csv",',');
+
+    // id = 5
+    sheet = db->createSheet("partsupp", 5, new Type[5]{
+        Type("PS_PARTKEY", INT, 0, NULL, false), 
+        Type("PS_SUPPKEY", INT, 0, NULL, false), 
+        Type("PS_AVAILQTY", INT),
+        Type("PS_SUPPLYCOST", DECIMAL), 
+        Type("PS_COMMENT", VARCHAR, 199),
+    });
+    assert(sheet->createPrimaryKey(new PrimaryKey(sheet, 2, new int[2]{0, 1})) == 0);
+    assert(sheet->createForeignKey(new ForeignKey(sheet, 1, new int[1]{0}), db->sheet[0]->p_key) == 0);
+    assert(sheet->createForeignKey(new ForeignKey(sheet, 1, new int[1]{1}), db->sheet[3]->p_key) == 0);
+    import_data(sheet, "data/partsupp.csv",',');
+    import_data(sheet, "data/customer.csv",',');
+
+    // id = 6
+    sheet = db->createSheet("orders", 9, new Type[9]{
+        Type("O_ORDERKEY", INT), 
+        Type("O_CUSTKEY", INT, 0, NULL, false), 
+        Type("O_ORDERSTATUS", CHAR, 1),
+        Type("O_TOTALPRICE", DECIMAL), 
+        Type("O_ORDERDATE", DATE),
+        Type("O_ORDERPRIORITY", CHAR, 15),
+        Type("O_CLERK", CHAR, 15),
+        Type("O_SHIPPRIORITY", INT),
+        Type("O_COMMENT", VARCHAR, 79),
+    });
+    assert(sheet->createPrimaryKey(new PrimaryKey(sheet, 1, new int[1]{0})) == 0);
+    assert(sheet->createForeignKey(new ForeignKey(sheet, 1, new int[1]{1}), db->sheet[4]->p_key) == 0);
+    import_data(sheet, "data/orders.csv",',');
+
+    // id = 7
+    sheet = db->createSheet("lineitem", 16, new Type[16]{
+        Type("L_ORDERKEY", INT, 0, NULL, false), 
+        Type("L_PARTKEY", INT, 0, NULL, false), 
+        Type("L_SUPPKEY", INT, 0, NULL, false),
+        Type("L_LINENUMBER", INT), 
+        Type("L_QUANTITY", DECIMAL),
+        Type("L_EXTENDEDPRICE", DECIMAL),
+        Type("L_DISCOUNT", DECIMAL),
+        Type("L_TAX", DECIMAL),
+        Type("L_RETURNFLAG", CHAR, 1),
+        Type("L_LINESTATUS", CHAR, 1),
+        Type("L_SHIPDATE", DATE),
+        Type("L_COMMITDATE", DATE),
+        Type("L_RECEIPTDATE", DATE),
+        Type("L_SHIPINSTRUCT", CHAR, 25),
+        Type("L_SHIPMODE", CHAR, 10),
+        Type("L_COMMENT", VARCHAR, 44),
+    });
+    assert(sheet->createPrimaryKey(new PrimaryKey(sheet, 2, new int[2]{0, 3})) == 0);
+    assert(sheet->createForeignKey(new ForeignKey(sheet, 1, new int[1]{0}), db->sheet[6]->p_key) == 0);
+    assert(sheet->createForeignKey(new ForeignKey(sheet, 2, new int[2]{1, 2}), db->sheet[5]->p_key) == 0);
+    import_data(sheet, "data/lineitem.csv",',');
 
     delete db;
 }
@@ -471,7 +588,8 @@ int main() {
     // test_7();
     // test_8();
     // test_9();
-    // import_data();
+    // import_data_csv();
+    import_data_tbl();
     yyparse();
     return 0;
 }

@@ -119,23 +119,7 @@ void Sheet::insert(Any& val, enumType ty, uint size, BufType& buf) {
 }
 
 void Sheet::fetch(BufType& buf, enumType ty, uint size, Any& val) {
-    switch (ty) {
-    case INT: 
-        val = *(int*)buf; 
-        break;
-    case CHAR:
-        val = getStr(buf, size);
-        break;
-    case VARCHAR: 
-        val = db->getVarchar(*(uint64_t*)buf); 
-        break;
-    case DATE: 
-        val = *(uint32_t*)buf; 
-        break;
-    case DECIMAL: 
-        val = *(long double*)buf; 
-        break;
-    }
+    fetch_with_offset(buf,ty,size,val,0);
     buf += size;
 }
 
@@ -150,7 +134,11 @@ int Sheet::insertRecord(Any* data) {
         insert(data[i], col_ty[i].ty, col_ty[i].size(), buf);
     }
     for (uint i = 0; i < index_num; i++) {
-        this->index[i].insertRecord(&data[this->index[i].key], record_num);
+        Anys a;
+        for(uint j = 0; j < this->index[i].key_num;j ++){
+            a.push_back(data[this->index[i].key[j]]);
+        }
+        this->index[i].insertRecord(&a, record_num);
     }
     bpm->markDirty(index);
     record_num++;
@@ -164,7 +152,11 @@ int Sheet::removeRecord(const int record_id) { // TODO when remove some p_key da
         Any* data;
         queryRecord(record_id, data);
         for (uint i = 0; i < index_num; i++) {
-            this->index[i].removeRecord(&data[this->index[i].key], record_id);
+            Anys temp;
+            for(uint j = 0;j < this->index[i].key_num;j ++){
+                temp.push_back(data[this->index[i].key[j]]);
+            }
+            this->index[i].removeRecord(&temp, record_id);
         }
         buf[(record_id % record_onepg) / 8] -= 1 << (record_id % 8);
         bpm->markDirty(index);
@@ -254,7 +246,38 @@ int Sheet::findIndex(std::string s){
     return -1;
 }
 
-uint Sheet::createIndex(uint key_index) {
+void Sheet::fetch_with_offset(BufType& buf, enumType ty, uint size, Any& val, uint offset){
+    buf += offset;
+    switch (ty) {
+    case INT: 
+        val = *(int*)buf; 
+        break;
+    case CHAR:
+        val = getStr(buf, size);
+        break;
+    case VARCHAR: 
+        val = db->getVarchar(*(uint64_t*)buf); 
+        break;
+    case DATE: 
+        val = *(uint32_t*)buf; 
+        break;
+    case DECIMAL: 
+        val = *(long double*)buf; 
+        break;
+    }
+    buf -= offset;
+}
+
+uint Sheet::gen_offset(uint index){
+    uint ans = 0;
+    for(uint i = 0;i < index; i ++){
+        ans += this->col_ty[i].size();
+    }
+    return ans;
+}
+
+uint Sheet::createIndex(vector<uint> key_index) {
+    //Calculate max per
     index[index_num] = Index(this, getTime(), key_index, 3);
     index[index_num].open();
     int _index;
@@ -262,9 +285,13 @@ uint Sheet::createIndex(uint key_index) {
         BufType buf = bpm->getPage(main_file, record_id / record_onepg, _index);
         if (exist(buf, record_id % record_onepg)) {
             BufType _buf = buf + (record_onepg - 1) / 8 + 1 + record_size * (record_id % record_onepg);
-            Any val;
-            fetch(_buf, col_ty[index[index_num].key].ty, col_ty[index[index_num].key].size(), val);
-            index[index_num].insertRecord(&val, record_id);
+            Anys a;
+            for (int j = 0;j < key_index.size();j ++){
+                Any val;
+                fetch_with_offset(_buf, col_ty[index[index_num].key[j]].ty, col_ty[index[index_num].key[j]].size(), val,gen_offset(key_index[j]));
+                a.push_back(val);
+            }
+            index[index_num].insertRecord(&a, record_id);
         }
     }
     return index_num++;

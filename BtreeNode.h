@@ -2,16 +2,16 @@
 #define __BTREENODE
 
 #include "constants.h"
-#include "Any.h"
+#include "Anys.h"
 
 struct BtreeRecord{
     //RECORD_ID
     int record_id;
 
     //KEY
-    Any key;
+    Anys key;
     BtreeRecord(){}
-    BtreeRecord(int record_id, Any key):record_id(record_id),key(key){
+    BtreeRecord(int record_id, Anys key):record_id(record_id),key(key){
 
     }
 };
