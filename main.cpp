@@ -127,25 +127,17 @@ void test_4() {
     Sheet *sheet = db->openSheet("TestSheet");
 
     sheet->createIndex(0);
-    cout << "check" << endl;
     sheet->insertRecord(new Any[4]{2017011475, (char*)"GGT", 345, 34});
     sheet->insertRecord(new Any[4]{634645345, (char*)"KLE", 345, 34});
     sheet->insertRecord(new Any[4]{634645345, (char*)"KLEX", 3456, 345});
-    cout << "check" << endl;
     std::vector<int> v = sheet->index[0].queryRecord(new Any[1]{2017011475});
     assert(sheet->index[0].queryRecord(new Any[1]{2017011475}).size() == 1);
     assert(sheet->index[0].queryRecord(new Any[1]{634645345}).size() == 2);
-    cout << "check" << endl;
-    sheet->index[0].Debug();
     assert(sheet->removeRecord(1) == 0);
-    sheet->index[0].Debug();
     assert(sheet->index[0].queryRecord(new Any[1]{2017011475}).size() == 0);
     assert(sheet->index[0].queryRecord(new Any[1]{634645345}).size() == 2);
-    sheet->index[0].Debug();
     sheet->insertRecord(new Any[4]{4523524, (char*)"YNT", 345, 34});
-    sheet->index[0].Debug();
     sheet->insertRecord(new Any[4]{87674234, (char*)"VWH", 345, 34});
-    sheet->index[0].Debug();
     assert(sheet->index[0].queryRecord(new Any[1]{2017011475}).size() == 0);
     assert(sheet->index[0].queryRecord(new Any[1]{634645345}).size() == 2);
     assert(sheet->index[0].queryRecord(new Any[1]{4523524}).size() == 1);
@@ -473,7 +465,7 @@ int main() {
     // test_1();
     // test_2();
     // test_3();
-    test_4();
+    // test_4();
     // test_5();
     // test_6();
     // test_7();
