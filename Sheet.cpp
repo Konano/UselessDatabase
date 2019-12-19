@@ -610,7 +610,7 @@ int Sheet::constraintRow(Any* data, uint record_id, bool ck_unique) {
     for (uint i = 0; i < col_num; i++) {
         if (col_ty[i].isNull() == false && data[i].isNull()) return -1;
     }
-    if (constraintRowKey(data, p_key)) return -3;
+    if (p_key != nullptr && constraintRowKey(data, p_key)) return -3;
     for (auto it: f_key) if (constraintRowKey(data, it)) return -4;
     return 0;
 }

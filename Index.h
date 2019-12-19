@@ -33,11 +33,11 @@ public:
 private:
     // IndexRecord* BTreeInsert(uint32_t pageID, Any key, Record* record);
     // Any calKeyValue(Record* record, uint32_t key);
-    //void initIndex();
+    // void initIndex();
 
     void overflow_upstream(BtreeNode* now);
     void overflow_downstream(BtreeNode* now);
-    int queryRecord(Any* info, int index);
+    std::vector<int> queryRecord(Any* info, int index);
     void insertRecord(Any* info, int record_id, BtreeNode* now);
     void removeRecord(Any* info, int record_id, BtreeNode* now);
 
@@ -55,7 +55,7 @@ public:
     void convert_BtreeNode_to_buf(BtreeNode* node);
     void Btree_remove(BtreeNode* node);
 
-    int queryRecord(Any* info);
+    std::vector<int> queryRecord(Any* info);
     void insertRecord(Any* info, int record_id);
     void removeRecord(Any* info, int record_id);
 

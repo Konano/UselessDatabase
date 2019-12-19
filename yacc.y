@@ -239,9 +239,14 @@ tbStmt:
     | DELETE FROM tbName WHERE whereClauses SEMI 
     | UPDATE tbName SET setClause WHERE whereClauses SEMI
     | seleStmt SEMI {
-        db->buildSel(-1 - $1);
-        db->sel_sheet[-1 - $1]->print();
-        while (db->sel_num) delete db->sel_sheet[--(db->sel_num)];
+        if(db == nullptr){
+            printf("Select a database first\n");
+        }
+        else{
+            db->buildSel(-1 - $1);
+            db->sel_sheet[-1 - $1]->print();
+            while (db->sel_num) delete db->sel_sheet[--(db->sel_num)];
+        }
     };
 
 seleStmt:
