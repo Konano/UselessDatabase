@@ -15,10 +15,12 @@ extern "C"
 letter      ([A-Za-z])
 nondigit    ([_A-Za-z])
 digit       ([0-9])
-integer     ({digit}+)
+integer     (-?{digit}+)
 identifier  ({letter}({nondigit}|{digit})*)
 blank_chars	([ \f\r\t\v]+)
 string      ('[^']*')
+date        ({digit}{4}-{digit}{2}-{digit}{2})
+longdouble  ({integer}\.{digit}+)
 %%
 
 {blank_chars} {}
@@ -92,6 +94,14 @@ AS { return AS; }
 	yylval.S = yytext;
 	yylval.S = yylval.S.substr(1, yylval.S.length()-2);
 	return VALUE_STRING;
+}
+{date} {
+	yylval.U = stoi(string(yytext).substr(0, 4)) * 10000 + stoi(string(yytext).substr(5, 2)) * 100 + stoi(string(yytext).substr(8, 2));
+	return VALUE_DATE;
+}
+{longdouble} {
+	yylval.D = stold(string(yytext));
+	return VALUE_LONG_DOUBLE;
 }
 %%
 

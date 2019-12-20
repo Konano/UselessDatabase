@@ -24,6 +24,8 @@ struct YYType_Where {
 struct YYType {
 	string S;
 	int I;
+	uint32_t U;
+	long double D;
 	Type TY;
 	vector<Type> V_TY;
 	Any V;

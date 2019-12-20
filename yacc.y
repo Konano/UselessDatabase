@@ -21,7 +21,9 @@ extern Database* db;
 bool error;
 
 #define filterSheet(it) ((it) < 0 ? db->sel_sheet[-1-it] : db->sheet[it])
-#define Piu2Col(it) (filterSheet((it).first)->col_ty[(it).second]) 
+#define Piu2Col(it) (filterSheet((it).first)->col_ty[(it).second])
+
+uint month[12] = {31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31};
 
 vector<Piu> dealCol(vector<Pss> cols, vector<Pis> from) {
 	vector<Piu> v; 
@@ -161,6 +163,8 @@ const char *op2str(enumOp op) {
 %token <S> IDENTIFIER
 %token <I> VALUE_INT
 %token <S> VALUE_STRING
+%token <U> VALUE_DATE
+%token <D> VALUE_LONG_DOUBLE
 %type <S> dbName tbName colName pkName fkName idxName aliasName
 %type <TY> type
 %type <TY> field
@@ -782,15 +786,20 @@ values:
     };
 
 value:
-    VALUE_INT {
-        $$ = Any((int)$1);
+    VALUE_INT { $$ = Any($1); }
+    | VALUE_STRING { $$ = Any((char*)$1.c_str()); }
+    | VALUE_DATE { 
+        if (($1 / 10000 < 1500 || $1 / 10000 > 2500) || 
+            ($1 % 10000 / 100 < 1 || $1 % 10000 / 100 > 12) || 
+            ($1 % 100 < 1 || $1 % 100 > month[$1 % 10000 / 100 - 1]) || 
+            ((($1 / 10000 % 4 != 0) ^ ($1 / 10000 % 100 != 0) ^ ($1 / 10000 % 400 != 0)) && $1 % 100 == 29)) {
+            printf("Wrong date: %04d-%02d-%02d\n", $1 / 10000, $1 % 10000 / 100, $1 % 100);
+            YYERROR;
+        }
+        $$ = Any($1); 
     }
-    | VALUE_STRING {
-        $$ = Any((char*)$1.c_str());
-    }
-    | NL {
-        $$ = Any();
-    };
+    | VALUE_LONG_DOUBLE { $$ = Any($1); }
+    | NL { $$ = Any(); };
 
 fromClauses:
     fromClause {
