@@ -6,6 +6,7 @@
 #include "Index.h"
 #include "Key.h"
 #include "Anys.h"
+#include "Database.h" // enumOp
 
 #include "json.hpp"
 using json = nlohmann::json;
@@ -41,14 +42,15 @@ public:
     uint record_size;
     uint record_onepg;
     
-    bool sel = false;
-    std::vector<Anys> data;
+    uint sel = 0;
+    std::vector<Anys> data; // when sel = 1
+    std::vector<Any> val;   // when sel = 2
 
     json toJson();
     Sheet(Database* db, json j);
 
     Sheet() {}
-    Sheet(bool _sel) : sel(_sel) {}
+    Sheet(uint _sel) : sel(_sel) {}
     ~Sheet();
     uint calDataSize();
     int createSheet(uint sheet_id,Database* db, const char* name, uint col_num, Type* col_ty, bool create = false);
@@ -58,6 +60,8 @@ public:
     Anys queryRecord(const int record_id);
     int queryRecord(const int record_id, Any* &data);
     int updateRecord(const int record_id, const int len, Any* data);
+
+    bool cmpRecords(Anys data, enumOp op, bool any, bool all);
 
     int findIndex(std::string s);
     uint createIndex(std::vector<uint> key_index,std::string name);

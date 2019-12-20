@@ -253,9 +253,13 @@ bool Database::checkWhere(WhereStmt w) {
         }
         return cmpCol(w.op, data, _data);
     }
-    // case 3:
-    //     return false; // TODO
-    //     break;
+    case 3:
+        if (w.op == OP_IN) w.any = true, w.op = OP_EQ;
+        if (w.any || w.all) {
+            return filterSheet(w.rvalue_sheet)->cmpRecords(data, w.op, w.any, w.all);
+        } else {
+            return false; // TODO
+        }
     default:
         return false;
     }

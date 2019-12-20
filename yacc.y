@@ -312,7 +312,7 @@ seleStmt:
             for (auto it: $4) if (it.first == MAX_SHEET_NUM) YYERROR;
             error = false;
             uint idx = db->sel_num++;
-            db->sel_sheet[idx] = new Sheet(true);
+            db->sel_sheet[idx] = new Sheet(1);
             db->sel[idx].select = dealCol($2, $4);
             db->sel[idx].from = $4;
             db->sel[idx].recursion.clear();
@@ -337,7 +337,7 @@ seleStmt:
             for (auto it: $4) if (it.first == MAX_SHEET_NUM) YYERROR;
             error = false;
             uint idx = db->sel_num++;
-            db->sel_sheet[idx] = new Sheet(true);
+            db->sel_sheet[idx] = new Sheet(1);
             db->sel[idx].select = dealCol($2, $4);
             db->sel[idx].from = $4;
             db->sel[idx].recursion.clear();
@@ -357,6 +357,10 @@ seleStmt:
                 switch (it.ty) {
                 case 0:
                     where.rvalue_ty = 1;
+                    if (where.cols.size() != where.rvalue.size()) {
+                        printf("length is not equal\n");
+                        break;
+                    }
                     for (uint i = 0, size = where.cols.size(); i < size; i++) {
                         if (tycheck_any(Piu2Col(where.cols[i]), where.rvalue[i]) == false) {
                             printf("Type error: %s.%s(%s) %s %s\n", 
@@ -371,6 +375,10 @@ seleStmt:
                     break;
                 case 1:
                     where.rvalue_ty = 2;
+                    if (where.cols.size() != where.rvalue_cols.size()) {
+                        printf("length is not equal\n");
+                        break;
+                    }
                     for (uint i = 0, size = where.cols.size(); i < size; i++) {
                         if (tycheck_ty(Piu2Col(where.cols[i]), Piu2Col(where.rvalue_cols[i])) == false) {
                             printf("Type error: %s.%s(%s) %s %s.%s(%s)\n", 
@@ -394,6 +402,10 @@ seleStmt:
                 case 6:
                 case 7:
                     where.rvalue_ty = 3;
+                    if (where.cols.size() != filterSheet(where.rvalue_sheet)->col_num) {
+                        printf("length is not equal\n");
+                        break;
+                    }
                     for (uint i = 0, size = where.cols.size(); i < size; i++) {
                         if (tycheck_ty(Piu2Col(where.cols[i]), filterSheet(where.rvalue_sheet)->col_ty[i]) == false) {
                             printf("Type error: %s.%s(%s) %s %s.%s(%s)\n", 
