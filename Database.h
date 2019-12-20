@@ -11,6 +11,7 @@ using json = nlohmann::json;
 typedef std::pair<std::string, std::string> Pss;
 typedef std::pair<int, std::string> Pis;
 typedef std::pair<int, uint> Piu;
+typedef std::pair<std::string, Any> Psa;
 
 class Sheet;
 class FileManager;
@@ -51,19 +52,24 @@ private:
     json toJson();
     void fromJson(json j);
     
+    bool cmpCol(enumOp op, Anys a, Anys b);
+    bool checkWhere(WhereStmt w);
+    void storeData(uint idx);
+    void dfsCross(uint idx, uint f_idx);
+    
 public:
     void update();
     char name[MAX_NAME_LEN];
-    Sheet* sheet[MAX_SHEET_NUM]; // need to modify foreign key
+    Sheet* sheet[MAX_SHEET_NUM];
     uint sheet_num;
 
     FileManager* fm;
     BufPageManager* bpm;
-    int mem_file; // the lable of '.storage' 
+    int mem_file; // the file_index of '.storage' 
     uint64_t mem; // mem_file's end offset
 
-    SelectStmt sel[MAX_SHEET_NUM];
-    Sheet* sel_sheet[MAX_SHEET_NUM];
+    SelectStmt sel[MAX_SHEET_NUM]; 
+    Sheet* sel_sheet[MAX_SHEET_NUM]; // temp_table
     uint sel_num = 0;
 
     Database(const char* name, bool create);
@@ -73,16 +79,14 @@ public:
     int deleteSheet(const char* name);
     void showSheets();
     int findSheet(std::string s);
-    Sheet* findSheetPointer(std::string s);
 
     char* getVarchar(uint64_t idx); // get varchar from '.storage'
     uint64_t storeVarchar(char* str); // store varchar into '.storage'
 
     void buildSel(uint idx);
-    void dfsCross(uint idx, uint f_idx);
-    bool checkWhere(WhereStmt w);
-    void storeData(uint idx);
-    bool cmpCol(enumOp op, Anys a, Anys b);
 };
+
+// void showDatabases();
+// int cleanDatabase(const char *dbname);
 
 #endif

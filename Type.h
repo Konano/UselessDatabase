@@ -8,10 +8,10 @@
 using json = nlohmann::json;
 
 enum enumType {
-    INT, // int
-    CHAR, // char*
+    INT,     // int
+    CHAR,    // char*
     VARCHAR, // char*
-    DATE, // uint32_t
+    DATE,    // uint32_t
     DECIMAL, // long double
 };
 

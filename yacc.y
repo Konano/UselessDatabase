@@ -16,6 +16,7 @@ extern "C"
 };
 
 extern Database* db;
+bool parser_error;
 
 #define filterSheet(it) ((it) < 0 ? db->sel_sheet[-1-it] : db->sheet[it])
 
@@ -582,12 +583,16 @@ fromClauses:
 fromClause:
     tbName {
         int idx = db->findSheet($1);
-        // TODO if (idx < 0) ...
+        if (idx < 0) {
+            printf("Can not find TABLE %s\n", $1.c_str());
+        }
         $$ = make_pair(idx, $1);
     }
     | tbName AS aliasName {
         int idx = db->findSheet($1);
-        // TODO if (idx < 0) ...
+        if (idx < 0) {
+            printf("Can not find TABLE %s\n", $1.c_str());
+        }
         $$ = make_pair(idx, $3);
     }
     | LB seleStmt RB AS aliasName {

@@ -4,6 +4,7 @@
 #include "Sheet.h"
 #include "FileManager.h"
 #include "Database.h"
+#include "BtreeNode.h"
 
 #include <iostream>
 #include <stdio.h>

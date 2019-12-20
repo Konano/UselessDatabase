@@ -3,15 +3,13 @@
 
 #include "Any.h"
 #include "Type.h"
-
-#include <iostream>
-#include <string>
-#include <vector>
-#include <stdio.h>
-
 #include "Database.h"
 #include "Sheet.h"
 
+#include <stdio.h>
+#include <iostream>
+#include <string>
+#include <vector>
 using namespace std;
 
 struct YYType_Where {
@@ -26,7 +24,6 @@ struct YYType_Where {
 struct YYType {
 	string S;
 	int I;
-	// char C;
 	Type TY;
 	vector<Type> V_TY;
 	Any V;
@@ -39,10 +36,7 @@ struct YYType {
 	enumOp eOP;
 	YYType_Where W;
 	vector<YYType_Where> V_W;
-	vector<pair<string, Any> > V_P_SA;
-
-	// SelectStmt SEL;
-	// WhereStmt WH;
+	vector<Psa> V_P_SA;
 };
 
 #define YYSTYPE YYType
