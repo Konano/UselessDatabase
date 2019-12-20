@@ -179,7 +179,7 @@ const char *op2str(enumOp op) {
 %type <W> whereClause
 %type <V_W> whereClauses
 %type <eOP> op
-%type <V_S> colNames
+%type <V_S> colNames _colNames
 %type <V_P_SA> setClause
 
 %%
@@ -289,7 +289,9 @@ tbStmt:
             }
         }
     }
-    | INSERT INTO tbName VALUES _values SEMI
+    | INSERT INTO tbName VALUES LB values RB SEMI
+    | INSERT INTO tbName LB colNames RB VALUES LB values RB SEMI
+    | INSERT INTO tbName LB colNames RB VALUES LB values RB SEMI
     | DELETE FROM tbName WHERE whereClauses SEMI
     | UPDATE tbName SET setClause WHERE whereClauses SEMI
     | seleStmt SEMI {
@@ -425,6 +427,7 @@ seleStmt:
 
 idxStmt:
     CREATE INDEX idxName ON tbName LB colNames RB SEMI {
+    CREATE INDEX idxName ON tbName LB colNames RB SEMI {
         if (db == nullptr) {
             printf("Select a database first\n");
         } else {
@@ -475,6 +478,7 @@ idxStmt:
             db->update();
         }
     }
+    | ALTER TABLE tbName ADD INDEX idxName LB colNames RB SEMI {
     | ALTER TABLE tbName ADD INDEX idxName LB colNames RB SEMI {
         //TODO: 这个和第一个CREATE的区别
         if (db == nullptr) {
@@ -594,6 +598,7 @@ alterStmt:
         }
     }
     | ALTER TABLE tbName ADD PRIMARY KEY LB colNames RB SEMI {
+    | ALTER TABLE tbName ADD PRIMARY KEY LB colNames RB SEMI {
         if(db == nullptr){
             printf("Select a database first\n");
         }
@@ -643,6 +648,7 @@ alterStmt:
             db->update();
         }
     }
+    | ALTER TABLE tbName ADD CONSTRAINT pkName PRIMARY KEY LB colNames RB SEMI {
     | ALTER TABLE tbName ADD CONSTRAINT pkName PRIMARY KEY LB colNames RB SEMI {
         if(db == nullptr){
             printf("Select a database first\n");
@@ -695,6 +701,8 @@ alterStmt:
             db->update();
         }
     }
+    | ALTER TABLE tbName ADD CONSTRAINT fkName FOREIGN KEY LB colNames RB REFERENCES tbName LB colNames RB SEMI {
+    | ALTER TABLE tbName ADD CONSTRAINT fkName FOREIGN KEY LB colNames RB REFERENCES tbName LB colNames RB SEMI {
     | ALTER TABLE tbName ADD CONSTRAINT fkName FOREIGN KEY LB colNames RB REFERENCES tbName LB colNames RB SEMI {
 
     }
