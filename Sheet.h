@@ -70,7 +70,6 @@ public:
 
     void rebuild(int ty, uint key_index);
 
-    int findCol(std::string s);
     int createForeignKey(ForeignKey* fk, PrimaryKey* pk);
     int removeForeignKey(ForeignKey* fk);
     int createPrimaryKey(PrimaryKey* pk);

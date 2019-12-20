@@ -39,6 +39,7 @@ struct YYType {
 	enumOp eOP;
 	YYType_Where W;
 	vector<YYType_Where> V_W;
+	vector<pair<string, Any> > V_P_SA;
 
 	// SelectStmt SEL;
 	// WhereStmt WH;

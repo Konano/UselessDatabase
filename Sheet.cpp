@@ -447,11 +447,6 @@ void Sheet::rebuild(int ty, uint key_index) { // TODO rebuild index
     record_onepg = _record_onepg;
 }
 
-int Sheet::findCol(std::string s){
-    for (uint i = 0; i < col_num; i++) if (std::string(this->col_ty[i].name) == s) return i;
-    return -1;
-}
-
 int Sheet::createPrimaryKey(PrimaryKey* pk) {
     if (p_key) return -1;
     if (constraintKey(pk)) return -2;

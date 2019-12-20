@@ -104,9 +104,9 @@ void dealTy(uint idx) {
 %type <S> dbName tbName colName pkName fkName idxName aliasName
 %type <TY> type
 %type <TY> field
-%type <V_TY> fieldList
+%type <V_TY> fields
 %type <V> value
-%type <V_V> valueList _values
+%type <V_V> values _values
 %type <P_SS> col
 %type <V_P_SS> selector cols _cols
 %type <I> seleStmt
@@ -115,6 +115,8 @@ void dealTy(uint idx) {
 %type <W> whereClause
 %type <V_W> whereClauses
 %type <eOP> op
+%type <V_S> colNames
+%type <V_P_SA> setClause
 
 %%
 
@@ -174,8 +176,10 @@ dbStmt:
     };
 
 tbStmt:
-    CREATE TABLE tbName LB fieldList RB SEMI {
-        if (db != nullptr) {
+    CREATE TABLE tbName LB fields RB SEMI {
+        if (db == nullptr) {
+            printf("Select a database first\n");
+        } else {
             int tableID = db->findSheet($3);
             if (tableID != -1) {
                 Type* ty = new Type[$5.size()];
@@ -200,42 +204,40 @@ tbStmt:
                 printf("TABLE %s doesn't exist\n", $3.c_str());
             }
             db->update();
-        } else {
-            printf("Select a database first\n");
         }
     }
     | DROP TABLE tbName SEMI {
-        if (db != nullptr) {
+        if (db == nullptr) {
+            printf("Select a database first\n");
+        } else {
             if (db->deleteSheet($3.c_str())) {
                 printf("TABLE %s doesn't exist\n", $3.c_str());
             }
-        } else {
-            printf("Select a database first\n");
         }
     }
     | DESC tbName SEMI {
-        if (db != nullptr) {
+        if (db == nullptr) {
+            printf("Select a database first\n");
+        } else {
             int tableID = db->findSheet($2);
             if (tableID != -1) {
                 db->sheet[tableID]->printCol();
             } else {
                 printf("TABLE %s doesn't exist\n",$2.c_str());
             }
-        } else {
-            printf("Select a database first\n");
         }
     }
-    | INSERT INTO tbName VALUES valueLists SEMI
+    | INSERT INTO tbName VALUES _values SEMI
     | DELETE FROM tbName WHERE whereClauses SEMI
     | UPDATE tbName SET setClause WHERE whereClauses SEMI
     | seleStmt SEMI {
-        if (db != nullptr) {
+        if (db == nullptr) {
+            printf("Select a database first\n");
+        } else {
             db->buildSel(-1 - $1);
             db->sel_sheet[-1 - $1]->print();
             while (db->sel_num) delete db->sel_sheet[--(db->sel_num)];
-        } else {
-            printf("Select a database first\n");
-        } 
+        }
     };
 
 seleStmt:
@@ -299,12 +301,11 @@ seleStmt:
     };
 
 idxStmt:
-    CREATE INDEX idxName ON tbName LB columnList RB SEMI 
+    CREATE INDEX idxName ON tbName LB colNames RB SEMI 
     | DROP INDEX idxName SEMI {
-        if(db == nullptr){
+        if (db == nullptr) {
             printf("Select a database first\n");
-        }
-        else{
+        } else {
             bool flag = false;
             for(uint i = 0;i < db->sheet_num;i ++){
                 int indexID = db->sheet[i]->findIndex($3);
@@ -314,16 +315,15 @@ idxStmt:
                     break;
                 }
             }
-            if(!flag)printf("INDEX %s doesn't exist\n", $3.c_str());
+            if (!flag) printf("INDEX %s doesn't exist\n", $3.c_str());
             db->update();
         }
     }
-    | ALTER TABLE tbName ADD INDEX idxName LB columnList RB SEMI 
+    | ALTER TABLE tbName ADD INDEX idxName LB colNames RB SEMI 
     | ALTER TABLE tbName DROP INDEX idxName SEMI{
-        if(db == nullptr){
+        if (db == nullptr) {
             printf("Select a database first\n");
-        }
-        else{
+        } else {
             int tableID = db->findSheet($3);
             if(tableID != -1){
                 int indexID = db->sheet[tableID]->findIndex($6);
@@ -403,18 +403,18 @@ alterStmt:
             db->update();
         }
     }
-    | ALTER TABLE tbName ADD PRIMARY KEY LB columnList RB SEMI 
+    | ALTER TABLE tbName ADD PRIMARY KEY LB colNames RB SEMI 
     | ALTER TABLE tbName DROP PRIMARY KEY SEMI 
-    | ALTER TABLE tbName ADD CONSTRAINT pkName PRIMARY KEY LB columnList RB SEMI 
+    | ALTER TABLE tbName ADD CONSTRAINT pkName PRIMARY KEY LB colNames RB SEMI 
     | ALTER TABLE tbName DROP PRIMARY KEY pkName SEMI 
-    | ALTER TABLE tbName ADD CONSTRAINT fkName FOREIGN KEY LB columnList RB REFERENCES tbName LB columnList RB SEMI 
+    | ALTER TABLE tbName ADD CONSTRAINT fkName FOREIGN KEY LB colNames RB REFERENCES tbName LB colNames RB SEMI 
     | ALTER TABLE tbName DROP FOREIGN KEY fkName SEMI;
 
-fieldList:
+fields:
     field {
         $$.push_back($1);
     }
-    | fieldList COMMA field {
+    | fields COMMA field {
         $1.push_back($3);
         $$ = $1;
     };
@@ -429,30 +429,48 @@ field:
         $2.setNull(false);
         $$ = $2;
     }
-    | colName type DEFAULT value
-    | colName type NOT NL DEFAULT value;
+    | colName type DEFAULT value {
+        strcpy($2.name, $1.c_str());
+        $2.def = $4;
+        $$ = $2;
+    }
+    | colName type NOT NL DEFAULT value  {
+        strcpy($2.name, $1.c_str());
+        $2.setNull(false);
+        $2.def = $6;
+        $$ = $2;
+    };
 
 type:
     TYPE_INT {
         $$ = Type("", INT);
     }
-    | TYPE_VARCHAR LB VALUE_INT RB
+    | TYPE_VARCHAR LB VALUE_INT RB {
+        $$ = Type("", VARCHAR, $3);
+    }
     | TYPE_CHAR LB VALUE_INT RB {
         $$ = Type("", CHAR, $3);
     }
-    | TYPE_DATE
-    | TYPE_FLOAT
-    ;
+    | TYPE_DATE {
+        $$ = Type("", DATE);
+    }
+    | TYPE_FLOAT {
+        $$ = Type("", DECIMAL);
+    };
 
-valueLists:
-    LB valueList RB
-    | valueLists COMMA LB valueList RB;
-
-valueList:
+_values:
     value { 
         $$.push_back($1);
     }
-    | valueList COMMA value {
+    | LB values RB { 
+        $$ = $2;
+    };
+
+values:
+    value { 
+        $$.push_back($1);
+    }
+    | values COMMA value {
         $1.push_back($3);
         $$ = $1;
     };
@@ -577,14 +595,6 @@ col:
         $$ = make_pair(string(), $1);
     };
 
-_values:
-    LB valueList RB {
-        $$ = $2;
-    }
-    | value {
-        $$.push_back($1);
-    };
-
 op:
     EQ { $$ = OP_EQ; }
     | NEQ { $$ = OP_NEQ; }
@@ -594,16 +604,26 @@ op:
     | GT { $$ = OP_GT; };
 
 setClause:
-    colName EQ value
-    | setClause COMMA colName EQ value;
+    colName EQ value {
+        $$.push_back(make_pair($1, $3));
+    }
+    | setClause COMMA colName EQ value {
+        $1.push_back(make_pair($3, $5));
+        $$ = $1;
+    };
 
 selector:
     STAR {}
-    | cols;
+    | cols { $$ = $1; };
 
-columnList:
-    colName
-    | columnList COMMA colName;
+colNames:
+    colName {
+        $$.push_back($1);
+    }
+    | colNames COMMA colName {
+        $1.push_back($3);
+        $$ = $1;
+    };
 
 dbName:
     IDENTIFIER { $$ = $1; };
