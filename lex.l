@@ -82,6 +82,11 @@ IN { return IN; }
 ANY { return ANY; }
 ALL { return ALL; }
 AS { return AS; }
+COUNT { return COUNT; }
+MIN { return MIN; }
+MAX { return MAX; }
+AVG { return AVG; }
+SUM { return SUM; }
 {identifier} { 
 	yylval.S = yytext;
 	return IDENTIFIER; 

@@ -160,6 +160,7 @@ const char *op2str(enumOp op) {
 %token DOT
 %token IN ANY ALL
 %token AS
+%token COUNT MIN MAX AVG SUM
 %token <S> IDENTIFIER
 %token <I> VALUE_INT
 %token <S> VALUE_STRING
@@ -181,6 +182,8 @@ const char *op2str(enumOp op) {
 %type <eOP> op
 %type <V_S> colNames
 %type <V_P_SA> setClause
+%type <P__P_ISP_SS> aggregation
+%type <V_P__P_ISP_SS> aggregations _aggregations
 
 %%
 
@@ -321,6 +324,31 @@ seleStmt:
             }
             db->sel[idx].where.clear();
             dealTy(idx);
+            $$ = -1 - idx;
+            
+            if (error) {
+                delete db->sel_sheet[--db->sel_num];
+                YYERROR;
+            }
+        }
+    }
+    | SELECT _aggregations FROM fromClauses {
+        if (db == nullptr) {
+            printf("Select a database first\n");
+            YYERROR;
+        } else {
+            for (auto it: $4) if (it.first == MAX_SHEET_NUM) YYERROR;
+            error = false;
+            uint idx = db->sel_num++;
+            db->sel_sheet[idx] = new Sheet(2);
+            // db->sel[idx].select = dealCol($2, $4);
+            db->sel[idx].from = $4;
+            db->sel[idx].recursion.clear();
+            for (auto it: $4) if (it.first < 0) {
+                db->sel[idx].recursion.push_back(it.first);
+            }
+            db->sel[idx].where.clear();
+            // dealTy(idx);
             $$ = -1 - idx;
             
             if (error) {
@@ -949,6 +977,40 @@ setClause:
 selector:
     STAR {}
     | cols { $$ = $1; };
+
+_aggregations:
+    LB aggregations RB {
+        $$ = $2;
+    }
+    | aggregation {
+        $$.push_back($1);
+    };
+
+aggregations:
+    aggregations COMMA aggregation {
+        $1.push_back($3);
+        $$ = $1;
+    }
+    | aggregation {
+        $$.push_back($1);
+    };
+
+aggregation:
+    COUNT LB STAR RB AS colName {
+        $$ = make_pair(make_pair(0, $6), make_pair("", ""));
+    }
+    | MIN LB col RB AS colName {
+        $$ = make_pair(make_pair(1, $6), $3);
+    }
+    | MAX LB col RB AS colName {
+        $$ = make_pair(make_pair(2, $6), $3);
+    }
+    | SUM LB col RB AS colName {
+        $$ = make_pair(make_pair(3, $6), $3);
+    }
+    | AVG LB col RB AS colName {
+        $$ = make_pair(make_pair(4, $6), $3);
+    };
 
 colNames:
     colName {

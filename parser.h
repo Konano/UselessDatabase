@@ -39,6 +39,8 @@ struct YYType {
 	YYType_Where W;
 	vector<YYType_Where> V_W;
 	vector<Psa> V_P_SA;
+	pair<Pis, Pss> P__P_ISP_SS;
+	vector<pair<Pis, Pss> > V_P__P_ISP_SS;
 };
 
 #define YYSTYPE YYType
