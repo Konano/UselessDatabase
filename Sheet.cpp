@@ -602,6 +602,11 @@ void Sheet::print() {
     Print::end();
 }
 
+int Sheet::findCol(std::string a){
+    for(uint i = 0; i < col_num;i ++)if(a == std::string(this->col_ty[i].name))return i;
+    return -1;
+}
+
 int Sheet::constraintCol(uint col_id) {
     Any* data;
     std::map<Any, bool> m;

@@ -79,6 +79,7 @@ public:
     void printCol();
     void print();
 
+    int findCol(std::string a);
     int constraintCol(uint col_id);
     int constraintKey(Key* key);
     int constraintRow(Any* data, uint record_id, bool ck_unique);
