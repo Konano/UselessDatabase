@@ -145,11 +145,27 @@ Sheet* Database::findSheetPointer(std::string s) {
 }
 
 char* Database::getVarchar(uint64_t idx) {
-    int index; 
-    int size = (idx & 0xffff);
-    BufType buf = bpm->getPage(mem_file, idx >> 32, index) + ((idx & 0xffffffff) >> 16);
+    int index;
+    uint page = idx >> 32;
+    uint offset = (idx & 0xffffffff) >> 16;
+    uint size = idx & 0xffff;
+    BufType buf = bpm->getPage(mem_file, page, index) + offset;
     char* str = new char[size + 1];
-    memcpy(str, buf, size);
+    while (true) {
+        if (PAGE_SIZE - offset > size) {
+            memcpy(str, buf, size);
+            offset += size;
+            break;
+        } else {
+            memcpy(str, buf, (PAGE_SIZE - offset));
+            str += PAGE_SIZE - offset;
+            size -= PAGE_SIZE - offset;
+            page += 1;
+            offset = 0;
+            buf = bpm->getPage(mem_file, page, index) + offset;
+        }
+    }
+    
     str[size] = '\0';
     return str;
 }
@@ -164,11 +180,11 @@ uint64_t Database::storeVarchar(char* str) {
     BufType buf = bpm->getPage(mem_file, page, index) + offset;
     while (true) {
         if (PAGE_SIZE - offset > size) {
-            memcpy(buf, str, size * sizeof(char));
+            memcpy(buf, str, size);
             offset += size;
             break;
         } else {
-            memcpy(buf, str, (PAGE_SIZE - offset) * sizeof(char));
+            memcpy(buf, str, (PAGE_SIZE - offset));
             str += PAGE_SIZE - offset;
             size -= PAGE_SIZE - offset;
             page += 1;

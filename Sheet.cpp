@@ -128,7 +128,7 @@ int Sheet::insertRecord(Any* data) {
     if (this->constraintRow(data, record_num, true)) return -1;
     int index;
     BufType buf = bpm->getPage(main_file, record_num / record_onepg, index);
-    buf[(record_num % record_onepg) / 8] |= 1 << (record_num % 8);
+    exist_set(buf, record_num % record_onepg);
     buf += (record_onepg - 1) / 8 + 1;
     buf += record_size * (record_num % record_onepg);
     for (uint i = 0; i < col_num; i++) {
