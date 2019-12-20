@@ -95,9 +95,13 @@ Database::~Database() {
 
 int Database::deleteSheet(const char* name){
     int num = this->findSheet(std::string(name));
-    if(num == -1)return -1;
-    sheet[num] = sheet[sheet_num];
-    sheet[sheet_num --] = nullptr;
+    if (num == -1) return -1;
+    delete sheet[num];
+    for (uint i = num; i < sheet_num - 1; i++) {
+        sheet[i] = sheet[i + 1];
+        sheet[i]->sheet_id = i;
+    }
+    sheet[--sheet_num] = nullptr;
     return fm->deleteFile(dirPath(this->name, name, "usid"));
 }
 
