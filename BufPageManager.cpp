@@ -25,10 +25,7 @@ void BufPageManager::writeBack(int index) {
         fm->writePage(file_id[index], page_id[index], addr[index]);
         dirty[index] = false;
     }
-    // TODO pool->free(index);
     hash->del(file_id[index], page_id[index]);
-    // file_id[index] = page_id[index] = 0;
-    // addr[index] = nullptr;
 }
 
 BufPageManager::BufPageManager(FileManager* fm) : fm(fm) {

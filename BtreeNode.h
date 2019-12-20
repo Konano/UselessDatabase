@@ -55,17 +55,6 @@ struct BtreeNode{
         this->child.push_back(-1);
     };
 
-    // BtreeNode() {
-    //     this->left_page_index = this->right_page_index = -1;
-    //     this->left_page = this->right_page = nullptr;
-    //     this->index = 0;
-    //     this->record_cnt = 0;
-    //     this->is_leaf = true;
-    // }
-
-    // BtreeNode(BufType buf); // TODO
-    // void toBuf(BufType buf); // TODO
-
     //FATHER_INDEX
     int fa_index;
 

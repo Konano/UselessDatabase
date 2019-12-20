@@ -6,6 +6,7 @@
 #include "Anys.h"
 #include "Type.h"
 #include "BtreeNode.h"
+
 #include <vector>
 using namespace std;
 
@@ -20,7 +21,7 @@ public:
     Sheet* sheet;
     char name[MAX_NAME_LEN];
     uint key_num;
-    vector<uint> key; // TODO: Finally will be index_cal, Tree, Pointer, to support combine index
+    vector<uint> key;
     vector<uint> offset;
     uint page_num;
     uint root_page;

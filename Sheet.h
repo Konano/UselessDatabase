@@ -27,7 +27,7 @@ public:
     Database* db;
     FileManager* fm;
     BufPageManager* bpm;
-    uint sheet_id; // TODO when drop, need modify
+    uint sheet_id;
     uint col_num = 0; // TODO Drop this, change to vector
     Type col_ty[MAX_COL_NUM];
     PrimaryKey* p_key = nullptr; // primary key
@@ -35,7 +35,7 @@ public:
     int p_key_index = -1;
     uint index_num = 0;
     Index index[MAX_INDEX_NUM];
-    uint record_num = 0; // all record, include removed record // TODO Drop this, change to vector
+    uint record_num = 0; // all record, include removed record
     int main_file;
     uint record_size;
     uint record_onepg;
@@ -54,6 +54,7 @@ public:
     int insertRecord(Any* data);
     // TODO void removeRecord(const int len, Any* info);
     int removeRecord(const int record_id);
+    Anys queryRecord(const int record_id);
     int queryRecord(const int record_id, Any* &data);
     int updateRecord(const int record_id, const int len, Any* data);
 

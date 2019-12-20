@@ -9,7 +9,6 @@
 
 #include <vector>
 #include <map>
-
 #include <time.h>
 #include <iostream>
 using namespace std; // TODO remove
@@ -165,6 +164,23 @@ int Sheet::removeRecord(const int record_id) { // TODO when remove some p_key da
     }
     return -1;
 }
+
+Anys Sheet::queryRecord(const int record_id) {
+    Anys data;
+    int index;
+    BufType buf = bpm->getPage(main_file, record_id / record_onepg, index);
+    if (exist(buf, record_id % record_onepg)) {
+        buf += (record_onepg - 1) / 8 + 1;
+        buf += record_size * (record_id % record_onepg);
+        Any any;
+        for (uint i = 0; i < col_num; i++) {
+            fetch(buf, col_ty[i].ty, col_ty[i].size(), any);
+            data.push_back(any);
+        }
+    }
+    return data;
+}
+
 
 int Sheet::queryRecord(const int record_id, Any* &data) {
     int index;
@@ -681,9 +697,7 @@ Any Sheet::getPointerColData(uint idx) {
     if (sel) {
         return data[pointer][idx];
     } else {
-        Any* data;
-        queryRecord(pointer, data);
-        return data[idx]; // TODO Anys
+        return queryRecord(pointer)[idx];
     }
 }
 
@@ -691,9 +705,7 @@ Anys Sheet::getPointerData() {
     if (sel) {
         return data[pointer];
     } else {
-        Any* data;
-        queryRecord(pointer, data);
-        return Anys(data, col_num); // TODO Anys
+        return queryRecord(pointer);
     }
 }
 

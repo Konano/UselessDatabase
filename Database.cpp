@@ -309,7 +309,7 @@ void showDatabases() {
             stat(dp->d_name, &dir_stat);
             if (S_ISDIR(dir_stat.st_mode)) {
                 if (checkFile(dirPath(dp->d_name, ".storage")) == 1) {
-                    d.push_back(Any((char *)dp->d_name)); // TODO char* -> const char*
+                    d.push_back(Any((char*)dp->d_name));
                     Print::row(d);
                     d.clear();
                 }

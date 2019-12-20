@@ -2,7 +2,8 @@
 #define __KEY
 
 #include "constants.h"
-#include "math.h"
+
+#include <math.h>
 #include <vector>
 
 #include "json.hpp"

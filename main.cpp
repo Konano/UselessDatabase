@@ -316,8 +316,6 @@ void import_data(Sheet* sheet, const char* filename, char separator) {
         }
         sheet->insertRecord(data);
         cnt++;
-        printf(" %d\n", cnt);
-        // if (cnt == 1) break;
     }
     delete []data;
     inFile.close();
@@ -343,7 +341,6 @@ void import_data_tbl() {
     });
     assert(sheet->createPrimaryKey(new PrimaryKey(sheet, 1, new int[1]{0})) == 0);
     import_data(sheet, "data/part.tbl",'|');
-    sheet->print();
 
     // id = 1
     sheet = db->createSheet("region", 3, new Type[3]{
@@ -448,12 +445,10 @@ void import_data_tbl() {
     assert(sheet->createForeignKey(new ForeignKey(sheet, 1, new int[1]{0}), db->sheet[6]->p_key) == 0);
     assert(sheet->createForeignKey(new ForeignKey(sheet, 2, new int[2]{1, 2}), db->sheet[5]->p_key) == 0);
     import_data(sheet, "data/lineitem.tbl",'|');
-    */
 
     delete db;
 }
 
-/*
 void import_data_csv() {
     assert(cleanDatabase("orderdb") == 0);
 
@@ -582,8 +577,6 @@ void import_data_csv() {
     delete db;
 }
 
-*/
-
 Database* db;
 
 int main() {
@@ -599,6 +592,6 @@ int main() {
     // test_9();
     // import_data_csv();
     import_data_tbl();
-    // yyparse();
+    yyparse();
     return 0;
 }
