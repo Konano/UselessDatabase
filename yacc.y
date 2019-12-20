@@ -471,7 +471,6 @@ idxStmt:
             db->update();
         }
     }
-<<<<<<< Updated upstream
     | ALTER TABLE tbName ADD INDEX idxName LB colNames RB SEMI {
         //TODO: 这个和第一个CREATE的区别
         if (db == nullptr) {
@@ -508,10 +507,6 @@ idxStmt:
         }
     }
     | ALTER TABLE tbName DROP INDEX idxName SEMI{
-=======
-    | ALTER TABLE tbName ADD INDEX idxName LB colNames RB SEMI 
-    | ALTER TABLE tbName DROP INDEX idxName SEMI {
->>>>>>> Stashed changes
         if (db == nullptr) {
             printf("Select a database first\n");
         } else {
