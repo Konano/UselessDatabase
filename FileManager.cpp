@@ -1,10 +1,17 @@
 #include "FileManager.h"
+
 #include "BufPageManager.h"
 
 #include <string>
-#include <sys/stat.h>
 #include <dirent.h>
 #include <fcntl.h>
+
+#ifdef WIN32
+#include <direct.h>
+#elif __linux__
+#include <sys/types.h>
+#include <sys/stat.h>
+#endif
 
 int FileManager::alloc() { // Find lowest 0
     int wh = 0;

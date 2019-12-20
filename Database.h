@@ -11,6 +11,7 @@ using json = nlohmann::json;
 typedef std::pair<std::string, std::string> Pss;
 typedef std::pair<int, std::string> Pis;
 typedef std::pair<int, uint> Piu;
+typedef std::pair<std::string, Any> Psa;
 
 class Sheet;
 class FileManager;
