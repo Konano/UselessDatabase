@@ -8,6 +8,8 @@ extern int cleanDatabase(const char *dbname);
 extern char* dirPath(const char* dir, const char* path);
 extern int checkFile(const char *filename);
 extern void showDatabases();
+extern string Type2Str(enumType ty);
+extern string Any2Str(Any val);
 
 extern "C"
 {
@@ -16,19 +18,37 @@ extern "C"
 };
 
 extern Database* db;
-bool parser_error;
+bool error;
 
 #define filterSheet(it) ((it) < 0 ? db->sel_sheet[-1-it] : db->sheet[it])
+#define Piu2Col(it) (filterSheet((it).first)->col_ty[(it).second]) 
 
 vector<Piu> dealCol(vector<Pss> cols, vector<Pis> from) {
 	vector<Piu> v; 
 	for (auto it: cols) {
+        bool findTable = false;
+        if (it.first == string() && from.size() > 1) {
+            printf("COLUMN %s need to assign TABLE\n", it.second.c_str());
+            error = true;
+            continue;
+        }
 		for (auto _it: from) if ((it.first == _it.second) || (it.first == string() && from.size() == 1)) {
+            findTable = true;
 			int col = filterSheet(_it.first)->findCol(it.second);
-			// TODO if (col < 0)
+            if (col < 0) {
+                printf("COLUMN %s doesn't exist in TABLE %s\n", it.second.c_str(), _it.second.c_str());
+                error = true;
+                continue;
+            }
 			v.push_back(make_pair(_it.first, (uint)col));
 			break;
 		}
+        
+        if (findTable == false) { 
+            printf("TABLE %s doesn't exist\n", it.first.c_str());
+            error = true;
+            continue;
+        }
 	}
 	return v;
 }
@@ -45,6 +65,45 @@ void dealTy(uint idx) {
         for (auto it: db->sel[idx].select) {
             db->sel_sheet[idx]->col_ty[db->sel_sheet[idx]->col_num++] = filterSheet(it.first)->col_ty[it.second];
         }
+    }
+}
+
+bool tycheck_any(Type ty, Any v) {
+    switch (ty.ty) {
+        case INT: 
+            return v.anyCast<int>() != nullptr;
+        case CHAR: 
+            return (v.anyCast<char*>() != nullptr) && (strlen((const char*)v.anyCast<char*>()) == ty.char_len);
+        case VARCHAR: 
+            return (v.anyCast<char*>() != nullptr) && (strlen((const char*)v.anyCast<char*>()) <= ty.char_len);
+        case DATE: 
+            return v.anyCast<uint32_t>() != nullptr;
+        case DECIMAL: 
+            return v.anyCast<long double>() != nullptr;
+        default:
+            return false;
+    }
+};
+
+bool tycheck_ty(Type ty, Type _ty) {
+    if (ty.ty == _ty.ty) return true;
+    if (ty.ty == CHAR && _ty.ty == VARCHAR) return true;
+    if (ty.ty == VARCHAR && _ty.ty == CHAR) return true;
+    return false;
+};
+
+const char *op2str(enumOp op) {
+    switch (op) {
+    case OP_EQ: return "=";   
+    case OP_NEQ: return "<>";
+    case OP_LE: return "<=";
+    case OP_GE: return ">=";    
+    case OP_LS: return "<";    
+    case OP_GT: return ">";    
+    case OP_NL: return "IS NULL";   
+    case OP_NNL: return "IS NOT NULL";   
+    case OP_IN: return "IN";
+    default: return "";
     }
 }
 
@@ -197,6 +256,7 @@ tbStmt:
                 }
                 if (flag) {
                     db->createSheet($3.c_str(), $5.size(), ty);
+                    db->update();
                 }
                 else {
                     printf("Column name conflict\n");
@@ -204,16 +264,13 @@ tbStmt:
             } else {
                 printf("TABLE %s doesn't exist\n", $3.c_str());
             }
-            db->update();
         }
     }
     | DROP TABLE tbName SEMI {
         if (db == nullptr) {
             printf("Select a database first\n");
-        } else {
-            if (db->deleteSheet($3.c_str())) {
-                printf("TABLE %s doesn't exist\n", $3.c_str());
-            }
+        } else if (db->deleteSheet($3.c_str())) {
+            printf("TABLE %s doesn't exist\n", $3.c_str());
         }
     }
     | DESC tbName SEMI {
@@ -243,62 +300,123 @@ tbStmt:
 
 seleStmt:
     SELECT selector FROM fromClauses {
-        uint idx = db->sel_num++;
-        db->sel_sheet[idx] = new Sheet(true);
-        db->sel[idx].select = dealCol($2, $4);
-        db->sel[idx].from = $4;
-        db->sel[idx].recursion.clear();
-        for (auto it: $4) if (it.first < 0) {
-            db->sel[idx].recursion.push_back(it.first);
+        if (db == nullptr) {
+            printf("Select a database first\n");
+            YYERROR;
+        } else {
+            for (auto it: $4) if (it.first == MAX_SHEET_NUM) YYERROR;
+            error = false;
+            uint idx = db->sel_num++;
+            db->sel_sheet[idx] = new Sheet(true);
+            db->sel[idx].select = dealCol($2, $4);
+            db->sel[idx].from = $4;
+            db->sel[idx].recursion.clear();
+            for (auto it: $4) if (it.first < 0) {
+                db->sel[idx].recursion.push_back(it.first);
+            }
+            db->sel[idx].where.clear();
+            dealTy(idx);
+            $$ = -1 - idx;
+            
+            if (error) {
+                delete db->sel_sheet[--db->sel_num];
+                YYERROR;
+            }
         }
-        db->sel[idx].where.clear();
-        dealTy(idx);
-        $$ = -1 - idx;
     }
     | SELECT selector FROM fromClauses WHERE whereClauses {
-        uint idx = db->sel_num++;
-        db->sel_sheet[idx] = new Sheet(true);
-        db->sel[idx].select = dealCol($2, $4);
-        db->sel[idx].from = $4;
-        db->sel[idx].recursion.clear();
-        for (auto it: $4) if (it.first < 0) {
-            db->sel[idx].recursion.push_back(it.first);
-        }
-        db->sel[idx].where.clear();
-        for (auto it: $6) {
-            WhereStmt where;
-            where.cols = dealCol(it.cols, $4);
-            where.op = it.op;
-            where.rvalue = it.rvalue;
-            where.rvalue_cols = dealCol(it.rvalue_cols, $4);
-            where.rvalue_sheet = it.rvalue_sheet;
-            where.any = (it.ty == 5);
-            where.all = (it.ty == 6);
-            switch (it.ty) {
-            case 0:
-                where.rvalue_ty = 1;
-                break;
-            case 1:
-                where.rvalue_ty = 2;
-                break;
-            case 2:
-            case 3:
-                where.rvalue_ty = 0;
-                break;
-            case 4:
-            case 5:
-            case 6:
-            case 7:
-                where.rvalue_ty = 3;
-                break;
+        if (db == nullptr) {
+            printf("Select a database first\n");
+            YYERROR;
+        } else {
+            for (auto it: $4) if (it.first == MAX_SHEET_NUM) YYERROR;
+            error = false;
+            uint idx = db->sel_num++;
+            db->sel_sheet[idx] = new Sheet(true);
+            db->sel[idx].select = dealCol($2, $4);
+            db->sel[idx].from = $4;
+            db->sel[idx].recursion.clear();
+            for (auto it: $4) if (it.first < 0) {
+                db->sel[idx].recursion.push_back(it.first);
             }
-            if (where.rvalue_sheet < 0) {
-                db->sel[idx].recursion.push_back(where.rvalue_sheet);
+            db->sel[idx].where.clear();
+            for (auto it: $6) {
+                WhereStmt where;
+                where.cols = dealCol(it.cols, $4);
+                where.op = it.op;
+                where.rvalue = it.rvalue;
+                where.rvalue_cols = dealCol(it.rvalue_cols, $4);
+                where.rvalue_sheet = it.rvalue_sheet;
+                where.any = (it.ty == 5);
+                where.all = (it.ty == 6);
+                switch (it.ty) {
+                case 0:
+                    where.rvalue_ty = 1;
+                    for (uint i = 0, size = where.cols.size(); i < size; i++) {
+                        if (tycheck_any(Piu2Col(where.cols[i]), where.rvalue[i]) == false) {
+                            printf("Type error: %s.%s(%s) %s %s\n", 
+                                filterSheet(where.cols[i].first)->name, 
+                                Piu2Col(where.cols[i]).name, 
+                                Type2Str(Piu2Col(where.cols[i]).ty).c_str(),
+                                op2str(where.op), 
+                                Any2Str(where.rvalue[i]).c_str());
+                            error = true;
+                        }
+                    }
+                    break;
+                case 1:
+                    where.rvalue_ty = 2;
+                    for (uint i = 0, size = where.cols.size(); i < size; i++) {
+                        if (tycheck_ty(Piu2Col(where.cols[i]), Piu2Col(where.rvalue_cols[i])) == false) {
+                            printf("Type error: %s.%s(%s) %s %s.%s(%s)\n", 
+                                filterSheet(where.cols[i].first)->name, 
+                                Piu2Col(where.cols[i]).name, 
+                                Type2Str(Piu2Col(where.cols[i]).ty).c_str(),
+                                op2str(where.op), 
+                                filterSheet(where.rvalue_cols[i].first)->name, 
+                                Piu2Col(where.rvalue_cols[i]).name,
+                                Type2Str(Piu2Col(where.rvalue_cols[i]).ty).c_str());
+                            error = true;
+                        }
+                    }
+                    break;
+                case 2:
+                case 3:
+                    where.rvalue_ty = 0;
+                    break;
+                case 4:
+                case 5:
+                case 6:
+                case 7:
+                    where.rvalue_ty = 3;
+                    for (uint i = 0, size = where.cols.size(); i < size; i++) {
+                        if (tycheck_ty(Piu2Col(where.cols[i]), filterSheet(where.rvalue_sheet)->col_ty[i]) == false) {
+                            printf("Type error: %s.%s(%s) %s %s.%s(%s)\n", 
+                                filterSheet(where.cols[i].first)->name, 
+                                Piu2Col(where.cols[i]).name, 
+                                Type2Str(Piu2Col(where.cols[i]).ty).c_str(),
+                                op2str(where.op), 
+                                filterSheet(where.rvalue_sheet)->name, 
+                                filterSheet(where.rvalue_sheet)->col_ty[i].name,
+                                Type2Str(filterSheet(where.rvalue_sheet)->col_ty[i].ty).c_str());
+                            error = true;
+                        }
+                    }
+                    break;
+                }
+                if (where.rvalue_sheet < 0) {
+                    db->sel[idx].recursion.push_back(where.rvalue_sheet);
+                }
+                db->sel[idx].where.push_back(where);
             }
-            db->sel[idx].where.push_back(where);
+            dealTy(idx);
+            $$ = -1 - idx;
+            
+            if (error) {
+                delete db->sel_sheet[--db->sel_num];
+                YYERROR;
+            }
         }
-        dealTy(idx);
-        $$ = -1 - idx;
     };
 
 idxStmt:
@@ -353,6 +471,7 @@ idxStmt:
             db->update();
         }
     }
+<<<<<<< Updated upstream
     | ALTER TABLE tbName ADD INDEX idxName LB colNames RB SEMI {
         //TODO: 这个和第一个CREATE的区别
         if (db == nullptr) {
@@ -389,6 +508,10 @@ idxStmt:
         }
     }
     | ALTER TABLE tbName DROP INDEX idxName SEMI{
+=======
+    | ALTER TABLE tbName ADD INDEX idxName LB colNames RB SEMI 
+    | ALTER TABLE tbName DROP INDEX idxName SEMI {
+>>>>>>> Stashed changes
         if (db == nullptr) {
             printf("Select a database first\n");
         } else {
@@ -685,15 +808,17 @@ fromClauses:
 
 fromClause:
     tbName {
-        int idx = db->findSheet($1);
+        int idx = (db ? db->findSheet($1) : MAX_SHEET_NUM);
         if (idx < 0) {
+            idx = MAX_SHEET_NUM;
             printf("Can not find TABLE %s\n", $1.c_str());
         }
         $$ = make_pair(idx, $1);
     }
     | tbName AS aliasName {
-        int idx = db->findSheet($1);
+        int idx = (db ? db->findSheet($1) : MAX_SHEET_NUM);
         if (idx < 0) {
+            idx = MAX_SHEET_NUM;
             printf("Can not find TABLE %s\n", $1.c_str());
         }
         $$ = make_pair(idx, $3);
