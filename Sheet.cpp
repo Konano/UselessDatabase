@@ -18,7 +18,8 @@ using namespace std; // TODO remove
 #define exist_set(buf, offset) (buf[(offset) / 8] |= (1 << ((offset) % 8)))
 #define exist_reset(buf, offset) (buf[(offset) / 8] -= (1 << ((offset) % 8)))
 
-extern char* dirPath(const char* dir, const char* filename, const char* suffix);
+extern char* dirPath(const char* dir, const char* filename, const char* filetype);
+extern char* dirPath(const char* dir, const char* filename, const char* subname, const char* filetype);
 extern void replaceFile(const char *oldName, const char *newName);
 
 json Sheet::toJson() { // assemble to JSON
@@ -47,7 +48,7 @@ Sheet::Sheet(Database* db, json j) { // disassemble from JSON
     record_size = j["record_size"].get<int>();
     record_onepg = j["record_onepg"].get<int>();
     for (uint i = 0; i < col_num; i++) col_ty[i] = Type(j["col_ty"][i]);
-    fm->openFile(dirPath(db->name, name, ".usid"), main_file);
+    fm->openFile(dirPath(db->name, name, "usid"), main_file);
     index_num = j["index_num"].get<int>();
     for (uint i = 0; i < index_num; i++) index[i] = Index(this, j["index"][i]);
     if (j.count("primary")) p_key = new PrimaryKey(this, j["primary"]);
@@ -80,10 +81,10 @@ int Sheet::createSheet(uint sheet_id, Database* db, const char* name, uint col_n
         if (this->createColumn(col_ty[i])) return -1;
     }
     if (create) {
-        if (fm->createFile(dirPath(db->name, name, ".usid")) == false)
+        if (fm->createFile(dirPath(db->name, name, "usid")) == false)
             return -2;
     }
-    fm->openFile(dirPath(db->name, name, ".usid"), main_file);
+    fm->openFile(dirPath(db->name, name, "usid"), main_file);
     record_size = calDataSize();
     record_onepg = 0;
     while ((record_onepg + 1) * record_size + record_onepg / 8 + 1 <= PAGE_SIZE) record_onepg++;
@@ -286,7 +287,7 @@ uint Sheet::createIndex(vector<uint> key_index) {
         if (exist(buf, record_id % record_onepg)) {
             BufType _buf = buf + (record_onepg - 1) / 8 + 1 + record_size * (record_id % record_onepg);
             Anys a;
-            for (int j = 0;j < key_index.size();j ++){
+            for (uint j = 0;j < key_index.size();j ++){
                 Any val;
                 fetch_with_offset(_buf, col_ty[index[index_num].key[j]].ty, col_ty[index[index_num].key[j]].size(), val,gen_offset(key_index[j]));
                 a.push_back(val);
@@ -363,8 +364,8 @@ void Sheet::updateColumns() {
 void Sheet::rebuild(int ty, uint key_index) { // TODO rebuild index
     if (record_num == 0) return;
     int _main_file;
-    fm->createFile(dirPath(db->name, name, "_tmp.usid"));
-    fm->openFile(dirPath(db->name, name, "_tmp.usid"), _main_file);
+    fm->createFile(dirPath(db->name, name, "tmp", "usid"));
+    fm->openFile(dirPath(db->name, name, "tmp", "usid"), _main_file);
     uint _record_size, _record_onepg;
     int index, _index;
     BufType buf, _buf, buf_st, _buf_st;
@@ -424,9 +425,9 @@ void Sheet::rebuild(int ty, uint key_index) { // TODO rebuild index
     }
     fm->closeFile(main_file);
     fm->closeFile(_main_file);
-    replaceFile(dirPath(db->name, name, "_tmp.usid"), dirPath(db->name, name, ".usid"));
+    replaceFile(dirPath(db->name, name, "tmp", "usid"), dirPath(db->name, name, "usid"));
 
-    fm->openFile(dirPath(db->name, name, ".usid"), main_file);
+    fm->openFile(dirPath(db->name, name, "usid"), main_file);
     record_size = _record_size;
     record_onepg = _record_onepg;
 }

@@ -7,6 +7,8 @@
 
 #include <vector>
 #include <string>
+#include <dirent.h>
+#include <fcntl.h>
 
 #ifdef WIN32
 #include <direct.h>
@@ -17,10 +19,13 @@
 
 #define filterSheet(it) ((it) < 0 ? sel_sheet[-1-it] : sheet[it])
 
+extern int cleanFiles(const char *dir);
 extern char* readFile(const char* path);
 extern void writeFile(const char* path, const char* data, const int length);
+extern char* dirPath(const char* dir);
 extern char* dirPath(const char* dir, const char* path);
-extern char* dirPath(const char* dir, const char* filename, const char* suffix);
+extern char* dirPath(const char* dir, const char* filename, const char* filetype);
+extern int checkFile(const char *filename);
 
 json Database::toJson() {
     json j;
@@ -50,16 +55,24 @@ void Database::update() {
 Database::Database(const char* name, bool create) {
     fm = new FileManager();
     bpm = new BufPageManager(fm);
+    memset(sheet, 0, sizeof(sheet));
+    sheet_num = 0;
+    mem = 0;
     if (create) {
         strcpy(this->name, name); 
-        memset(sheet, 0, sizeof(sheet));
-        sheet_num = 0;
-        mem = 0;
-        if (access(this->name, 0) == -1) {
+        char* dbdir = dirPath(this->name);
+        if (access("db", 0) == -1) {
             #ifdef WIN32
-            mkdir(this->name);
+            mkdir("db");
             #elif __linux__
-            mkdir(this->name, 0777);
+            mkdir("db", 0777);
+            #endif
+        }
+        if (access(dbdir, 0) == -1) {
+            #ifdef WIN32
+            mkdir(dbdir);
+            #elif __linux__
+            mkdir(dbdir, 0777);
             #endif
         }
         update();
@@ -85,7 +98,7 @@ int Database::deleteSheet(const char* name){
     if(num == -1)return -1;
     sheet[num] = sheet[sheet_num];
     sheet[sheet_num --] = nullptr;
-    return fm->deleteFile(dirPath(this->name, name, ".usid"));
+    return fm->deleteFile(dirPath(this->name, name, "usid"));
 }
 
 Sheet* Database::createSheet(const char* name, int col_num, Type* col_ty) {
@@ -255,3 +268,40 @@ void Database::buildSel(uint idx) {
     for (auto it: sel[idx].recursion) buildSel(-1-it);
     dfsCross(idx, 0);
 }
+
+void showDatabases() {
+    std::vector<std::pair<std::string, int> > v;
+    v.push_back(std::pair<std::string, int>("Database", 20));
+    Print::title(v);
+    Anys d;
+
+    DIR *dirp;
+    struct dirent *dp;
+    struct stat dir_stat;
+    
+    stat("db", &dir_stat);
+    if (S_ISDIR(dir_stat.st_mode)) {
+        dirp = opendir("db");
+        while ((dp=readdir(dirp)) != NULL) {
+            if ((0 == strcmp(".", dp->d_name)) || (0 == strcmp("..", dp->d_name))) { // Ignore . & ..
+                continue;
+            }
+            stat(dp->d_name, &dir_stat);
+            if (S_ISDIR(dir_stat.st_mode)) {
+                if (checkFile(dirPath(dp->d_name, ".storage")) == 1) {
+                    d.push_back(Any((char *)dp->d_name)); // TODO char* -> const char*
+                    Print::row(d);
+                    d.clear();
+                }
+            }
+        }
+        closedir(dirp);
+    }
+    
+    Print::end();
+}
+
+int cleanDatabase(const char *dbname) {
+    return cleanFiles(dirPath(dbname));
+}
+

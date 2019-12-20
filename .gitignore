@@ -1,8 +1,6 @@
 *.o
 useless
-*.udb
-*.usid
 lex.yy.*
 yacc.tab.*
 data
-.storage
+db

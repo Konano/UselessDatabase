@@ -4,7 +4,10 @@
 #include "Database.h"
 #include "Type.h"
 
-extern int cleanFiles(const char *dir);
+extern int cleanDatabase(const char *dbname);
+extern char* dirPath(const char* dir, const char* path);
+extern int checkFile(const char *filename);
+extern void showDatabases();
 
 extern "C"
 {
@@ -12,7 +15,7 @@ extern "C"
     extern int yylex(void);
 };
 
-Database* db;
+extern Database* db;
 
 #define filterSheet(it) ((it) < 0 ? db->sel_sheet[-1-it] : db->sheet[it])
 
@@ -131,54 +134,41 @@ stmt:
     | alterStmt;
 
 sysStmt:
-    SHOW DATABASES;
+    SHOW DATABASES SEMI {
+        showDatabases();
+    };
 
 dbStmt:
     CREATE DATABASE dbName SEMI {
-        int length = strlen($3.c_str()) + 1 + strlen(".storage");
-        char* data = (char *)malloc((length + 1) * sizeof(char));
-        strcpy(data, $3.c_str());
-        strcpy(data + strlen($3.c_str()), "/.storage");
-        FILE* file = fopen(data, "rb");
-        if (file == nullptr) {
+        if (checkFile(dirPath($3.c_str(), ".storage")) == 0) {
             new Database($3.c_str(), true);   
-        }
-        else {
+        } else {
             printf("DATABASE %s exists\n",$3.c_str());
         }
     }
     | DROP DATABASE dbName SEMI {
-        int length = strlen($3.c_str()) + 1 + strlen(".storage");
-        char* data = (char *)malloc((length + 1) * sizeof(char));
-        strcpy(data, $3.c_str());
-        strcpy(data + strlen($3.c_str()), "/.storage");
-        FILE* file = fopen(data, "rb");
-        if(file == nullptr){
+        if (checkFile(dirPath($3.c_str(), ".storage")) == 1) {
+            if (db && strcmp(db->name, $3.c_str()) == 0) {
+                delete db;
+                db = nullptr;
+            }
+            cleanDatabase($3.c_str());
+        } else {
             printf("DATABASE %s doesn't exist\n",$3.c_str());
-        }
-        else{
-            cleanFiles($3.c_str());
         }
     }
     | USE dbName SEMI {
-        int length = strlen($2.c_str()) + 1 + strlen(".storage");
-        char* data = (char *)malloc((length + 1) * sizeof(char));
-        strcpy(data, $2.c_str());
-        strcpy(data + strlen($2.c_str()), "/.storage");
-        FILE* file = fopen(data, "rb");
-        if(file == nullptr){
-            printf("DATABASE %s doesn't exist\n",$2.c_str());
-        }
-        else{
+        if (checkFile(dirPath($2.c_str(), ".storage")) == 1) {
             if (db) delete db;
             db = new Database($2.c_str(), false);
+        } else {
+            printf("DATABASE %s doesn't exist\n",$2.c_str());
         }
     }
     | SHOW TABLES SEMI {
-        if(db == nullptr){
+        if (db == nullptr) {
             printf("Select a database first\n");
-        }
-        else{
+        } else {
             db->showSheets();
         }
     };

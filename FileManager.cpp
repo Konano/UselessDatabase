@@ -108,34 +108,47 @@ void writeFile(const char* path, const char* data, const int length) {
     fclose(file);
 }
 
-char* dirPath(const char* dir, const char* path) { // dir / path
-    int length = strlen(dir) + 1 + strlen(path);
+char* dirPath(const char* dir) { // db / dir
+    int length = 3 + strlen(dir);
     char* data = new char[length + 1];
-    strcpy(data, dir);
-    strcpy(data + strlen(dir), "/");
-    strcpy(data + strlen(dir) + 1, path);
+    strcpy(data, "db/");
+    strcpy(data + 3, dir);
     return data;
 }
 
-char* dirPath(const char* dir, const char* filename, const char* suffix) { // dir / filename suffix
-    int length = strlen(dir) + 1 + strlen(filename) + strlen(suffix);
+char* dirPath(const char* dir, const char* path) { // db / dir / path
+    int length = 3 + strlen(dir) + 1 + strlen(path);
     char* data = new char[length + 1];
-    strcpy(data, dir);
-    strcpy(data + strlen(dir), "/");
-    strcpy(data + strlen(dir) + 1, filename);
-    strcpy(data + strlen(dir) + 1 + strlen(filename), suffix);
+    strcpy(data, "db/");
+    strcpy(data + 3, dir);
+    strcpy(data + 3 + strlen(dir), "/");
+    strcpy(data + 3 + strlen(dir) + 1, path);
     return data;
 }
 
-char* dirPath(const char* dir, const char* filename, const char* name, const char* suffix) { // dir / filename _ name suffix
-    int length = strlen(dir) + 1 + strlen(filename) + 1 + strlen(name) + strlen(suffix);
+char* dirPath(const char* dir, const char* filename, const char* filetype) { // db / dir / filename . filetype
+    int length = 3 + strlen(dir) + 1 + strlen(filename) + 1 + strlen(filetype);
     char* data = new char[length + 1];
-    strcpy(data, dir);
-    strcpy(data + strlen(dir), "/");
-    strcpy(data + strlen(dir) + 1, filename);
-    strcpy(data + strlen(dir) + 1 + strlen(filename), "_");
-    strcpy(data + strlen(dir) + 1 + strlen(filename) + 1, name);
-    strcpy(data + strlen(dir) + 1 + strlen(filename) + 1 + strlen(name), suffix);
+    strcpy(data, "db/");
+    strcpy(data + 3, dir);
+    strcpy(data + 3 + strlen(dir), "/");
+    strcpy(data + 3 + strlen(dir) + 1, filename);
+    strcpy(data + 3 + strlen(dir) + 1 + strlen(filename), ".");
+    strcpy(data + 3 + strlen(dir) + 1 + strlen(filename) + 1, filetype);
+    return data;
+}
+
+char* dirPath(const char* dir, const char* filename, const char* subname, const char* filetype) { // db / dir / filename _ subname . filetype
+    int length = 3 + strlen(dir) + 1 + strlen(filename) + 1 + strlen(subname) + 1 + strlen(filetype);
+    char* data = new char[length + 1];
+    strcpy(data, "db/");
+    strcpy(data + 3, dir);
+    strcpy(data + 3 + strlen(dir), "/");
+    strcpy(data + 3 + strlen(dir) + 1, filename);
+    strcpy(data + 3 + strlen(dir) + 1 + strlen(filename), "_");
+    strcpy(data + 3 + strlen(dir) + 1 + strlen(filename) + 1, subname);
+    strcpy(data + 3 + strlen(dir) + 1 + strlen(filename) + 1 + strlen(subname), ".");
+    strcpy(data + 3 + strlen(dir) + 1 + strlen(filename) + 1 + strlen(subname) + 1, filetype);
     return data;
 }
 
@@ -183,4 +196,12 @@ int cleanFiles(const char *dir) { // clean file(s)
 void replaceFile(const char *oldName, const char *newName) {
     cleanFiles(newName);
     rename(oldName, newName);
+}
+
+int checkFile(const char *filename) { // file exists? 1: exist, 0: null, -1: error
+    struct stat dir_stat;
+    if ( 0 != access(filename, F_OK) ) return 0;
+    if ( 0 > stat(filename, &dir_stat) ) return -1;
+    if ( S_ISREG(dir_stat.st_mode) ) return 1;
+    return -1;
 }

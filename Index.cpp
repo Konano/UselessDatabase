@@ -11,8 +11,7 @@
 #include <vector>
 using namespace std;
 
-extern char* dirPath(const char* dir, const char* filename, const char* name, const char* suffix);
-extern int cleanFiles(const char *dir);
+extern char* dirPath(const char* dir, const char* filename, const char* subname, const char* filetype);
 
 json Index::toJson() {
     json j;
@@ -31,7 +30,7 @@ json Index::toJson() {
 Index::Index(Sheet* sheet, const char* name, vector<uint> key,int btree_max_per_node) : sheet(sheet), key(key), btree_max_per_node(btree_max_per_node) {
     strcpy(this->name, name);
     cout << sheet->name << endl;
-    sheet->fm->createFile(dirPath(sheet->db->name, sheet->name, name, ".usid"));
+    sheet->fm->createFile(dirPath(sheet->db->name, sheet->name, name, "usid"));
     page_num = 1;
     next_del_page = -1;
     record_size = 8;
@@ -73,7 +72,7 @@ Index::Index(Sheet* sheet, json j) : sheet(sheet) {
 }
 
 void Index::open() {
-    sheet->fm->openFile(dirPath(sheet->db->name, sheet->name, name, ".usid"), fileID);
+    sheet->fm->openFile(dirPath(sheet->db->name, sheet->name, name, "usid"), fileID);
 }
 
 void Index::close() {
@@ -83,7 +82,7 @@ void Index::close() {
 
 void Index::remove() {
     if (fileID != -1) close();
-    sheet->fm->deleteFile(dirPath(sheet->db->name, sheet->name, name, ".usid"));
+    sheet->fm->deleteFile(dirPath(sheet->db->name, sheet->name, name, "usid"));
 }
 
 void Index::Btree_remove(BtreeNode* node) {
@@ -142,7 +141,7 @@ BtreeNode* Index::convert_buf_to_BtreeNode(int index) {
     for (int i = 0;i < ans->record_cnt;i ++){
         BtreeRecord temp;
         temp.record_id = *(uint32_t *)(buf + 22 + i * record_size);
-        for (int j = 0;j < this->key_num;j ++){
+        for (uint j = 0;j < this->key_num;j ++){
             if (this->ty[j] == enumType::INT) {
                 temp.key[j] = *(int*)(buf + 22 + i * record_size + 4 + this->offset[j]);
             }
@@ -174,7 +173,7 @@ void Index::convert_BtreeNode_to_buf(BtreeNode* node) {
     }
     for (int i = 0;i < node->record_cnt;i ++){
         *(uint32_t*) buf = node->record[i].record_id; buf += 4;
-        for (int j = 0;j < this->key_num;j ++){
+        for (uint j = 0;j < this->key_num;j ++){
             if (this->ty[j] == enumType::INT) {
                 *(uint32_t*)buf = *node->record[i].key[j].anyCast<int>();
                 buf += 4;
