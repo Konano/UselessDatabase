@@ -85,8 +85,6 @@ public:
     int constraintRow(Any* data, uint record_id, bool ck_unique);
     int constraintRowKey(Any* data, Key* key);
 
-    int findCol(std::string s);
-
     int pointer;
     void setPointer(int pointer);
     bool movePointer();
