@@ -21,6 +21,7 @@ private:
     void fetchWithOffset(BufType& buf, enumType ty, uint size, Any& val, uint offset);
     uint genOffset(uint index);
     char* getStr(BufType buf, uint size);
+    
 public:
     char name[MAX_NAME_LEN];
     // char comment[MAX_COMMENT_LEN];
@@ -59,7 +60,7 @@ public:
     int updateRecord(const int record_id, const int len, Any* data);
 
     int findIndex(std::string s);
-    uint createIndex(vector<uint> key_index);
+    uint createIndex(std::vector<uint> key_index);
     uint createKeyIndex(Key* key); // TODO
     void removeIndex(uint index_id);
 

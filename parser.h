@@ -10,32 +10,33 @@
 #include <iostream>
 #include <string>
 #include <vector>
+using namespace std;
 
 struct YYType_Where {
 	uint ty;
-	std::vector<Pss> cols;
+	vector<Pss> cols;
 	enumOp op;
-	std::vector<Any> rvalue;
-	std::vector<Pss> rvalue_cols;
+	vector<Any> rvalue;
+	vector<Pss> rvalue_cols;
 	int rvalue_sheet;
 };
 
 struct YYType {
-	std::string S;
+	string S;
 	int I;
 	Type TY;
-	std::vector<Type> V_TY;
+	vector<Type> V_TY;
 	Any V;
-	std::vector<Any> V_V;
-	std::vector<std::string> V_S;
+	vector<Any> V_V;
+	vector<string> V_S;
 	Pss P_SS;
-	std::vector<Pss> V_P_SS;
+	vector<Pss> V_P_SS;
 	Pis P_IS;
-	std::vector<Pis> V_P_IS;
+	vector<Pis> V_P_IS;
 	enumOp eOP;
 	YYType_Where W;
-	std::vector<YYType_Where> V_W;
-	std::vector<Psa> V_P_SA;
+	vector<YYType_Where> V_W;
+	vector<Psa> V_P_SA;
 };
 
 #define YYSTYPE YYType

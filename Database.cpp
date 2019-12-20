@@ -93,20 +93,6 @@ Database::~Database() {
     delete bpm;
 }
 
-int Database::deleteSheet(const char* name) { // -1: doesn't exist, 0: OK
-    int num = this->findSheet(std::string(name));
-    if (num == -1) return -1;
-    delete sheet[num];
-    for (uint i = num; i < sheet_num - 1; i++) {
-        sheet[i] = sheet[i + 1];
-        sheet[i]->sheet_id = i;
-    }
-    sheet[--sheet_num] = nullptr;
-    fm->deleteFile(dirPath(this->name, name, "usid"));
-    update();
-    return 0;
-}
-
 Sheet* Database::createSheet(const char* name, int col_num, Type* col_ty) {
     Sheet* new_sheet = new Sheet();
     if (new_sheet->createSheet(sheet_num, this, name, col_num, col_ty, true)) {
@@ -127,6 +113,20 @@ Sheet* Database::openSheet(const char* name) {
     return nullptr;
 }
 
+int Database::deleteSheet(const char* name) { // -1: doesn't exist, 0: OK
+    int num = this->findSheet(std::string(name));
+    if (num == -1) return -1;
+    delete sheet[num];
+    for (uint i = num; i < sheet_num - 1; i++) {
+        sheet[i] = sheet[i + 1];
+        sheet[i]->sheet_id = i;
+    }
+    sheet[--sheet_num] = nullptr;
+    fm->deleteFile(dirPath(this->name, name, "usid"));
+    update();
+    return 0;
+}
+
 void Database::showSheets() {
     std::vector<std::pair<std::string, int> > v;
     v.push_back(std::pair<std::string, int>("Table", 20));
@@ -145,10 +145,12 @@ int Database::findSheet(std::string s) { // -1: doesn't exist, others: OK
     return -1;
 }
 
-Sheet* Database::findSheetPointer(std::string s) {
-    int idx = findSheet(s);
-    if (idx < 0) return nullptr; else return sheet[idx];
-}
+// Sheet* Database::findSheetPointer(std::string s) {
+//     int idx = findSheet(s);
+//     if (idx < 0) return nullptr; else return sheet[idx];
+// }
+
+
 
 char* Database::getVarchar(uint64_t idx) {
     int index;
@@ -203,6 +205,8 @@ uint64_t Database::storeVarchar(char* str) {
     mem = ((uint64_t)page << 16) + offset;
     return out;
 }
+
+
 
 bool Database::cmpCol(enumOp op, Anys a, Anys b) {
     switch (op) {
