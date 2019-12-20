@@ -301,7 +301,40 @@ seleStmt:
     };
 
 idxStmt:
-    CREATE INDEX idxName ON tbName LB colNames RB SEMI 
+    CREATE INDEX idxName ON tbName LB colNames RB SEMI {
+        if (db == nullptr) {
+            printf("Select a database first\n");
+        } else {
+            int tableID = db->findSheet($5);
+            if(tableID != -1){
+                if (db->sheet[tableID]->findIndex($3) != -1) printf("INDEX %s exists\n", $3.c_str());
+                else{
+                    vector<uint> key_index;
+                    bool create_ok = true;
+                    for(uint i = 0;i < $7.size();i ++){
+                        bool flag = false;
+                        for(uint j = 0;j < db->sheet[tableID]->col_num;j ++){
+                            if ($7[i] == std::string(db->sheet[tableID]->col_ty[j].name)){
+                                flag = true;
+                                key_index.push_back(j);
+                                break;
+                            }
+                        }
+                        if (!flag) {
+                            printf("TABLE %s doesn't have a column named %s\n",$5.c_str(),$7[i].c_str());
+                            create_ok = false;
+                            break;
+                        }
+                    }
+                    if(create_ok){
+                        db->sheet[tableID]->createIndex(key_index,$3);
+                    }
+                }
+            }
+            else printf("TABLE %s doesn't exist\n",$3.c_str());
+            db->update();
+        }
+    }
     | DROP INDEX idxName SEMI {
         if (db == nullptr) {
             printf("Select a database first\n");
@@ -403,12 +436,63 @@ alterStmt:
             db->update();
         }
     }
-    | ALTER TABLE tbName ADD PRIMARY KEY LB colNames RB SEMI 
-    | ALTER TABLE tbName DROP PRIMARY KEY SEMI 
+    | ALTER TABLE tbName ADD PRIMARY KEY LB colNames RB SEMI {
+
+    }
+    | ALTER TABLE tbName DROP PRIMARY KEY SEMI {
+        if(db == nullptr){
+            printf("Select a database first\n");
+        }
+        else{
+            int tableID = db->findSheet($3);
+            if(tableID != -1){
+                if(db->sheet[tableID]->p_key != nullptr)db->sheet[tableID]->removePrimaryKey();
+                else printf("TABLE %s doesn't have a primary key\n",$3.c_str());
+            }
+            else printf("TABLE %s doesn't exist\n",$3.c_str());
+            db->update();
+        }
+    }
     | ALTER TABLE tbName ADD CONSTRAINT pkName PRIMARY KEY LB colNames RB SEMI 
-    | ALTER TABLE tbName DROP PRIMARY KEY pkName SEMI 
-    | ALTER TABLE tbName ADD CONSTRAINT fkName FOREIGN KEY LB colNames RB REFERENCES tbName LB colNames RB SEMI 
-    | ALTER TABLE tbName DROP FOREIGN KEY fkName SEMI;
+    | ALTER TABLE tbName DROP PRIMARY KEY pkName SEMI {
+        //TODO: pkName?
+        if(db == nullptr){
+            printf("Select a database first\n");
+        }
+        else{
+            int tableID = db->findSheet($3);
+            if(tableID != -1){
+                if(db->sheet[tableID]->p_key != nullptr)db->sheet[tableID]->removePrimaryKey();
+                else printf("TABLE %s doesn't have a primary key\n",$3.c_str());
+            }
+            else printf("TABLE %s doesn't exist\n",$3.c_str());
+            db->update();
+        }
+    }
+    | ALTER TABLE tbName ADD CONSTRAINT fkName FOREIGN KEY LB colNames RB REFERENCES tbName LB colNames RB SEMI {
+
+    }
+    | ALTER TABLE tbName DROP FOREIGN KEY fkName SEMI{
+        if(db == nullptr){
+            printf("Select a database first\n");
+        }
+        else{
+            int tableID = db->findSheet($3);
+            if(tableID != -1){
+                bool flag = false;
+                for(uint i = 0;i < db->sheet[tableID]->f_key.size();i ++){
+                    if(db->sheet[tableID]->f_key[i]->name == $7){
+                        db->sheet[tableID]->removeForeignKey(db->sheet[tableID]->f_key[i]);
+                        flag = true;
+                        break;
+                    }
+                }
+                if (!flag) printf("TABLE %s doesn't have a forrign key named %s\n",$3.c_str(),$7.c_str());
+            }
+            else printf("TABLE %s doesn't exist\n",$3.c_str());
+            db->update();
+        }
+    };
 
 fields:
     field {

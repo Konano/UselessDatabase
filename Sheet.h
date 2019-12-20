@@ -59,7 +59,7 @@ public:
     int updateRecord(const int record_id, const int len, Any* data);
 
     int findIndex(std::string s);
-    uint createIndex(vector<uint> key_index);
+    uint createIndex(vector<uint> key_index,std::string name);
     uint createKeyIndex(Key* key); // TODO
     void removeIndex(uint index_id);
 

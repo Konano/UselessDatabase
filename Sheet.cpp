@@ -292,9 +292,9 @@ uint Sheet::genOffset(uint index){
     return ans;
 }
 
-uint Sheet::createIndex(vector<uint> key_index) {
-    //Calculate max per
-    index[index_num] = Index(this, getTime(), key_index, 3);
+uint Sheet::createIndex(vector<uint> key_index,std::string name) {
+    //Calculate max per node
+    index[index_num] = Index(this, name.c_str(), key_index, 3);
     index[index_num].open();
     int _index;
     for (uint record_id = 0; record_id < record_num; record_id++) {

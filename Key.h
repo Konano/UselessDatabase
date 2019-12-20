@@ -16,7 +16,7 @@ class Key {
 private:
     uint v_size = 0;
 public:
-    // TODO name
+    std::string name;
     std::vector<uint> v;
     Sheet* sheet;
     virtual int ty() { return 0; }
