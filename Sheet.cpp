@@ -662,11 +662,6 @@ int Sheet::constraintRowKey(Any* data, Key* key) {
     }
     return 0;
 }
-    
-int Sheet::findCol(std::string s) {
-    for (uint i = 0; i < col_num; i++) if (std::string(col_ty[i].name) == s) return i;
-    return -1;
-}
 
 void Sheet::setPointer(int pointer) {
     this->pointer = pointer;
