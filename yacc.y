@@ -175,68 +175,67 @@ dbStmt:
 
 tbStmt:
     CREATE TABLE tbName LB fieldList RB SEMI {
-        if(db == nullptr){
-            printf("Select a database first\n");
-        }
-        else{
+        if (db != nullptr) {
             int tableID = db->findSheet($3);
-            if(tableID != -1){
+            if (tableID != -1) {
                 Type* ty = new Type[$5.size()];
                 bool flag = true;
                 for (uint i = 0; i < $5.size(); i++) {
                     ty[i] = $5[i];
-                    for(uint j = 0;j < i;j ++){
-                        if(std::string(ty[i].name) == std::string(ty[j].name)){
-                            flag = false;break;
+                    for (uint j = 0; j < i; j++) {
+                        if (std::string(ty[i].name) == std::string(ty[j].name)) {
+                            flag = false;
+                            break;
                         }
                     }
-                    if(!flag)break;
+                    if (!flag) break;
                 }
-                if(flag)db->createSheet($3.c_str(), $5.size(), ty);
-                else printf("Column name conflict\n");
+                if (flag) {
+                    db->createSheet($3.c_str(), $5.size(), ty);
+                }
+                else {
+                    printf("Column name conflict\n");
+                }
+            } else {
+                printf("TABLE %s doesn't exist\n", $3.c_str());
             }
-            else printf("TABLE %s doesn't exist\n",$3.c_str());
             db->update();
-        }
-    }
-    | DROP TABLE tbName SEMI{
-        if(db == nullptr){
+        } else {
             printf("Select a database first\n");
         }
-        else{
-            int tableID = db->findSheet($3);
-            if(tableID != -1){
-                db->deleteSheet($3.c_str());
+    }
+    | DROP TABLE tbName SEMI {
+        if (db != nullptr) {
+            if (db->deleteSheet($3.c_str())) {
+                printf("TABLE %s doesn't exist\n", $3.c_str());
             }
-            else printf("TABLE %s doesn't exist\n",$3.c_str());
-            db->update();
+        } else {
+            printf("Select a database first\n");
         }
     }
     | DESC tbName SEMI {
-        if(db == nullptr){
-            printf("Select a database first\n");
-        }
-        else{
+        if (db != nullptr) {
             int tableID = db->findSheet($2);
-            if(tableID != -1){
+            if (tableID != -1) {
                 db->sheet[tableID]->printCol();
+            } else {
+                printf("TABLE %s doesn't exist\n",$2.c_str());
             }
-            else printf("TABLE %s doesn't exist\n",$2.c_str());
-            db->update();
+        } else {
+            printf("Select a database first\n");
         }
     }
-    | INSERT INTO tbName VALUES valueLists SEMI 
-    | DELETE FROM tbName WHERE whereClauses SEMI 
+    | INSERT INTO tbName VALUES valueLists SEMI
+    | DELETE FROM tbName WHERE whereClauses SEMI
     | UPDATE tbName SET setClause WHERE whereClauses SEMI
     | seleStmt SEMI {
-        if(db == nullptr){
-            printf("Select a database first\n");
-        }
-        else{
+        if (db != nullptr) {
             db->buildSel(-1 - $1);
             db->sel_sheet[-1 - $1]->print();
             while (db->sel_num) delete db->sel_sheet[--(db->sel_num)];
-        }
+        } else {
+            printf("Select a database first\n");
+        } 
     };
 
 seleStmt:
@@ -346,7 +345,7 @@ alterStmt:
         else{
             int tableID = db->findSheet($3);
             if(tableID != -1){
-                if(db->sheet[tableID]->findKey(std::string($5.name)) != -1){
+                if(db->sheet[tableID]->findCol(std::string($5.name)) != -1){
                     printf("Column %s is used\n",$5.name);
                 }
                 else {
@@ -364,7 +363,7 @@ alterStmt:
         else{
             int tableID = db->findSheet($3);
             if(tableID != -1){
-                if(db->sheet[tableID]->findKey($5) != -1)db->sheet[tableID]->removeColumn(db->sheet[tableID]->findKey($5));
+                if(db->sheet[tableID]->findCol($5) != -1)db->sheet[tableID]->removeColumn(db->sheet[tableID]->findCol($5));
                 else printf("Column %s doesn't exist\n",$5.c_str());
             }
             else printf("TABLE %s doesn't exist\n",$3.c_str());
@@ -378,8 +377,8 @@ alterStmt:
         else{
             int tableID = db->findSheet($3);
             if(tableID != -1){
-                if(db->sheet[tableID]->findKey($5) != -1){
-                    if(db->sheet[tableID]->findKey(std::string($6.name)) == -1 || $5 == std::string($6.name))db->sheet[tableID]->modifyColumn(db->sheet[tableID]->findKey($5), $6);
+                if(db->sheet[tableID]->findCol($5) != -1){
+                    if(db->sheet[tableID]->findCol(std::string($6.name)) == -1 || $5 == std::string($6.name))db->sheet[tableID]->modifyColumn(db->sheet[tableID]->findCol($5), $6);
                     else printf("Column %s is used\n",$6.name);
                 }
                 else printf("Column %s doesn't exist\n",$5.c_str());

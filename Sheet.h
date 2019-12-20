@@ -18,8 +18,8 @@ class Sheet {
 private:
     void insert(Any& val, enumType ty, uint size, BufType& buf);
     void fetch(BufType& buf, enumType ty, uint size, Any& val);
-    void fetch_with_offset(BufType& buf, enumType ty, uint size, Any& val, uint offset);
-    uint gen_offset(uint index);
+    void fetchWithOffset(BufType& buf, enumType ty, uint size, Any& val, uint offset);
+    uint genOffset(uint index);
     char* getStr(BufType buf, uint size);
 public:
     char name[MAX_NAME_LEN];
@@ -70,7 +70,7 @@ public:
 
     void rebuild(int ty, uint key_index);
 
-    int findKey(std::string s);
+    int findCol(std::string s);
     int createForeignKey(ForeignKey* fk, PrimaryKey* pk);
     int removeForeignKey(ForeignKey* fk);
     int createPrimaryKey(PrimaryKey* pk);

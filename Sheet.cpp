@@ -11,7 +11,7 @@
 #include <map>
 #include <time.h>
 #include <iostream>
-using namespace std; // TODO remove
+using namespace std;
 
 #define exist(buf, offset) (buf[(offset) / 8] & (1 << ((offset) % 8)))
 #define exist_set(buf, offset) (buf[(offset) / 8] |= (1 << ((offset) % 8)))
@@ -119,7 +119,7 @@ void Sheet::insert(Any& val, enumType ty, uint size, BufType& buf) {
 }
 
 void Sheet::fetch(BufType& buf, enumType ty, uint size, Any& val) {
-    fetch_with_offset(buf,ty,size,val,0);
+    fetchWithOffset(buf, ty, size, val, 0);
     buf += size;
 }
 
@@ -180,7 +180,6 @@ Anys Sheet::queryRecord(const int record_id) {
     }
     return data;
 }
-
 
 int Sheet::queryRecord(const int record_id, Any* &data) {
     int index;
@@ -263,7 +262,7 @@ int Sheet::findIndex(std::string s){
     return -1;
 }
 
-void Sheet::fetch_with_offset(BufType& buf, enumType ty, uint size, Any& val, uint offset){
+void Sheet::fetchWithOffset(BufType& buf, enumType ty, uint size, Any& val, uint offset){
     buf += offset;
     switch (ty) {
     case INT: 
@@ -285,7 +284,7 @@ void Sheet::fetch_with_offset(BufType& buf, enumType ty, uint size, Any& val, ui
     buf -= offset;
 }
 
-uint Sheet::gen_offset(uint index){
+uint Sheet::genOffset(uint index){
     uint ans = 0;
     for(uint i = 0;i < index; i ++){
         ans += this->col_ty[i].size();
@@ -305,7 +304,7 @@ uint Sheet::createIndex(vector<uint> key_index) {
             Anys a;
             for (uint j = 0;j < key_index.size();j ++){
                 Any val;
-                fetch_with_offset(_buf, col_ty[index[index_num].key[j]].ty, col_ty[index[index_num].key[j]].size(), val,gen_offset(key_index[j]));
+                fetchWithOffset(_buf, col_ty[index[index_num].key[j]].ty, col_ty[index[index_num].key[j]].size(), val, genOffset(key_index[j]));
                 a.push_back(val);
             }
             index[index_num].insertRecord(&a, record_id);
@@ -448,7 +447,7 @@ void Sheet::rebuild(int ty, uint key_index) { // TODO rebuild index
     record_onepg = _record_onepg;
 }
 
-int Sheet::findKey(std::string s){
+int Sheet::findCol(std::string s){
     for (uint i = 0; i < col_num; i++) if (std::string(this->col_ty[i].name) == s) return i;
     return -1;
 }

@@ -11,10 +11,7 @@
 #include <iostream>
 #include <fstream>
 #include <sstream>
-
-// #define NDEBUG
 #include <assert.h>
-
 using namespace std;
 
 extern int cleanDatabase(const char *dbname);
@@ -591,7 +588,7 @@ int main() {
     // test_8();
     // test_9();
     // import_data_csv();
-    import_data_tbl();
+    // import_data_tbl();
     yyparse();
     return 0;
 }

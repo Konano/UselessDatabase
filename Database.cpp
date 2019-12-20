@@ -93,7 +93,7 @@ Database::~Database() {
     delete bpm;
 }
 
-int Database::deleteSheet(const char* name){
+int Database::deleteSheet(const char* name) { // -1: doesn't exist, 0: OK
     int num = this->findSheet(std::string(name));
     if (num == -1) return -1;
     delete sheet[num];
@@ -102,7 +102,9 @@ int Database::deleteSheet(const char* name){
         sheet[i]->sheet_id = i;
     }
     sheet[--sheet_num] = nullptr;
-    return fm->deleteFile(dirPath(this->name, name, "usid"));
+    fm->deleteFile(dirPath(this->name, name, "usid"));
+    update();
+    return 0;
 }
 
 Sheet* Database::createSheet(const char* name, int col_num, Type* col_ty) {
@@ -138,7 +140,7 @@ void Database::showSheets() {
     Print::end();
 }
     
-int Database::findSheet(std::string s) {
+int Database::findSheet(std::string s) { // -1: doesn't exist, others: OK
     for (uint i = 0; i < sheet_num; i++) if (std::string(sheet[i]->name) == s) return i;
     return -1;
 }
