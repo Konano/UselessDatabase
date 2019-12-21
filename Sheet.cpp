@@ -166,6 +166,7 @@ int Sheet::removeRecord(const int record_id) { // TODO when remove some p_key da
 }
 
 Anys Sheet::queryRecord(const int record_id) {
+    if (sel) return this->data[record_id];
     Anys data;
     int index;
     BufType buf = bpm->getPage(main_file, record_id / record_onepg, index);
@@ -590,7 +591,7 @@ void Sheet::print() {
         }
     } else {
         Anys d;
-        for (uint i = 0; i < record_num; i++) {
+        for (uint i = 0; i < record_num; i++) { // TODO optimize
             Any* data;
             if (queryRecord(i, data) == 0) {
                 for (uint j = 0; j < col_num; j++) d.push_back(data[j]);
@@ -610,7 +611,7 @@ int Sheet::findCol(std::string a){
 int Sheet::constraintCol(uint col_id) {
     Any* data;
     std::map<Any, bool> m;
-    for (uint record_id = 0; record_id < record_num; record_id++) {
+    for (uint record_id = 0; record_id < record_num; record_id++) { // TODO optimize
         if (queryRecord(record_id, data)) continue;
         if (col_ty[col_id].isNull() == false && data[col_id].isNull()) return -1;
     }
@@ -621,7 +622,7 @@ int Sheet::constraintKey(Key* key) {
     if (key->ty() == 1) {
         Any* data;
         std::map<Anys, bool> m;
-        for (uint record_id = 0; record_id < record_num; record_id++) {
+        for (uint record_id = 0; record_id < record_num; record_id++) { // TODO optimize
             if (queryRecord(record_id, data)) continue;
             Anys as;
             for (auto i: key->v) {
@@ -633,7 +634,7 @@ int Sheet::constraintKey(Key* key) {
         }
     } else {
         Any* data;
-        for (uint record_id = 0; record_id < record_num; record_id++) {
+        for (uint record_id = 0; record_id < record_num; record_id++) { // TODO optimize
             if (queryRecord(record_id, data)) continue;
             Anys as;
             bool null = true, non_null = true;
@@ -701,6 +702,28 @@ Anys Sheet::getPointerData() {
     } else {
         return queryRecord(pointer);
     }
+}
+
+bool Sheet::cmpRecords(Anys data, enumOp op, bool any, bool all) {
+    bool cmp;
+    Anys _data;
+    for (uint record_id = 0; record_id < record_num; record_id++) { // TODO optimize
+        if ((_data = queryRecord(record_id)).size() == 0) continue;
+        switch (op) {
+        case OP_EQ: { cmp = data == _data; break; }
+        case OP_NEQ: { cmp = data != _data; break; }
+        case OP_LE: { cmp = data <= _data; break; }
+        case OP_LS: { cmp = data < _data; break; }
+        case OP_GE: { cmp = data >= _data; break; }
+        case OP_GT: { cmp = data > _data; break; }
+        default:;
+        }
+        if (any && cmp) return true;
+        if (all && !cmp) return false;
+    }
+    if (any) return false;
+    if (all) return true;
+    return false;
 }
 
 // TODO Key 名字，还不能重复

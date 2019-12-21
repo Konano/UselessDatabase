@@ -1,4 +1,5 @@
 #include "Print.h"
+#include "Type.h"
 
 #include <iostream>
 using namespace std;
@@ -10,7 +11,18 @@ string lenLimit(string str, uint len) {
         return str + string(len - str.length(), ' ');
 }
 
-string toString(Any val) {
+string Type2Str(enumType ty) {
+    switch (ty) {
+    case INT: return "INT";
+    case CHAR: return "CHAR";
+    case VARCHAR: return "VARCHAR";
+    case DATE: return "DATE";
+    case DECIMAL: return "DECIMAL";
+    default: return "";
+    }
+}
+
+string Any2Str(Any val) {
     if (val.anyCast<int>() != NULL) {
         return to_string(*val.anyCast<int>());
     } else if (val.anyCast<char*>() != NULL) {
@@ -23,7 +35,7 @@ string toString(Any val) {
     } else return "NULL";
 }
 
-vector<pair<string,int> >Print::t;
+vector<pair<string,int> > Print::t;
 int Print::col_num;
 
 void Print::title(vector<pair<string,int> > v) {
@@ -45,7 +57,7 @@ void Print::title(vector<pair<string,int> > v) {
 
 void Print::row(Anys v) {
     string str = "|";
-    for (int i = 0; i < col_num; i++) str += ' ' + lenLimit(toString(v[i]), t[i].second) + " |";
+    for (int i = 0; i < col_num; i++) str += ' ' + lenLimit(Any2Str(v[i]), t[i].second) + " |";
     cout << str << endl;
 }
 
