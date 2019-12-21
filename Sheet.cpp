@@ -451,7 +451,12 @@ void Sheet::rebuild(int ty, uint key_index) { // TODO rebuild index
 int Sheet::createPrimaryKey(PrimaryKey* pk) {
     if (p_key) return -1;
     if (constraintKey(pk)) return -2;
-    p_key = pk;
+    p_key = new PrimaryKey(this);
+    p_key->v_size = pk->v_size;
+    p_key->name = pk->name;
+    p_key->v.clear();
+    for (auto i: pk->v)p_key->v.push_back(i);
+    p_key->sheet = pk->sheet;
     updateColumns();
     // TODO new p_key_index
     return 0;
@@ -507,6 +512,7 @@ int Sheet::createPrimaryKey(PrimaryKey* pk) {
 int Sheet::removePrimaryKey() {
     if (p_key == nullptr) return -1;
     for (auto it: p_key->f) it->p = nullptr;
+    for (auto col: p_key->v) col_ty[col].key = enumKeyType::Common;
     // TODO delete p_key_index
     delete p_key;
     p_key = nullptr;

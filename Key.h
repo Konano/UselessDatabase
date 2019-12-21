@@ -5,6 +5,8 @@
 
 #include <math.h>
 #include <vector>
+#include <iostream>
+using namespace std;
 
 #include "json.hpp"
 using json = nlohmann::json;
@@ -13,9 +15,8 @@ class Sheet;
 class Database;
 
 class Key {
-private:
-    uint v_size = 0;
 public:
+    uint v_size = 0;
     std::string name;
     std::vector<uint> v;
     Sheet* sheet;
