@@ -25,6 +25,18 @@ bool error;
 
 uint month[12] = {31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31};
 
+bool current_db_exists(){
+    if(db == nullptr)printf("Select a database first\n");
+    return db != nullptr;
+}
+
+bool table_exists(std::string name, int& tableID, bool expect){
+    tableID = db->findSheet(name);
+    if(tableID == -1 && expect)printf("TABLE %s doesn't exist\n", name.c_str());
+    if(tableID != -1 && !expect)printf("TABLE %s exists\n", name.c_str());
+    return tableID != -1;
+}
+
 vector<Piu> dealCol(vector<Pss> cols, vector<Pis> from) {
 	vector<Piu> v; 
 	for (auto it: cols) {
@@ -235,20 +247,16 @@ dbStmt:
         }
     }
     | SHOW TABLES SEMI {
-        if (db == nullptr) {
-            printf("Select a database first\n");
-        } else {
+        if (current_db_exists()) {
             db->showSheets();
         }
     };
 
 tbStmt:
     CREATE TABLE tbName LB fields RB SEMI {
-        if (db == nullptr) {
-            printf("Select a database first\n");
-        } else {
-            int tableID = db->findSheet($3);
-            if (tableID == -1) {
+        if (current_db_exists()) {
+            int tableID;
+            if(!table_exists($3,tableID,false)){
                 Type* ty = new Type[$5.size()];
                 bool flag = true;
                 for (uint i = 0; i < $5.size(); i++) {
@@ -268,27 +276,19 @@ tbStmt:
                 else {
                     printf("Column name conflict\n");
                 }
-            } else {
-                printf("TABLE %s exists\n", $3.c_str());
             }
         }
     }
     | DROP TABLE tbName SEMI {
-        if (db == nullptr) {
-            printf("Select a database first\n");
-        } else if (db->deleteSheet($3.c_str())) {
-            printf("TABLE %s doesn't exist\n", $3.c_str());
+        if (current_db_exists()) {
+            if (db->deleteSheet($3.c_str())) printf("TABLE %s doesn't exist\n", $3.c_str());
         }
     }
     | DESC tbName SEMI {
-        if (db == nullptr) {
-            printf("Select a database first\n");
-        } else {
-            int tableID = db->findSheet($2);
-            if (tableID != -1) {
+        if (current_db_exists()) {
+            int tableID;
+            if (table_exists($2,tableID,true)) {
                 db->sheet[tableID]->printCol();
-            } else {
-                printf("TABLE %s doesn't exist\n",$2.c_str());
             }
         }
     }
@@ -297,9 +297,7 @@ tbStmt:
     | DELETE FROM tbName WHERE whereClauses SEMI
     | UPDATE tbName SET setClause WHERE whereClauses SEMI
     | seleStmt SEMI {
-        if (db == nullptr) {
-            printf("Select a database first\n");
-        } else {
+        if(current_db_exists()){
             db->buildSel(-1 - $1);
             db->sel_sheet[-1 - $1]->print();
             while (db->sel_num) delete db->sel_sheet[--(db->sel_num)];
@@ -308,10 +306,7 @@ tbStmt:
 
 seleStmt:
     SELECT selector FROM fromClauses {
-        if (db == nullptr) {
-            printf("Select a database first\n");
-            YYERROR;
-        } else {
+        if(current_db_exists()){
             for (auto it: $4) if (it.first == MAX_SHEET_NUM) YYERROR;
             error = false;
             uint idx = db->sel_num++;
@@ -331,12 +326,10 @@ seleStmt:
                 YYERROR;
             }
         }
+        else {YYERROR;}
     }
     | SELECT _aggregations FROM fromClauses {
-        if (db == nullptr) {
-            printf("Select a database first\n");
-            YYERROR;
-        } else {
+       if(current_db_exists()){
             for (auto it: $4) if (it.first == MAX_SHEET_NUM) YYERROR;
             error = false;
             uint idx = db->sel_num++;
@@ -356,12 +349,10 @@ seleStmt:
                 YYERROR;
             }
         }
+        else {YYERROR;}
     }
     | SELECT selector FROM fromClauses WHERE whereClauses {
-        if (db == nullptr) {
-            printf("Select a database first\n");
-            YYERROR;
-        } else {
+        if(current_db_exists()){
             for (auto it: $4) if (it.first == MAX_SHEET_NUM) YYERROR;
             error = false;
             uint idx = db->sel_num++;
@@ -462,15 +453,14 @@ seleStmt:
                 YYERROR;
             }
         }
+        else{YYERROR;}
     };
 
 idxStmt:
     CREATE INDEX idxName ON tbName LB colNames RB SEMI {
-        if (db == nullptr) {
-            printf("Select a database first\n");
-        } else {
-            int tableID = db->findSheet($5);
-            if(tableID != -1){
+        if(current_db_exists()){
+            int tableID;
+            if(table_exists($5,tableID,true)){
                 if (db->sheet[tableID]->findIndex($3) != -1) printf("INDEX %s exists\n", $3.c_str());
                 else{
                     vector<uint> key_index;
@@ -495,14 +485,11 @@ idxStmt:
                     }
                 }
             }
-            else printf("TABLE %s doesn't exist\n",$5.c_str());
             db->update();
         }
     }
     | DROP INDEX idxName SEMI {
-        if (db == nullptr) {
-            printf("Select a database first\n");
-        } else {
+        if(current_db_exists()){
             bool flag = false;
             for(uint i = 0;i < db->sheet_num;i ++){
                 int indexID = db->sheet[i]->findIndex($3);
@@ -518,11 +505,9 @@ idxStmt:
     }
     | ALTER TABLE tbName ADD INDEX idxName LB colNames RB SEMI {
         //TODO: 这个和第一个CREATE的区别
-        if (db == nullptr) {
-            printf("Select a database first\n");
-        } else {
-            int tableID = db->findSheet($3);
-            if(tableID != -1){
+        if(current_db_exists()){
+            int tableID;
+            if(table_exists($3,tableID,true)){
                 if (db->sheet[tableID]->findIndex($6) != -1) printf("INDEX %s exists\n", $6.c_str());
                 else{
                     vector<uint> key_index;
@@ -547,35 +532,28 @@ idxStmt:
                     }
                 }
             }
-            else printf("TABLE %s doesn't exist\n",$3.c_str());
             db->update();
         }
     }
     | ALTER TABLE tbName DROP INDEX idxName SEMI{
-        if (db == nullptr) {
-            printf("Select a database first\n");
-        } else {
-            int tableID = db->findSheet($3);
-            if(tableID != -1){
+        if(current_db_exists()){
+            int tableID;
+            if(table_exists($3,tableID,true)){
                 int indexID = db->sheet[tableID]->findIndex($6);
                 if(indexID != -1){
                     db->sheet[tableID]->removeIndex(indexID);
                 }
                 else printf("INDEX %s doesn't exist\n", $6.c_str());
             }
-            else printf("TABLE %s doesn't exist\n",$3.c_str());
             db->update();
         }
     };
 
 alterStmt:
     ALTER TABLE tbName ADD field SEMI{
-        if(db == nullptr){
-            printf("Select a database first\n");
-        }
-        else{
-            int tableID = db->findSheet($3);
-            if(tableID != -1){
+        if(current_db_exists()){
+            int tableID;
+            if(table_exists($3,tableID,true)){
                 if(db->sheet[tableID]->findCol(std::string($5.name)) != -1){
                     printf("Column %s is used\n",$5.name);
                 }
@@ -583,64 +561,48 @@ alterStmt:
                     db->sheet[tableID]->createColumn($5);
                 }
             }
-            else printf("TABLE %s doesn't exist\n",$3.c_str());
             db->update();
         }
     }
     | ALTER TABLE tbName DROP colName SEMI {
-        if(db == nullptr){
-            printf("Select a database first\n");
-        }
-        else{
-            int tableID = db->findSheet($3);
-            if(tableID != -1){
+        if(current_db_exists()){
+            int tableID;
+            if(table_exists($3,tableID,true)){
                 if(db->sheet[tableID]->findCol($5) != -1)db->sheet[tableID]->removeColumn(db->sheet[tableID]->findCol($5));
                 else printf("Column %s doesn't exist\n",$5.c_str());
             }
-            else printf("TABLE %s doesn't exist\n",$3.c_str());
             db->update();
         }
     }
     | ALTER TABLE tbName CHANGE colName field SEMI {
-        if(db == nullptr){
-            printf("Select a database first\n");
-        }
-        else{
-            int tableID = db->findSheet($3);
-            if(tableID != -1){
+        if(current_db_exists()){
+            int tableID;
+            if(table_exists($3,tableID,true)){
                 if(db->sheet[tableID]->findCol($5) != -1){
                     if(db->sheet[tableID]->findCol(std::string($6.name)) == -1 || $5 == std::string($6.name))db->sheet[tableID]->modifyColumn(db->sheet[tableID]->findCol($5), $6);
                     else printf("Column %s is used\n",$6.name);
                 }
                 else printf("Column %s doesn't exist\n",$5.c_str());
             }
-            else printf("TABLE %s doesn't exist\n",$3.c_str());
             db->update();
         }
     }
     | ALTER TABLE tbName RENAME TO tbName SEMI {
-        if(db == nullptr){
-            printf("Select a database first\n");
-        }
-        else{
-            int tableID = db->findSheet($3);
-            if(tableID != -1){
+        if(current_db_exists()){
+            int tableID;
+            if(table_exists($3,tableID,true)){
                 for(uint i = 0;i < $6.length();i ++){
                     db->sheet[tableID]->name[i] = $6[i];
                 }
                 db->sheet[tableID]->name[$6.length()] = '\0';
             }
-            else printf("TABLE %s doesn't exist\n",$3.c_str());
             db->update();
         }
     }
     | ALTER TABLE tbName ADD PRIMARY KEY LB colNames RB SEMI {
-        if(db == nullptr){
-            printf("Select a database first\n");
-        }
-        else{
-            int tableID = db->findSheet($3);
-            if(tableID != -1){
+        if(current_db_exists()){
+            int tableID;
+            if(table_exists($3,tableID,true)){
                 if(db->sheet[tableID]->p_key != nullptr)printf("TABLE %s has a primary key\n",$3.c_str());
                 else {
                     int* key_index = new int[$8.size()];
@@ -667,31 +629,23 @@ alterStmt:
                     }
                 }
             }
-            else printf("TABLE %s doesn't exist\n",$3.c_str());
             db->update();
         }
     }
     | ALTER TABLE tbName DROP PRIMARY KEY SEMI {
-        if(db == nullptr){
-            printf("Select a database first\n");
-        }
-        else{
-            int tableID = db->findSheet($3);
-            if(tableID != -1){
+        if(current_db_exists()){
+            int tableID;
+            if(table_exists($3,tableID,true)){
                 if(db->sheet[tableID]->p_key != nullptr)db->sheet[tableID]->removePrimaryKey();
                 else printf("TABLE %s doesn't have a primary key\n",$3.c_str());
             }
-            else printf("TABLE %s doesn't exist\n",$3.c_str());
             db->update();
         }
     }
     | ALTER TABLE tbName ADD CONSTRAINT pkName PRIMARY KEY LB colNames RB SEMI {
-        if(db == nullptr){
-            printf("Select a database first\n");
-        }
-        else{
-            int tableID = db->findSheet($3);
-            if(tableID != -1){
+        if(current_db_exists()){
+            int tableID;
+            if(table_exists($3,tableID,true)){
                 if(db->sheet[tableID]->p_key != nullptr)printf("TABLE %s has a primary key\n",$3.c_str());
                 else {
                     int* key_index = new int[$10.size()];
@@ -719,51 +673,36 @@ alterStmt:
                     }
                 }
             }
-            else printf("TABLE %s doesn't exist\n",$3.c_str());
             db->update();
         }
     }
     | ALTER TABLE tbName DROP PRIMARY KEY pkName SEMI {
         //TODO: pkName?
-        if(db == nullptr){
-            printf("Select a database first\n");
-        }
-        else{
-            int tableID = db->findSheet($3);
-            if(tableID != -1){
+        if(current_db_exists()){
+            int tableID;
+            if(table_exists($3,tableID,true)){
                 if(db->sheet[tableID]->p_key != nullptr)db->sheet[tableID]->removePrimaryKey();
                 else printf("TABLE %s doesn't have a primary key\n",$3.c_str());
             }
-            else printf("TABLE %s doesn't exist\n",$3.c_str());
             db->update();
         }
     }
     | ALTER TABLE tbName ADD CONSTRAINT fkName FOREIGN KEY LB colNames RB REFERENCES tbName LB colNames RB SEMI {
-        if(db == nullptr){
-            printf("Select a database first\n");
-        }
-        else{
-            int tableID1 = db->findSheet($3);
-            int tableID2 = db->findSheet($13);
-            if(tableID1 != -1 && tableID2 != -1){
+        if(current_db_exists()){
+            int tableID1;
+            int tableID2;
+            if(table_exists($3,tableID1,true) && table_exists($13,tableID2,true)){
                 if(db->sheet[tableID2]->p_key != nullptr)printf("TABLE %s has a primary key\n",$13.c_str());
                 else {
                 }
-            }
-            else {
-                if(tableID1 == -1)printf("TABLE %s doesn't exist\n",$3.c_str());
-                else printf("TABLE %s doesn't exist\n",$13.c_str());
             }
             db->update();
         }
     }
     | ALTER TABLE tbName DROP FOREIGN KEY fkName SEMI{
-        if(db == nullptr){
-            printf("Select a database first\n");
-        }
-        else{
-            int tableID = db->findSheet($3);
-            if(tableID != -1){
+        if(current_db_exists()){
+            int tableID;
+            if(table_exists($3,tableID,true)){
                 bool flag = false;
                 for(uint i = 0;i < db->sheet[tableID]->f_key.size();i ++){
                     if(db->sheet[tableID]->f_key[i]->name == $7){
@@ -774,7 +713,6 @@ alterStmt:
                 }
                 if (!flag) printf("TABLE %s doesn't have a forrign key named %s\n",$3.c_str(),$7.c_str());
             }
-            else printf("TABLE %s doesn't exist\n",$3.c_str());
             db->update();
         }
     };
