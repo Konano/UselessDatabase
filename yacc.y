@@ -292,8 +292,22 @@ tbStmt:
             }
         }
     }
-    | INSERT INTO tbName VALUES LB values RB SEMI
-    | INSERT INTO tbName LB colNames RB VALUES LB values RB SEMI
+    | INSERT INTO tbName VALUES LB values RB SEMI{
+        if(current_db_exists()){
+            int tableID;
+            if(table_exists($3,tableID,true)){
+
+            }
+        }
+    }
+    | INSERT INTO tbName LB colNames RB VALUES LB values RB SEMI{
+        if(current_db_exists()){
+            int tableID;
+            if(table_exists($3,tableID,true)){
+                
+            }
+        }
+    }
     | DELETE FROM tbName WHERE whereClauses SEMI
     | UPDATE tbName SET setClause WHERE whereClauses SEMI
     | seleStmt SEMI {
