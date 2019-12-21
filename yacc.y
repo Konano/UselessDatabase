@@ -234,6 +234,19 @@ WhereStmt dealWhere(uint &idx, YYType_Where &it, vector<Pis> &from) {
     return where;
 }
 
+bool check_datatype(Type tar,Any val){
+    if (val.anyCast<char*>() != nullptr) {
+        return tar.ty == enumType::CHAR || tar.ty == enumType::VARCHAR;
+    } else if (val.anyCast<int>() != nullptr) {
+        return tar.ty == enumType::INT;
+    } else if (val.anyCast<long double>() != nullptr) {
+        return tar.ty == enumType::DECIMAL;
+    } else if (val.anyCast<uint32_t>() != nullptr) {
+        return tar.ty == enumType::DATE;
+    }
+    else return true;
+}
+
 %}
 
 %token DATABASE
@@ -409,16 +422,67 @@ tbStmt:
         if(current_db_exists()){
             int tableID;
             if(table_exists($3,tableID,true)){
-
+                if(db->sheet[tableID]->col_num == $6.size()){
+                    bool flag = true;
+                    for(uint i = 0;i < $6.size();i ++){
+                        if(!check_datatype(db->sheet[tableID]->col_ty[i],$6[i])){
+                            flag = false;
+                            break;
+                        }
+                    }
+                    if(flag){
+                        Any* temp = new Any[db->sheet[tableID]->col_num];
+                        for(uint i = 0;i < $6.size();i ++)temp[i] = $6[i];
+                        db->sheet[tableID]->insertRecord(temp);
+                    }
+                    else printf("Data type mismatch\n");
+                }
+                else printf("Column number doesn't match\n");
             }
+            db->update();
         }
     }
     | INSERT INTO tbName LB colNames RB VALUES LB values RB SEMI{
         if(current_db_exists()){
             int tableID;
             if(table_exists($3,tableID,true)){
-                
+                if($5.size() == $9.size()){
+                    vector <uint> key;
+                    bool colNamecheck = true;
+                    for(uint i = 0;i < $5.size();i ++){
+                        bool flag = false;
+                        for(uint j = 0;j < db->sheet[tableID]->col_num;j ++){
+                            if($5[i] == std::string(db->sheet[tableID]->col_ty[j].name)){
+                                flag = true;
+                                key.push_back(j);
+                                break;
+                            }
+                        }
+                        if(!flag){
+                            colNamecheck = false;
+                            printf("TABLE %s doesn't have a column named %s\n",$3.c_str(),$5[i].c_str());
+                            break;
+                        }
+                    }
+                    if(colNamecheck){
+                        bool flag = true;
+                        for(uint i = 0;i < key.size();i ++){
+                            if(!check_datatype(db->sheet[tableID]->col_ty[key[i]],$9[i])){
+                                flag = false;
+                                break;
+                            }
+                        }
+                        if(flag){
+                            Any* temp = new Any[db->sheet[tableID]->col_num];
+                            for(uint i = 0;i < $9.size();i ++)temp[key[i]] = $9[i];
+                            db->sheet[tableID]->insertRecord(temp);
+                        }
+                        else printf("Data type mismatch\n");
+                    }
+                }
+                else printf("Column number doesn't match\n");
             }
+            db->update();
         }
     }
     | DELETE FROM tbName WHERE whereClauses SEMI
