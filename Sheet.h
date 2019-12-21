@@ -44,7 +44,7 @@ public:
     
     uint sel = 0;
     std::vector<Anys> data; // when sel = 1
-    std::vector<Any> val;   // when sel = 2
+    Anys val;   // when sel = 2
 
     json toJson();
     Sheet(Database* db, json j);
@@ -61,6 +61,7 @@ public:
     int queryRecord(const int record_id, Any* &data);
     int updateRecord(const int record_id, const int len, Any* data);
 
+    bool cmpRecord(Anys a, Anys b, enumOp op);
     bool cmpRecords(Anys data, enumOp op, bool any, bool all);
 
     int findIndex(std::string s);

@@ -591,10 +591,12 @@ void Sheet::print() {
     std::vector<std::pair<std::string, int> > v;
     for (uint i = 0; i < col_num; i++) v.push_back(std::pair<std::string, int>(col_ty[i].name, std::max(col_ty[i].printLen(), (int)strlen(col_ty[i].name))));
     Print::title(v);
-    if (sel) {
+    if (sel == 1) {
         for (auto it: data) {
             Print::row(it);
         }
+    } else if (sel == 2) {
+        Print::row(val);
     } else {
         Anys d;
         for (uint i = 0; i < record_num; i++) { // TODO optimize
@@ -710,20 +712,24 @@ Anys Sheet::getPointerData() {
     }
 }
 
+bool Sheet::cmpRecord(Anys a, Anys b, enumOp op) {
+    switch (op) {
+    case OP_EQ: return a == b;
+    case OP_NEQ: return a != b;
+    case OP_LE: return a <= b;
+    case OP_LS: return a < b;
+    case OP_GE: return a >= b;
+    case OP_GT: return a > b;
+    default: return false;
+    }
+}
+
 bool Sheet::cmpRecords(Anys data, enumOp op, bool any, bool all) {
     bool cmp;
     Anys _data;
     for (uint record_id = 0; record_id < record_num; record_id++) { // TODO optimize
         if ((_data = queryRecord(record_id)).size() == 0) continue;
-        switch (op) {
-        case OP_EQ: { cmp = data == _data; break; }
-        case OP_NEQ: { cmp = data != _data; break; }
-        case OP_LE: { cmp = data <= _data; break; }
-        case OP_LS: { cmp = data < _data; break; }
-        case OP_GE: { cmp = data >= _data; break; }
-        case OP_GT: { cmp = data > _data; break; }
-        default:;
-        }
+        cmp = cmpRecord(data, _data, op);
         if (any && cmp) return true;
         if (all && !cmp) return false;
     }

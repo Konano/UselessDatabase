@@ -12,6 +12,12 @@
 #include <vector>
 using namespace std;
 
+struct YYType_Aggr {
+	enumAggr ty;
+	Pss col;
+	string as;
+};
+
 struct YYType_Where {
 	uint ty;
 	vector<Pss> cols;
@@ -39,8 +45,8 @@ struct YYType {
 	YYType_Where W;
 	vector<YYType_Where> V_W;
 	vector<Psa> V_P_SA;
-	pair<Pis, Pss> P__P_ISP_SS;
-	vector<pair<Pis, Pss> > V_P__P_ISP_SS;
+	YYType_Aggr G;
+	vector<YYType_Aggr> V_G;
 };
 
 #define YYSTYPE YYType
