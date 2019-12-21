@@ -28,15 +28,42 @@ json Index::toJson() {
     return j;
 }
 
+Index::Index(Sheet* sheet, json j) : sheet(sheet) {
+    strcpy(name, j["name"].get<std::string>().c_str());
+    key.clear();
+    ty.clear();
+    offset.clear();
+    key_num = j["key_num"].get<int>();
+    for (uint i = 0; i < key_num; i++) key.push_back(j["key"][i]);
+    for (uint i = 0; i < key_num; i++) offset.push_back(j["offset"][i]);
+    page_num = j["page_num"].get<int>();
+    root_page = j["root_page"].get<int>();
+    next_del_page = j["next_del_page"].get<int>();
+    record_size = j["record_size"].get<int>();
+    for (uint i = 0; i < key_num; i++) ty.push_back((enumType)j["ty"][i]);
+    fileID = -1; // file is closed
+}
+
 Index::Index(Sheet* sheet, const char* name, vector<uint> key,int btree_max_per_node) : sheet(sheet), key(key), btree_max_per_node(btree_max_per_node) {
     strcpy(this->name, name);
-    cout << sheet->name << endl;
     sheet->fm->createFile(dirPath(sheet->db->name, sheet->name, name, "usid"));
     page_num = 1;
     next_del_page = -1;
     record_size = 8;
+    this->key.clear();
+    this->offset.clear();
+    this->ty.clear();
+    this->key_num = key.size();
+    for(auto i : key){
+        this->key.push_back(i);
+        this->ty.push_back(sheet->col_ty[key[i]].ty);
+    }
+    for(uint i = 0;i < key.size();i ++){
+        this->offset.push_back(i == 0 ? 0 : this->offset[i - 1]);
+        this->offset[i] += sheet->col_ty[key[i]].size();
+    }
     for(uint i = 0;i < key.size();i ++)
-        record_size += sheet->col_ty[i].size();
+        record_size += sheet->col_ty[key[i]].size();
     max_recond_num = (PAGE_SIZE - 18) / record_size;
 
     open();
@@ -54,22 +81,6 @@ Index::Index(Sheet* sheet, const char* name, vector<uint> key,int btree_max_per_
     root = convert_buf_to_BtreeNode(root_page);
     root->fa_index = -1;
     close();
-}
-
-Index::Index(Sheet* sheet, json j) : sheet(sheet) {
-    strcpy(name, j["name"].get<std::string>().c_str());
-    key.clear();
-    ty.clear();
-    offset.clear();
-    key_num = j["key_num"].get<int>();
-    for (uint i = 0; i < key_num; i++) key.push_back(j["key"].get<int>());
-    for (uint i = 0; i < key_num; i++) offset.push_back(j["offset"].get<int>());
-    page_num = j["page_num"].get<int>();
-    root_page = j["root_page"].get<int>();
-    next_del_page = j["next_del_page"].get<int>();
-    record_size = j["record_size"].get<int>();
-    for (uint i = 0; i < key_num; i++) ty.push_back((enumType)j["ty"].get<int>());
-    fileID = -1; // file is closed
 }
 
 void Index::open() {
