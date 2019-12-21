@@ -60,7 +60,7 @@ Piu dealCol(Pss col, vector<Pis> &from) {
     return Piu(0,0);
 }
 
-vector<Piu> dealCols(vector<Pss> &cols, vector<Pis> &from) {
+inline vector<Piu> dealCols(vector<Pss> &cols, vector<Pis> &from) {
 	vector<Piu> v; 
 	for (auto col: cols) v.push_back(dealCol(col, from));
 	return v;
@@ -105,7 +105,7 @@ void dealTy(uint idx) {
     }
 }
 
-bool tycheck_any(Type ty, Any v) {
+inline bool tycheck_any(Type ty, Any v) {
     switch (ty.ty) {
         case INT: 
             return v.anyCast<int>() != nullptr;
@@ -120,16 +120,16 @@ bool tycheck_any(Type ty, Any v) {
         default:
             return false;
     }
-};
+}
 
-bool tycheck_ty(Type ty, Type _ty) {
+inline bool tycheck_ty(Type ty, Type _ty) {
     if (ty.ty == _ty.ty) return true;
     if (ty.ty == CHAR && _ty.ty == VARCHAR) return true;
     if (ty.ty == VARCHAR && _ty.ty == CHAR) return true;
     return false;
-};
+}
 
-const char *op2str(enumOp op) {
+inline const char *op2str(enumOp op) {
     switch (op) {
     case OP_EQ: return "=";   
     case OP_NEQ: return "<>";
@@ -142,6 +142,96 @@ const char *op2str(enumOp op) {
     case OP_IN: return "IN";
     default: return "";
     }
+}
+
+WhereStmt dealWhere(uint &idx, YYType_Where &it, vector<Pis> &from) {
+    WhereStmt where;
+    where.cols = dealCols(it.cols, from);
+    where.op = it.op;
+    where.rvalue = it.rvalue;
+    where.rvalue_cols = dealCols(it.rvalue_cols, from);
+    where.rvalue_sheet = it.rvalue_sheet;
+    where.any = (it.ty == 5);
+    where.all = (it.ty == 6);
+    switch (it.ty) {
+    case 0:
+        where.rvalue_ty = 1;
+        if (where.cols.size() != where.rvalue.size()) {
+            printf("length is not equal\n");
+            break;
+        }
+        for (uint i = 0, size = where.cols.size(); i < size; i++) {
+            if (tycheck_any(Piu2Col(where.cols[i]), where.rvalue[i]) == false) {
+                printf("Type error: %s.%s(%s) %s %s\n", 
+                    filterSheet(where.cols[i].first)->name, 
+                    Piu2Col(where.cols[i]).name, 
+                    Type2Str(Piu2Col(where.cols[i]).ty).c_str(),
+                    op2str(where.op), 
+                    Any2Str(where.rvalue[i]).c_str());
+                error = true;
+            }
+        }
+        break;
+    case 1:
+        where.rvalue_ty = 2;
+        if (where.cols.size() != where.rvalue_cols.size()) {
+            printf("length is not equal\n");
+            break;
+        }
+        for (uint i = 0, size = where.cols.size(); i < size; i++) {
+            if (tycheck_ty(Piu2Col(where.cols[i]), Piu2Col(where.rvalue_cols[i])) == false) {
+                printf("Type error: %s.%s(%s) %s %s.%s(%s)\n", 
+                    filterSheet(where.cols[i].first)->name, 
+                    Piu2Col(where.cols[i]).name, 
+                    Type2Str(Piu2Col(where.cols[i]).ty).c_str(),
+                    op2str(where.op), 
+                    filterSheet(where.rvalue_cols[i].first)->name, 
+                    Piu2Col(where.rvalue_cols[i]).name,
+                    Type2Str(Piu2Col(where.rvalue_cols[i]).ty).c_str());
+                error = true;
+            }
+        }
+        break;
+    case 2:
+    case 3:
+        where.rvalue_ty = 0;
+        break;
+    case 4:
+    case 5:
+    case 6:
+    case 7:
+        where.rvalue_ty = 3;
+        if (it.ty == 4 && filterSheet(where.rvalue_sheet)->sel != 2) {
+            printf("use %s for TABLE is illegal\n", op2str(where.op));
+            break;
+        }
+        if (it.ty > 4 && filterSheet(where.rvalue_sheet)->sel == 2) {
+            printf("use %s for VALUELIST is illegal\n", op2str(where.op));
+            break;
+        }
+        if (where.cols.size() != filterSheet(where.rvalue_sheet)->col_num) {
+            printf("length is not equal\n");
+            break;
+        }
+        for (uint i = 0, size = where.cols.size(); i < size; i++) {
+            if (tycheck_ty(Piu2Col(where.cols[i]), filterSheet(where.rvalue_sheet)->col_ty[i]) == false) {
+                printf("Type error: %s.%s(%s) %s %s.%s(%s)\n", 
+                    filterSheet(where.cols[i].first)->name, 
+                    Piu2Col(where.cols[i]).name, 
+                    Type2Str(Piu2Col(where.cols[i]).ty).c_str(),
+                    op2str(where.op), 
+                    filterSheet(where.rvalue_sheet)->name, 
+                    filterSheet(where.rvalue_sheet)->col_ty[i].name,
+                    Type2Str(filterSheet(where.rvalue_sheet)->col_ty[i].ty).c_str());
+                error = true;
+            }
+        }
+        break;
+    }
+    if (where.rvalue_sheet < 0) {
+        db->sel[idx].recursion.push_back(where.rvalue_sheet);
+    }
+    return where;
 }
 
 %}
@@ -393,95 +483,7 @@ seleStmt:
                 db->sel[idx].recursion.push_back(it.first);
             }
             db->sel[idx].where.clear();
-            for (auto it: $6) {
-                WhereStmt where;
-                where.cols = dealCols(it.cols, $4);
-                where.op = it.op;
-                where.rvalue = it.rvalue;
-                where.rvalue_cols = dealCols(it.rvalue_cols, $4);
-                where.rvalue_sheet = it.rvalue_sheet;
-                where.any = (it.ty == 5);
-                where.all = (it.ty == 6);
-                switch (it.ty) {
-                case 0:
-                    where.rvalue_ty = 1;
-                    if (where.cols.size() != where.rvalue.size()) {
-                        printf("length is not equal\n");
-                        break;
-                    }
-                    for (uint i = 0, size = where.cols.size(); i < size; i++) {
-                        if (tycheck_any(Piu2Col(where.cols[i]), where.rvalue[i]) == false) {
-                            printf("Type error: %s.%s(%s) %s %s\n", 
-                                filterSheet(where.cols[i].first)->name, 
-                                Piu2Col(where.cols[i]).name, 
-                                Type2Str(Piu2Col(where.cols[i]).ty).c_str(),
-                                op2str(where.op), 
-                                Any2Str(where.rvalue[i]).c_str());
-                            error = true;
-                        }
-                    }
-                    break;
-                case 1:
-                    where.rvalue_ty = 2;
-                    if (where.cols.size() != where.rvalue_cols.size()) {
-                        printf("length is not equal\n");
-                        break;
-                    }
-                    for (uint i = 0, size = where.cols.size(); i < size; i++) {
-                        if (tycheck_ty(Piu2Col(where.cols[i]), Piu2Col(where.rvalue_cols[i])) == false) {
-                            printf("Type error: %s.%s(%s) %s %s.%s(%s)\n", 
-                                filterSheet(where.cols[i].first)->name, 
-                                Piu2Col(where.cols[i]).name, 
-                                Type2Str(Piu2Col(where.cols[i]).ty).c_str(),
-                                op2str(where.op), 
-                                filterSheet(where.rvalue_cols[i].first)->name, 
-                                Piu2Col(where.rvalue_cols[i]).name,
-                                Type2Str(Piu2Col(where.rvalue_cols[i]).ty).c_str());
-                            error = true;
-                        }
-                    }
-                    break;
-                case 2:
-                case 3:
-                    where.rvalue_ty = 0;
-                    break;
-                case 4:
-                case 5:
-                case 6:
-                case 7:
-                    where.rvalue_ty = 3;
-                    if (it.ty == 4 && filterSheet(where.rvalue_sheet)->sel != 2) {
-                        printf("use %s for TABLE is illegal\n", op2str(where.op));
-                        break;
-                    }
-                    if (it.ty > 4 && filterSheet(where.rvalue_sheet)->sel == 2) {
-                        printf("use %s for VALUELIST is illegal\n", op2str(where.op));
-                        break;
-                    }
-                    if (where.cols.size() != filterSheet(where.rvalue_sheet)->col_num) {
-                        printf("length is not equal\n");
-                        break;
-                    }
-                    for (uint i = 0, size = where.cols.size(); i < size; i++) {
-                        if (tycheck_ty(Piu2Col(where.cols[i]), filterSheet(where.rvalue_sheet)->col_ty[i]) == false) {
-                            printf("Type error: %s.%s(%s) %s %s.%s(%s)\n", 
-                                filterSheet(where.cols[i].first)->name, 
-                                Piu2Col(where.cols[i]).name, 
-                                Type2Str(Piu2Col(where.cols[i]).ty).c_str(),
-                                op2str(where.op), 
-                                filterSheet(where.rvalue_sheet)->name, 
-                                filterSheet(where.rvalue_sheet)->col_ty[i].name,
-                                Type2Str(filterSheet(where.rvalue_sheet)->col_ty[i].ty).c_str());
-                            error = true;
-                        }
-                    }
-                    break;
-                }
-                if (where.rvalue_sheet < 0) {
-                    db->sel[idx].recursion.push_back(where.rvalue_sheet);
-                }
-                db->sel[idx].where.push_back(where);
-            }
+            for (auto it: $6) db->sel[idx].where.push_back(dealWhere(idx, it, $4));
             dealTy(idx);
             $$ = -1 - idx;
             
@@ -492,11 +494,33 @@ seleStmt:
         } else YYERROR;
     }
     | SELECT _aggrClauses FROM fromClauses WHERE whereClauses {
-        // if (db == nullptr) {
-        //     printf("Select a database first\n");
-        //     YYERROR;
-        // }
-        // elseYYERROR;
+        if (current_db_exists()) {
+            for (auto it: $4) if (it.first == MAX_SHEET_NUM) YYERROR;
+            error = false;
+            uint idx = db->sel_num++;
+            db->sel_sheet[idx] = new Sheet(2);
+            db->sel[idx].select.clear();
+            db->sel[idx].aggr.clear();
+            for (auto it: $2) if (it.ty == AG_COUNT) {
+                db->sel[idx].aggr.push_back(AggrStmt{it.ty, Piu(0,0), it.as});
+            } else {
+                db->sel[idx].aggr.push_back(AggrStmt{it.ty, dealCol(it.col, $4), it.as});
+            }
+            db->sel[idx].from = $4;
+            db->sel[idx].recursion.clear();
+            for (auto it: $4) if (it.first < 0) {
+                db->sel[idx].recursion.push_back(it.first);
+            }
+            db->sel[idx].where.clear();
+            for (auto it: $6) db->sel[idx].where.push_back(dealWhere(idx, it, $4));
+            dealTy(idx);
+            $$ = -1 - idx;
+            
+            if (error) {
+                delete db->sel_sheet[--db->sel_num];
+                YYERROR;
+            }
+        } else YYERROR;
     };
 
 idxStmt:
