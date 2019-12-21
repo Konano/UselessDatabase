@@ -1,5 +1,6 @@
 #include "Print.h"
 #include "Type.h"
+#include "Database.h"
 
 #include <iostream>
 using namespace std;
@@ -18,6 +19,17 @@ string Type2Str(enumType ty) {
     case VARCHAR: return "VARCHAR";
     case DATE: return "DATE";
     case DECIMAL: return "DECIMAL";
+    default: return "";
+    }
+}
+
+string Aggr2Str(enumAggr ty) {
+    switch (ty) {
+    case AG_COUNT: return "COUNT()";
+    case AG_MIN: return "MIN()";
+    case AG_MAX: return "MAX()";
+    case AG_SUM: return "SUM()";
+    case AG_AVG: return "AVG()";
     default: return "";
     }
 }

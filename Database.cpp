@@ -210,20 +210,13 @@ uint64_t Database::storeVarchar(char* str) {
 
 bool Database::cmpCol(enumOp op, Anys a, Anys b) {
     switch (op) {
-    case OP_EQ:
-        return a == b;
-    case OP_NEQ:
-        return a != b;
-    case OP_LE:
-        return a <= b;
-    case OP_GE:
-        return a >= b;
-    case OP_LS:
-        return a < b;
-    case OP_GT:
-        return a > b;
-    default:
-        return false; // TODO
+    case OP_EQ: return a == b;
+    case OP_NEQ: return a != b;
+    case OP_LE: return a <= b;
+    case OP_GE: return a >= b;
+    case OP_LS: return a < b;
+    case OP_GT: return a > b;
+    default: return false;
     }
 }
 
@@ -258,7 +251,7 @@ bool Database::checkWhere(WhereStmt w) {
         if (w.any || w.all) {
             return filterSheet(w.rvalue_sheet)->cmpRecords(data, w.op, w.any, w.all);
         } else {
-            return false; // TODO
+            return filterSheet(w.rvalue_sheet)->cmpRecord(data, filterSheet(w.rvalue_sheet)->val, w.op);
         }
     default:
         return false;
@@ -268,8 +261,14 @@ bool Database::checkWhere(WhereStmt w) {
 void Database::storeData(uint idx) {
     Anys data;
     if (sel[idx].select.size() == 0) {
-        for (auto it: sel[idx].from) {
-            data.concatenate(filterSheet(it.first)->getPointerData());
+        if (sel[idx].aggr.size() == 0) {
+            for (auto it: sel[idx].from) {
+                data.concatenate(filterSheet(it.first)->getPointerData());
+            }
+        } else {
+            for (auto it: sel[idx].aggr) if (it.ty != AG_COUNT) {
+                data.push_back(filterSheet(it.col.first)->getPointerColData(it.col.second));
+            }
         }
     } else {
         for (auto it: sel[idx].select) {
@@ -297,6 +296,51 @@ void Database::dfsCross(uint idx, uint f_idx) {
 void Database::buildSel(uint idx) {
     for (auto it: sel[idx].recursion) buildSel(-1-it);
     dfsCross(idx, 0);
+    if (sel[idx].select.size() == 0 && sel[idx].aggr.size() > 0) {
+        uint _idx = 0;
+        Sheet* sheet = sel_sheet[idx];
+        for (auto it: sel[idx].aggr) switch (it.ty) {
+            case AG_COUNT: {
+                sheet->val.push_back(Any((int)sheet->record_num));
+                break;
+            }
+            case AG_MIN: {
+                Any min = Any();
+                for (auto _it: sheet->data) if (min.isNull()) min = _it[_idx]; else if (_it[_idx].isNull()) continue; else if (_it[_idx] < min) min = _it[_idx];
+                sheet->val.push_back(min);
+                _idx++;
+                break;
+            }
+            case AG_MAX: {
+                Any max = Any();
+                for (auto _it: sheet->data) if (max.isNull()) max = _it[_idx]; else if (_it[_idx].isNull()) continue; else if (_it[_idx] > max) max = _it[_idx];
+                sheet->val.push_back(max);
+                _idx++;
+                break;
+            }
+            case AG_SUM: 
+            case AG_AVG: {
+                if (sheet->col_ty[_idx].ty == INT) {
+                    int sum = 0;
+                    int num = 0;
+                    for (auto _it: sheet->data) if (_it[_idx].isNull() == false) num++, sum += _it[_idx].anyRefCast<int>();
+                    if (it.ty == AG_SUM) sheet->val.push_back(Any(sum)); else sheet->val.push_back(Any((long double)sum / num));
+                } else {
+                    long double sum = 0;
+                    int num = 0;
+                    for (auto _it: sheet->data) if (_it[_idx].isNull() == false) num++, sum += _it[_idx].anyRefCast<long double>();
+                    if (it.ty == AG_SUM) sheet->val.push_back(Any(sum)); else sheet->val.push_back(Any(sum / num));
+                }
+                _idx++;
+                break;
+            }
+        }
+    }
+    uint _idx = 0;
+    for (auto it: sel[idx].aggr) {
+        if (it.ty == AG_AVG) sel_sheet[idx]->col_ty[_idx].ty = DECIMAL;
+        if (it.ty != AG_COUNT) _idx++;
+    }
 }
 
 void showDatabases() {

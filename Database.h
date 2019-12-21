@@ -29,6 +29,20 @@ enum enumOp {
     OP_IN,     // in
 };
 
+enum enumAggr {
+    AG_COUNT,
+    AG_MIN,
+    AG_MAX,
+    AG_SUM,
+    AG_AVG,
+};
+
+struct AggrStmt {
+    enumAggr ty;
+    Piu col;
+    std::string as;
+};
+
 struct WhereStmt {
     std::vector<Piu> cols;
     enumOp op;
@@ -42,6 +56,7 @@ struct WhereStmt {
 
 struct SelectStmt {
     std::vector<Piu> select;
+    std::vector<AggrStmt> aggr;
     std::vector<Pis> from; 
     std::vector<WhereStmt> where;
     std::vector<int> recursion;
