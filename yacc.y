@@ -485,8 +485,17 @@ tbStmt:
             db->update();
         }
     }
-    | DELETE FROM tbName WHERE whereClauses SEMI
-    | UPDATE tbName SET setClause WHERE whereClauses SEMI
+    | DELETE FROM tbName WHERE whereClauses SEMI{
+        if(current_db_exists()){
+            int tableID;
+            if(table_exists($3,tableID,true)){
+                
+            }
+        }
+    }
+    | UPDATE tbName SET setClause WHERE whereClauses SEMI{
+
+    }
     | seleStmt SEMI {
         if(current_db_exists()){
             db->buildSel(-1 - $1);
