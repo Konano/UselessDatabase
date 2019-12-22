@@ -208,7 +208,7 @@ uint64_t Database::storeVarchar(char* str) {
 
 
 
-bool Database::cmpCol(enumOp op, Anys a, Anys b) {
+bool cmpCol(enumOp op, Anys a, Anys b) {
     switch (op) {
     case OP_EQ: return a == b;
     case OP_NEQ: return a != b;
@@ -220,7 +220,7 @@ bool Database::cmpCol(enumOp op, Anys a, Anys b) {
     }
 }
 
-bool Database::checkWhere(WhereStmt w) {
+bool Database::checkWhere(WhereStmt w) { // Sheet::checkWhere
     Anys data, _data;
     for (auto it: w.cols) {
         data.push_back(filterSheet(it.first)->getPointerColData(it.second));
@@ -294,6 +294,8 @@ void Database::dfsCross(uint idx, uint f_idx) {
 }
 
 void Database::buildSel(uint idx) {
+    if (sel[idx].build) return; 
+    sel[idx].build = true;
     for (auto it: sel[idx].recursion) buildSel(-1-it);
     dfsCross(idx, 0);
     if (sel[idx].select.size() == 0 && sel[idx].aggr.size() > 0) {

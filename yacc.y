@@ -144,7 +144,7 @@ inline const char *op2str(enumOp op) {
     }
 }
 
-WhereStmt dealWhere(uint &idx, YYType_Where &it, vector<Pis> &from) {
+WhereStmt dealWhere(YYType_Where &it, vector<Pis> &from) {
     WhereStmt where;
     where.cols = dealCols(it.cols, from);
     where.op = it.op;
@@ -227,9 +227,6 @@ WhereStmt dealWhere(uint &idx, YYType_Where &it, vector<Pis> &from) {
             }
         }
         break;
-    }
-    if (where.rvalue_sheet < 0) {
-        db->sel[idx].recursion.push_back(where.rvalue_sheet);
     }
     return where;
 }
@@ -382,7 +379,7 @@ tbStmt:
     CREATE TABLE tbName LB fields RB SEMI {
         if (current_db_exists()) {
             int tableID;
-            if(!table_exists($3,tableID,false)){
+            if (!table_exists($3, tableID, false)) {
                 Type* ty = new Type[$5.size()];
                 bool flag = true;
                 for (uint i = 0; i < $5.size(); i++) {
@@ -433,7 +430,8 @@ tbStmt:
                     if(flag){
                         Any* temp = new Any[db->sheet[tableID]->col_num];
                         for(uint i = 0;i < $6.size();i ++)temp[i] = $6[i];
-                        db->sheet[tableID]->insertRecord(temp);
+                        int x = db->sheet[tableID]->insertRecord(temp);
+                        if(x != 0)printf("Insert fail\n");
                     }
                     else printf("Data type mismatch\n");
                 }
@@ -475,7 +473,8 @@ tbStmt:
                         if(flag){
                             Any* temp = new Any[db->sheet[tableID]->col_num];
                             for(uint i = 0;i < $9.size();i ++)temp[key[i]] = $9[i];
-                            db->sheet[tableID]->insertRecord(temp);
+                            int x = db->sheet[tableID]->insertRecord(temp);
+                            if(x != 0)printf("Insert fail\n");
                         }
                         else printf("Data type mismatch\n");
                     }
@@ -485,19 +484,48 @@ tbStmt:
             db->update();
         }
     }
-    | DELETE FROM tbName WHERE whereClauses SEMI{
-        if(current_db_exists()){
+    | DELETE FROM tbName WHERE whereClauses SEMI {
+        if (current_db_exists()) {
             int tableID;
-            if(table_exists($3,tableID,true)){
-                
+            if (!table_exists($3, tableID, true)) {
+                error = false;
+                vector<Pis> from; 
+                from.push_back(Pis(tableID, $3));
+                vector<WhereStmt> where;
+                for (auto it: $5) where.push_back(dealWhere(it, from));
+                if (error) YYERROR;
+                for (auto it: where) if (it.rvalue_sheet < 0) db->buildSel(-1 - it.rvalue_sheet);
+                db->sheet[tableID]->removeRecords(where);
             }
         }
     }
-    | UPDATE tbName SET setClause WHERE whereClauses SEMI{
-
+    | UPDATE tbName SET setClause WHERE whereClauses SEMI {
+        if (current_db_exists()) {
+            int tableID;
+            if (!table_exists($2, tableID, true)) {
+                error = false;
+                vector<Pis> from; 
+                from.push_back(Pis(tableID, $2));
+                vector<Pia> set;
+                for (auto it: $4) {
+                    int colIndex = db->sheet[tableID]->findCol(it.first);
+                    if (colIndex < 0) {
+                        printf("COLUMN %s doesn't exist in TABLE %s\n", $2.c_str(), it.first.c_str());
+                        error = true;
+                    } else {
+                        set.push_back(Pia(colIndex, it.second));
+                    }
+                }
+                vector<WhereStmt> where;
+                for (auto it: $6) where.push_back(dealWhere(it, from));
+                if (error) YYERROR;
+                for (auto it: where) if (it.rvalue_sheet < 0) db->buildSel(-1 - it.rvalue_sheet);
+                db->sheet[tableID]->updateRecords(set, where);
+            }
+        }
     }
     | seleStmt SEMI {
-        if(current_db_exists()){
+        if (current_db_exists()) {
             db->buildSel(-1 - $1);
             db->sel_sheet[-1 - $1]->print();
             while (db->sel_num) delete db->sel_sheet[--(db->sel_num)];
@@ -543,9 +571,7 @@ seleStmt:
             }
             db->sel[idx].from = $4;
             db->sel[idx].recursion.clear();
-            for (auto it: $4) if (it.first < 0) {
-                db->sel[idx].recursion.push_back(it.first);
-            }
+            for (auto it: $4) if (it.first < 0) db->sel[idx].recursion.push_back(it.first);
             db->sel[idx].where.clear();
             dealTy(idx);
             $$ = -1 - idx;
@@ -570,7 +596,10 @@ seleStmt:
                 db->sel[idx].recursion.push_back(it.first);
             }
             db->sel[idx].where.clear();
-            for (auto it: $6) db->sel[idx].where.push_back(dealWhere(idx, it, $4));
+            for (auto it: $6) db->sel[idx].where.push_back(dealWhere(it, $4));
+            for (auto it: db->sel[idx].where) if (it.rvalue_sheet < 0) {
+                db->sel[idx].recursion.push_back(it.rvalue_sheet);
+            }
             dealTy(idx);
             $$ = -1 - idx;
             
@@ -599,7 +628,10 @@ seleStmt:
                 db->sel[idx].recursion.push_back(it.first);
             }
             db->sel[idx].where.clear();
-            for (auto it: $6) db->sel[idx].where.push_back(dealWhere(idx, it, $4));
+            for (auto it: $6) db->sel[idx].where.push_back(dealWhere(it, $4));
+            for (auto it: db->sel[idx].where) if (it.rvalue_sheet < 0) {
+                db->sel[idx].recursion.push_back(it.rvalue_sheet);
+            }
             dealTy(idx);
             $$ = -1 - idx;
             

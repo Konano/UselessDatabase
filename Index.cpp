@@ -62,6 +62,7 @@ Index::Index(Sheet* sheet, const char* name, vector<uint> key,int btree_max_per_
         this->offset.push_back(i == 0 ? 0 : this->offset[i - 1]);
         this->offset[i] += sheet->col_ty[key[i]].size();
     }
+    for(uint i = 0;i < key.size();i ++)this->offset[i] -= sheet->col_ty[key[i]].size();
     for(uint i = 0;i < key.size();i ++)
         record_size += sheet->col_ty[key[i]].size();
     max_recond_num = (PAGE_SIZE - 18) / record_size;
@@ -155,13 +156,13 @@ BtreeNode* Index::convert_buf_to_BtreeNode(int index) {
         temp.record_id = *(uint32_t *)(buf + 22 + i * record_size);
         for (uint j = 0;j < this->key_num;j ++){
             if (this->ty[j] == enumType::INT) {
-                temp.key[j] = *(int*)(buf + 22 + i * record_size + 4 + this->offset[j]);
+                temp.key.push_back(Any(*(int*)(buf + 22 + i * record_size + 4 + this->offset[j])));
             }
             if (this->ty[j] == enumType::CHAR) {
                 char* str = new char[record_size - 8 + 1];
                 memcpy(str, buf + 22 + i * record_size + 4 + this->offset[j], this->offset[j] - (j == 0 ? 0 : this->offset[j - 1]));
                 str[record_size - 8] = '\0';
-                temp.key[j] = str;
+                temp.key.push_back(Any(str));
             }
         }
         ans->child.push_back(*(uint32_t *)(buf + 22 + (i + 1) * record_size - 4));

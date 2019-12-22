@@ -61,6 +61,11 @@ public:
     int queryRecord(const int record_id, Any* &data);
     int updateRecord(const int record_id, const int len, Any* data);
 
+    bool checkWhere(Anys data, WhereStmt &w);
+    bool checkWheres(Anys data, std::vector<WhereStmt> &where);
+    int removeRecords(std::vector<WhereStmt> &where);
+    int updateRecords(std::vector<Pia> &set, std::vector<WhereStmt> &where);
+
     bool cmpRecord(Anys a, Anys b, enumOp op);
     bool cmpRecords(Anys data, enumOp op, bool any, bool all);
 
