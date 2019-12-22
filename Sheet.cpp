@@ -551,6 +551,8 @@ int Sheet::removePrimaryKey() {
     for (auto it: p_key->f) it->p = nullptr;
     for (auto col: p_key->v) col_ty[col].key = enumKeyType::Common;
     // TODO delete p_key_index
+    int index_id = findIndex(std::string("Primary_Key"));
+    removeIndex(index_id);
     delete p_key;
     p_key = nullptr;
     return 0;
@@ -715,7 +717,7 @@ int Sheet::constraintRowKey(Any* data, Key* key) {
         if(ans.size() != 0)return -2;
     } else {
         // TODO check exist(find p_key_index)
-
+        
     }
     return 0;
 }
