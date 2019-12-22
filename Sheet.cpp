@@ -13,6 +13,8 @@
 #include <iostream>
 using namespace std;
 
+#define filterSheet(it) ((it) < 0 ? this->db->sel_sheet[-1-it] : this->db->sheet[it])
+
 #define exist(buf, offset) (buf[(offset) / 8] & (1 << ((offset) % 8)))
 #define exist_set(buf, offset) (buf[(offset) / 8] |= (1 << ((offset) % 8)))
 #define exist_reset(buf, offset) (buf[(offset) / 8] -= (1 << ((offset) % 8)))
@@ -20,6 +22,8 @@ using namespace std;
 extern char* dirPath(const char* dir, const char* filename, const char* filetype);
 extern char* dirPath(const char* dir, const char* filename, const char* subname, const char* filetype);
 extern void replaceFile(const char *oldName, const char *newName);
+
+extern bool cmpCol(enumOp op, Anys a, Anys b);
 
 json Sheet::toJson() { // assemble to JSON
     json j;
@@ -736,6 +740,81 @@ bool Sheet::cmpRecords(Anys data, enumOp op, bool any, bool all) {
     if (any) return false;
     if (all) return true;
     return false;
+}
+
+bool Sheet::checkWhere(Anys data, WhereStmt &w) { // Database::checkWhere
+    Anys _data;
+    switch (w.rvalue_ty) {
+    case 0: {
+        bool nl = true, nnl = true;
+        for (uint i = 0; i < w.cols.size(); i++) {
+            nl &= data[i].isNull();
+            nnl &= !data[i].isNull();
+        }
+        return (w.op == OP_NL && nl) && (w.op == OP_NNL && nnl);
+    }
+    case 1: {
+        for (auto it: w.rvalue) {
+            _data.push_back(it);
+        }
+        return cmpCol(w.op, data, _data);
+    }
+    case 2: {
+        for (auto it: w.rvalue_cols) {
+            _data.push_back(filterSheet(it.first)->getPointerColData(it.second));
+        }
+        return cmpCol(w.op, data, _data);
+    }
+    case 3:
+        if (w.op == OP_IN) w.any = true, w.op = OP_EQ;
+        if (w.any || w.all) {
+            return filterSheet(w.rvalue_sheet)->cmpRecords(data, w.op, w.any, w.all);
+        } else {
+            return filterSheet(w.rvalue_sheet)->cmpRecord(data, filterSheet(w.rvalue_sheet)->val, w.op);
+        }
+    default:
+        return false;
+    }
+}
+
+bool Sheet::checkWheres(Anys data, std::vector<WhereStmt> &where) {
+    for (auto it: where) if (checkWhere(data, it) == false) return false;
+    return true;
+}
+
+int Sheet::removeRecords(std::vector<WhereStmt> &where) {
+    setPointer(-1);
+    while (movePointer()) {
+        if (checkWheres(getPointerData(), where)) {
+            removeRecord(pointer);
+        }
+    }
+    return 0;
+}
+
+int Sheet::updateRecords(std::vector<Pia> &set, std::vector<WhereStmt> &where) {
+    setPointer(-1);
+    while (movePointer()) {
+        if (checkWheres(getPointerData(), where)) {
+            int index;
+            BufType buf = bpm->getPage(main_file, pointer / record_onepg, index);
+            if (exist(buf, pointer % record_onepg)) {
+                Any* data;
+                queryRecord(pointer, data);
+                for (uint i = 0; i < index_num; i++) {
+                    Anys temp;
+                    for(uint j = 0;j < this->index[i].key_num;j ++){
+                        temp.push_back(data[this->index[i].key[j]]);
+                    }
+                    this->index[i].removeRecord(&temp, pointer);
+                }
+                buf[(pointer % record_onepg) / 8] -= 1 << (pointer % 8);
+                bpm->markDirty(index);
+                return 0;
+            }
+        }
+    }
+    return 0;
 }
 
 // TODO Key 名字，还不能重复

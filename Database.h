@@ -12,6 +12,7 @@ typedef std::pair<std::string, std::string> Pss;
 typedef std::pair<int, std::string> Pis;
 typedef std::pair<int, uint> Piu;
 typedef std::pair<std::string, Any> Psa;
+typedef std::pair<int, Any> Pia;
 
 class Sheet;
 class FileManager;
@@ -55,6 +56,7 @@ struct WhereStmt {
 };
 
 struct SelectStmt {
+    bool build = false;
     std::vector<Piu> select;
     std::vector<AggrStmt> aggr;
     std::vector<Pis> from; 
@@ -67,7 +69,6 @@ private:
     json toJson();
     void fromJson(json j);
     
-    bool cmpCol(enumOp op, Anys a, Anys b);
     bool checkWhere(WhereStmt w);
     void storeData(uint idx);
     void dfsCross(uint idx, uint f_idx);
