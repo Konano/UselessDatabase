@@ -102,24 +102,32 @@ char* Sheet::getStr(BufType buf, uint size) {
 }
 
 void Sheet::insert(Any& val, enumType ty, uint size, BufType& buf) {
-    switch (ty) {
-    case INT: 
-        *(int*)buf = *val.anyCast<int>(); 
-        break;
-    case CHAR: 
-        memcpy(buf, *val.anyCast<char*>(), strlen(*val.anyCast<char*>()));
-        break; 
-    case VARCHAR: 
-        *(uint64_t*)buf = db->storeVarchar(*val.anyCast<char*>());
-        break;
-    case DATE: 
-        *(uint32_t*)buf = *val.anyCast<uint32_t>(); 
-        break;
-    case DECIMAL: 
-        *(long double*)buf = *val.anyCast<long double>(); 
-        break;
+    if(val.isNull()){
+        for(uint i = 0;i < size;i ++){
+            *(uint8_t*)buf = 255;
+            buf += 1;
+        }
     }
-    buf += size;
+    else {
+        switch (ty) {
+        case INT: 
+            *(int*)buf = *val.anyCast<int>(); 
+            break;
+        case CHAR: 
+            memcpy(buf, *val.anyCast<char*>(), strlen(*val.anyCast<char*>()));
+            break; 
+        case VARCHAR: 
+            *(uint64_t*)buf = db->storeVarchar(*val.anyCast<char*>());
+            break;
+        case DATE: 
+            *(uint32_t*)buf = *val.anyCast<uint32_t>(); 
+            break;
+        case DECIMAL: 
+            *(long double*)buf = *val.anyCast<long double>(); 
+            break;
+        }
+        buf += size;
+    }
 }
 
 void Sheet::fetch(BufType& buf, enumType ty, uint size, Any& val) {
@@ -149,7 +157,11 @@ int Sheet::insertRecord(Any* data) {
     printf("check index_num:%d record_num:%d\n",index_num,record_num);
     for(int i = 0;i < record_num;i ++){
         Anys temp = queryRecord(i);
-        printf("%d %d\n",*temp[0].anyCast<int>(),*temp[1].anyCast<int>());
+        if(temp[0].isNull())printf("null ");
+        else printf("%d ",*temp[0].anyCast<int>());
+        if(temp[1].isNull())printf("null ");
+        else printf("%d ",*temp[1].anyCast<int>());
+        printf("\n");
     }
     return 0;
 }
@@ -274,22 +286,35 @@ int Sheet::findIndex(std::string s){
 
 void Sheet::fetchWithOffset(BufType& buf, enumType ty, uint size, Any& val, uint offset){
     buf += offset;
-    switch (ty) {
-    case INT: 
-        val = *(int*)buf; 
-        break;
-    case CHAR:
-        val = getStr(buf, size);
-        break;
-    case VARCHAR: 
-        val = db->getVarchar(*(uint64_t*)buf); 
-        break;
-    case DATE: 
-        val = *(uint32_t*)buf; 
-        break;
-    case DECIMAL: 
-        val = *(long double*)buf; 
-        break;
+    BufType temp = buf;
+    bool flag = true;
+    for(uint i = 0;i < size;i ++){
+        if(*(uint8_t*)buf != 255){
+            flag = false;
+            break;
+        }
+        buf += 1;
+    }
+    buf = temp;
+    if(flag) val = Any();
+    else{
+        switch (ty) {
+        case INT: 
+            val = *(int*)buf; 
+            break;
+        case CHAR:
+            val = getStr(buf, size);
+            break;
+        case VARCHAR: 
+            val = db->getVarchar(*(uint64_t*)buf); 
+            break;
+        case DATE: 
+            val = *(uint32_t*)buf; 
+            break;
+        case DECIMAL: 
+            val = *(long double*)buf; 
+            break;
+        }
     }
     buf -= offset;
 }
