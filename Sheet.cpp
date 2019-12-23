@@ -407,7 +407,7 @@ int Sheet::modifyColumn(uint col_id, Type ty) { // TODO 对于 Key 和 index 的
 
 void Sheet::updateColumns() {
     for (uint i = 0; i < col_num; i++) col_ty[i].key = Common;
-    for (auto it: p_key->v) col_ty[it].key = Primary;
+    if(p_key != nullptr)for (auto it: p_key->v) col_ty[it].key = Primary;
     for (auto _it: f_key) for (auto it: _it->v) col_ty[it].key = Foreign;
 }
 
@@ -493,9 +493,9 @@ int Sheet::createPrimaryKey(PrimaryKey* pk) {
     p_key->sheet = pk->sheet;
     updateColumns();
     // TODO new p_key_index
-    int old = findIndex(std::string("Primary_Key"));
+    int old = p_key_index;
     if(old != -1)removeIndex(old);
-    createIndex(p_key->v, "Primary_Key");
+    p_key_index = createIndex(p_key->v, "Primary_Key");
     return 0;
 
     // std::vector<Any> v;
@@ -569,7 +569,15 @@ int Sheet::createForeignKey(ForeignKey* fk, PrimaryKey* pk) {
         else if (col_ty[fk->v[i]].ty != pk->sheet->col_ty[pk->v[i]].ty) return -5;
     }
     if (constraintKey(fk)) return -2;
-    f_key.push_back(fk);
+    
+    ForeignKey* f_keyx = new ForeignKey(this);
+    f_keyx->v_size = fk->v_size;
+    f_keyx->name = fk->name;
+    f_keyx->v.clear();
+    for (auto i: fk->v)f_keyx->v.push_back(i);
+    f_keyx->sheet = fk->sheet;
+    f_keyx->p = pk->sheet->p_key;
+    f_key.push_back(f_keyx);
     updateColumns();
     pk->sheet->p_key->f.push_back(fk);
     return 0;
@@ -709,7 +717,6 @@ int Sheet::constraintRow(Any* data, uint record_id, bool ck_unique) {
 int Sheet::constraintRowKey(Any* data, Key* key) {
     if (key->ty() == 1) {
         for (auto i: key->v) if (data[i].isNull()) return -1;
-        // TODO check unique(find p_key_index)
         Anys temp;
         for (auto i: key->v)temp.push_back(data[i]);
         int index_num = findIndex(std::string("Primary_Key"));
@@ -717,7 +724,12 @@ int Sheet::constraintRowKey(Any* data, Key* key) {
         if(ans.size() != 0)return -2;
     } else {
         // TODO check exist(find p_key_index)
-        
+        Anys val;
+        for(auto i: key->v)val.push_back(data[i]);
+        vector <int> ans;
+        Sheet* p_sheet = dynamic_cast<ForeignKey*>(key)->p->sheet;
+        ans = p_sheet->index[p_sheet->p_key_index].queryRecord(&val);
+        if(ans.size() == 0)return -3;
     }
     return 0;
 }

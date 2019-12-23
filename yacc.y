@@ -878,9 +878,46 @@ alterStmt:
             int tableID1;
             int tableID2;
             if(table_exists($3,tableID1,true) && table_exists($13,tableID2,true)){
-                if(db->sheet[tableID2]->p_key != nullptr)printf("TABLE %s has a primary key\n",$13.c_str());
-                else {
+                if(db->sheet[tableID2]->p_key == nullptr)printf("TABLE %s doesn't have a primary key\n",$13.c_str());
+                else if(db->sheet[tableID2]->p_key->v.size() == $15.size()){
+                    bool isok = true;
+                    for(uint i = 0;i < db->sheet[tableID2]->p_key->v.size();i ++){
+                        if($15[i] != std::string(db->sheet[tableID2]->col_ty[db->sheet[tableID2]->p_key->v[i]].name)){
+                            isok = false;
+                            printf("Primary key column %s mismatch column name %s\n",db->sheet[tableID2]->col_ty[db->sheet[tableID2]->p_key->v[i]].name,$15[i].c_str());
+                            break;
+                        }
+                    }
+                    if(isok){
+                        bool flag = true;
+                        vector <uint> key;
+                        for(uint i = 0;i < $10.size();i ++){
+                            bool flag2 = false;
+                            for(uint j = 0;j < db->sheet[tableID1]->col_num;j ++){
+                                if($10[i] == std::string(db->sheet[tableID1]->col_ty[j].name)){
+                                    key.push_back(j);
+                                    flag2 = true;
+                                    break;
+                                }
+                            }
+                            if(!flag2){
+                                flag = false;
+                                printf("Column %s doesn't exist\n",$10[i].c_str());
+                                break;
+                            }
+                        }
+                        if(flag){
+                            int* temp = new int[$10.size()];
+                            for(uint i = 0;i < $10.size();i ++){
+                                temp[i] = key[i];
+                            }
+                            ForeignKey fkey = ForeignKey(db->sheet[tableID1],$10.size(),temp);
+                            fkey.name = $6;
+                            db->sheet[tableID1]->createForeignKey(&fkey, db->sheet[tableID2]->p_key);
+                        }
+                    }
                 }
+                else printf("Column num of target primary key mismatch\n");
             }
             db->update();
         }
