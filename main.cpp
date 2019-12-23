@@ -113,7 +113,10 @@ void test_4() {
     Database *db = new Database("TestDatabase", false);
     Sheet *sheet = db->openSheet("TestSheet");
 
-    sheet->createIndex(0);
+    vector <uint> key;
+    key.push_back(0);
+
+    sheet->createIndex(key,"test_index");
     sheet->insertRecord(new Any[4]{2017011475, (char*)"GGT", 345, 34});
     sheet->insertRecord(new Any[4]{634645345, (char*)"KLE", 345, 34});
     sheet->insertRecord(new Any[4]{634645345, (char*)"KLEX", 3456, 345});
