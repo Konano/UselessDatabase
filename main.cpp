@@ -18,6 +18,7 @@ extern int cleanDatabase(const char *dbname);
 
 int yyparse (void);
 
+/*
 void test_0() { // Testcase: new database
     assert(cleanDatabase("TestDatabase") == 0);
 
@@ -58,7 +59,7 @@ void test_1() { // Testcase: record manager
     delete db;
     cout << "Pass Test 1" << endl;
 }
-/*
+
 void test_2() {
     test_1();
 
@@ -195,7 +196,6 @@ void test_6() {
     delete db;
     cout << "Pass Test 6" << endl;
 }
-*/
 
 void init() { // Testcase: new database
     assert(cleanDatabase("TestDatabase") == 0);
@@ -269,13 +269,14 @@ void test_9() { // varchar data decimal
     delete db;
     cout << "Pass Test 9" << endl;
 }
+*/
 
 inline uint32_t date_to_uint(string str) {
     str = str.substr(0,4) + str.substr(5,2) + str.substr(8,2);
     return (uint32_t)atoi(str.c_str());
 }
 
-char* copyStr(const char* _str) {
+inline char* copyStr(const char* _str) {
     uint size = strlen(_str);
     char* str = new char[size + 1];
     strcpy(str, _str);
@@ -289,10 +290,6 @@ void import_data(Sheet* sheet, const char* filename, char separator) {
     string field;
     int cnt = 0;
     Any* data = new Any[sheet->col_num];
-    // while (getline(inFile, line)) {
-    //     istringstream sin(line); 
-    // }
-    // return;
     while (getline(inFile, line)) {
         istringstream sin(line); 
         memset(data, 0, sheet->col_num * sizeof(Any));

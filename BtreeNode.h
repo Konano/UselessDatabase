@@ -10,10 +10,8 @@ struct BtreeRecord{
 
     //KEY
     Anys key;
-    BtreeRecord(){}
-    BtreeRecord(int record_id, Anys key):record_id(record_id),key(key){
-
-    }
+    BtreeRecord() {}
+    BtreeRecord(int record_id, Anys key) : record_id(record_id) , key(key) {}
 };
 
 struct BtreeNode{

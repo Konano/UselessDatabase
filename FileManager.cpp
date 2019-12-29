@@ -13,7 +13,7 @@
 #include <sys/stat.h>
 #endif
 
-int FileManager::alloc() { // Find lowest 0
+inline int FileManager::alloc() { // 0 means no flag, so find lowest 0 bit
     int wh = 0;
     __uint128_t flag_tmp = flag;
     for (int i = MAX_FILE_NUM_INDEX - 1; i >= 0; i--) {
@@ -22,7 +22,7 @@ int FileManager::alloc() { // Find lowest 0
             flag_tmp >>= 1 << i;
         }
     }
-    if (flag_tmp & 1) return -1; // all bits is 1
+    if (flag_tmp & 1) return -1; // all bits are 1
     return wh;
 }
 
@@ -115,7 +115,7 @@ void writeFile(const char* path, const char* data, const int length) {
     fclose(file);
 }
 
-char* dirPath(const char* dir) { // db / dir
+char* dirPath(const char* dir) { // get str "db/dir"
     int length = 3 + strlen(dir);
     char* data = new char[length + 1];
     strcpy(data, "db/");
@@ -123,7 +123,7 @@ char* dirPath(const char* dir) { // db / dir
     return data;
 }
 
-char* dirPath(const char* dir, const char* path) { // db / dir / path
+char* dirPath(const char* dir, const char* path) { // get str "db/dir/path"
     int length = 3 + strlen(dir) + 1 + strlen(path);
     char* data = new char[length + 1];
     strcpy(data, "db/");
@@ -133,7 +133,7 @@ char* dirPath(const char* dir, const char* path) { // db / dir / path
     return data;
 }
 
-char* dirPath(const char* dir, const char* filename, const char* filetype) { // db / dir / filename . filetype
+char* dirPath(const char* dir, const char* filename, const char* filetype) { // get str "db/dir/filename.filetype"
     int length = 3 + strlen(dir) + 1 + strlen(filename) + 1 + strlen(filetype);
     char* data = new char[length + 1];
     strcpy(data, "db/");
@@ -145,7 +145,7 @@ char* dirPath(const char* dir, const char* filename, const char* filetype) { // 
     return data;
 }
 
-char* dirPath(const char* dir, const char* filename, const char* subname, const char* filetype) { // db / dir / filename _ subname . filetype
+char* dirPath(const char* dir, const char* filename, const char* subname, const char* filetype) { // get str "db/dir/filename_subname.filetype"
     int length = 3 + strlen(dir) + 1 + strlen(filename) + 1 + strlen(subname) + 1 + strlen(filetype);
     char* data = new char[length + 1];
     strcpy(data, "db/");
