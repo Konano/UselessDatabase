@@ -44,7 +44,7 @@ private:
 
 public:
     Index() {}
-    Index(Sheet* sheet, const char* name, std::vector<uint> key,int btree_max_per_node);
+    Index(Sheet* sheet, const char* name, std::vector<uint> key, int btree_max_per_node);
     Index(Sheet* sheet, json j);
     json toJson();
 

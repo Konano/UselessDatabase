@@ -26,15 +26,15 @@ bool error;
 
 uint month[12] = {31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31};
 
-bool current_db_exists(){
-    if(db == nullptr)printf("Select a database first\n");
+bool current_db_exists() {
+    if (db == nullptr) printf("Select a database first\n");
     return db != nullptr;
 }
 
-bool table_exists(std::string name, int& tableID, bool expect){
+bool table_exists(std::string name, int& tableID, bool expect) {
     tableID = db->findSheet(name);
-    if(tableID == -1 && expect)printf("TABLE %s doesn't exist\n", name.c_str());
-    if(tableID != -1 && !expect)printf("TABLE %s exists\n", name.c_str());
+    if (tableID == -1 && expect) printf("TABLE %s doesn't exist\n", name.c_str());
+    if (tableID != -1 && !expect) printf("TABLE %s exists\n", name.c_str());
     return tableID != -1;
 }
 
@@ -42,7 +42,7 @@ Piu dealCol(Pss col, vector<Pis> &from) {
     if (col.first == string() && from.size() > 1) {
         printf("COLUMN %s need to assign TABLE\n", col.second.c_str());
         error = true;
-        return Piu(0,0);
+        return Piu(0, 0);
     }
 
     for (auto _it: from) if ((col.first == _it.second) || (col.first == string() && from.size() == 1)) {
@@ -50,14 +50,14 @@ Piu dealCol(Pss col, vector<Pis> &from) {
         if (colIndex < 0) {
             printf("COLUMN %s doesn't exist in TABLE %s\n", col.second.c_str(), _it.second.c_str());
             error = true;
-            return Piu(0,0);
+            return Piu(0, 0);
         }
         return Piu(_it.first, (uint)colIndex);
     }
     
     printf("TABLE %s doesn't exist\n", col.first.c_str());
     error = true;
-    return Piu(0,0);
+    return Piu(0, 0);
 }
 
 inline vector<Piu> dealCols(vector<Pss> &cols, vector<Pis> &from) {
@@ -231,7 +231,7 @@ WhereStmt dealWhere(YYType_Where &it, vector<Pis> &from) {
     return where;
 }
 
-bool check_datatype(Type tar,Any val){
+bool check_datatype(Type tar, Any val) {
     if (val.anyCast<char*>() != nullptr) {
         return tar.ty == enumType::CHAR || tar.ty == enumType::VARCHAR;
     } else if (val.anyCast<int>() != nullptr) {
@@ -324,11 +324,10 @@ bool check_datatype(Type tar,Any val){
 
 program:
     | EXIT {
-        if(db != nullptr)delete db;
+        if (db != nullptr)delete db;
         return 0;
     }
-    | stmt program
-    ;
+    | stmt program;
 
 stmt:
     error
@@ -348,7 +347,7 @@ dbStmt:
         if (checkFile(dirPath($3.c_str(), ".storage")) == 0) {
             new Database($3.c_str(), true);   
         } else {
-            printf("DATABASE %s exists\n",$3.c_str());
+            printf("DATABASE %s exists\n", $3.c_str());
         }
     }
     | DROP DATABASE dbName SEMI {
@@ -359,7 +358,7 @@ dbStmt:
             }
             cleanDatabase($3.c_str());
         } else {
-            printf("DATABASE %s doesn't exist\n",$3.c_str());
+            printf("DATABASE %s doesn't exist\n", $3.c_str());
         }
     }
     | USE dbName SEMI {
@@ -367,7 +366,7 @@ dbStmt:
             if (db) delete db;
             db = new Database($2.c_str(), false);
         } else {
-            printf("DATABASE %s doesn't exist\n",$2.c_str());
+            printf("DATABASE %s doesn't exist\n", $2.c_str());
         }
     }
     | SHOW TABLES SEMI {
@@ -411,28 +410,28 @@ tbStmt:
     | DESC tbName SEMI {
         if (current_db_exists()) {
             int tableID;
-            if (table_exists($2,tableID,true)) {
+            if (table_exists($2, tableID, true)) {
                 db->sheet[tableID]->printCol();
             }
         }
     }
     | INSERT INTO tbName VALUES LB values RB SEMI{
-        if(current_db_exists()){
+        if (current_db_exists()) {
             int tableID;
-            if(table_exists($3,tableID,true)){
-                if(db->sheet[tableID]->col_num == $6.size()){
+            if (table_exists($3, tableID, true)) {
+                if (db->sheet[tableID]->col_num == $6.size()) {
                     bool flag = true;
-                    for(uint i = 0;i < $6.size();i ++){
-                        if(!check_datatype(db->sheet[tableID]->col_ty[i],$6[i])){
+                    for (uint i = 0; i < $6.size(); i++) {
+                        if (!check_datatype(db->sheet[tableID]->col_ty[i], $6[i])) {
                             flag = false;
                             break;
                         }
                     }
-                    if(flag){
+                    if (flag) {
                         Any* temp = new Any[db->sheet[tableID]->col_num];
-                        for(uint i = 0;i < $6.size();i ++)temp[i] = $6[i];
+                        for (uint i = 0; i < $6.size(); i++)temp[i] = $6[i];
                         int x = db->sheet[tableID]->insertRecord(temp);
-                        if(x != 0)printf("Insert fail\n");
+                        if (x != 0)printf("Insert fail\n");
                     }
                     else printf("Data type mismatch\n");
                 }
@@ -442,40 +441,40 @@ tbStmt:
         }
     }
     | INSERT INTO tbName LB colNames RB VALUES LB values RB SEMI{
-        if(current_db_exists()){
+        if (current_db_exists()) {
             int tableID;
-            if(table_exists($3,tableID,true)){
-                if($5.size() == $9.size()){
+            if (table_exists($3, tableID, true)) {
+                if ($5.size() == $9.size()) {
                     vector <uint> key;
                     bool colNamecheck = true;
-                    for(uint i = 0;i < $5.size();i ++){
+                    for (uint i = 0; i < $5.size(); i++) {
                         bool flag = false;
-                        for(uint j = 0;j < db->sheet[tableID]->col_num;j ++){
-                            if($5[i] == std::string(db->sheet[tableID]->col_ty[j].name)){
+                        for (uint j = 0; j < db->sheet[tableID]->col_num; j++) {
+                            if ($5[i] == std::string(db->sheet[tableID]->col_ty[j].name)) {
                                 flag = true;
                                 key.push_back(j);
                                 break;
                             }
                         }
-                        if(!flag){
+                        if (!flag) {
                             colNamecheck = false;
-                            printf("TABLE %s doesn't have a column named %s\n",$3.c_str(),$5[i].c_str());
+                            printf("TABLE %s doesn't have a column named %s\n", $3.c_str(), $5[i].c_str());
                             break;
                         }
                     }
-                    if(colNamecheck){
+                    if (colNamecheck) {
                         bool flag = true;
-                        for(uint i = 0;i < key.size();i ++){
-                            if(!check_datatype(db->sheet[tableID]->col_ty[key[i]],$9[i])){
+                        for (uint i = 0; i < key.size(); i++) {
+                            if (!check_datatype(db->sheet[tableID]->col_ty[key[i]], $9[i])) {
                                 flag = false;
                                 break;
                             }
                         }
-                        if(flag){
+                        if (flag) {
                             Any* temp = new Any[db->sheet[tableID]->col_num];
-                            for(uint i = 0;i < $9.size();i ++)temp[key[i]] = $9[i];
+                            for (uint i = 0; i < $9.size(); i++)temp[key[i]] = $9[i];
                             int x = db->sheet[tableID]->insertRecord(temp);
-                            if(x != 0)printf("Insert fail\n");
+                            if (x != 0)printf("Insert fail\n");
                         }
                         else printf("Data type mismatch\n");
                     }
@@ -531,7 +530,7 @@ tbStmt:
             db->sel_sheet[-1 - $1]->print();
             while (db->sel_num) delete db->sel_sheet[--(db->sel_num)];
             //TODO:检查如下操作是否科学，抛去这句可能导致同一个select语句的第二次执行无结果
-            for(int i = 0;i < MAX_SHEET_NUM;i ++)db->sel[i].build = false;
+            for (int i = 0; i < MAX_SHEET_NUM; i++)db->sel[i].build = false;
         }
     };
 
@@ -568,7 +567,7 @@ seleStmt:
             db->sel[idx].select.clear();
             db->sel[idx].aggr.clear();
             for (auto it: $2) if (it.ty == AG_COUNT) {
-                db->sel[idx].aggr.push_back(AggrStmt{it.ty, Piu(0,0), it.as});
+                db->sel[idx].aggr.push_back(AggrStmt{it.ty, Piu(0, 0), it.as});
             } else {
                 db->sel[idx].aggr.push_back(AggrStmt{it.ty, dealCol(it.col, $4), it.as});
             }
@@ -621,7 +620,7 @@ seleStmt:
             db->sel[idx].select.clear();
             db->sel[idx].aggr.clear();
             for (auto it: $2) if (it.ty == AG_COUNT) {
-                db->sel[idx].aggr.push_back(AggrStmt{it.ty, Piu(0,0), it.as});
+                db->sel[idx].aggr.push_back(AggrStmt{it.ty, Piu(0, 0), it.as});
             } else {
                 db->sel[idx].aggr.push_back(AggrStmt{it.ty, dealCol(it.col, $4), it.as});
             }
@@ -647,30 +646,30 @@ seleStmt:
 
 idxStmt:
     CREATE INDEX idxName ON tbName LB colNames RB SEMI {
-        if(current_db_exists()){
+        if (current_db_exists()) {
             int tableID;
-            if(table_exists($5,tableID,true)){
+            if (table_exists($5, tableID, true)) {
                 if (db->sheet[tableID]->findIndex($3) != -1) printf("INDEX %s exists\n", $3.c_str());
                 else{
                     vector<uint> key_index;
                     bool create_ok = true;
-                    for(uint i = 0;i < $7.size();i ++){
+                    for (uint i = 0; i < $7.size(); i++) {
                         bool flag = false;
-                        for(uint j = 0;j < db->sheet[tableID]->col_num;j ++){
-                            if ($7[i] == std::string(db->sheet[tableID]->col_ty[j].name)){
+                        for (uint j = 0; j < db->sheet[tableID]->col_num; j++) {
+                            if ($7[i] == std::string(db->sheet[tableID]->col_ty[j].name)) {
                                 flag = true;
                                 key_index.push_back(j);
                                 break;
                             }
                         }
                         if (!flag) {
-                            printf("TABLE %s doesn't have a column named %s\n",$5.c_str(),$7[i].c_str());
+                            printf("TABLE %s doesn't have a column named %s\n", $5.c_str(), $7[i].c_str());
                             create_ok = false;
                             break;
                         }
                     }
-                    if(create_ok){
-                        db->sheet[tableID]->createIndex(key_index,$3);
+                    if (create_ok) {
+                        db->sheet[tableID]->createIndex(key_index, $3);
                     }
                 }
             }
@@ -678,11 +677,11 @@ idxStmt:
         }
     }
     | DROP INDEX idxName SEMI {
-        if(current_db_exists()){
+        if (current_db_exists()) {
             bool flag = false;
-            for(uint i = 0;i < db->sheet_num;i ++){
+            for (uint i = 0; i < db->sheet_num; i++) {
                 int indexID = db->sheet[i]->findIndex($3);
-                if(indexID != -1){
+                if (indexID != -1) {
                     db->sheet[i]->removeIndex(indexID);
                     flag = true;
                     break;
@@ -694,30 +693,30 @@ idxStmt:
     }
     | ALTER TABLE tbName ADD INDEX idxName LB colNames RB SEMI {
         //TODO: 这个和第一个CREATE的区别
-        if(current_db_exists()){
+        if (current_db_exists()) {
             int tableID;
-            if(table_exists($3,tableID,true)){
+            if (table_exists($3, tableID, true)) {
                 if (db->sheet[tableID]->findIndex($6) != -1) printf("INDEX %s exists\n", $6.c_str());
                 else{
                     vector<uint> key_index;
                     bool create_ok = true;
-                    for(uint i = 0;i < $8.size();i ++){
+                    for (uint i = 0; i < $8.size(); i++) {
                         bool flag = false;
-                        for(uint j = 0;j < db->sheet[tableID]->col_num;j ++){
-                            if ($8[i] == std::string(db->sheet[tableID]->col_ty[j].name)){
+                        for (uint j = 0; j < db->sheet[tableID]->col_num; j++) {
+                            if ($8[i] == std::string(db->sheet[tableID]->col_ty[j].name)) {
                                 flag = true;
                                 key_index.push_back(j);
                                 break;
                             }
                         }
                         if (!flag) {
-                            printf("TABLE %s doesn't have a column named %s\n",$3.c_str(),$8[i].c_str());
+                            printf("TABLE %s doesn't have a column named %s\n", $3.c_str(), $8[i].c_str());
                             create_ok = false;
                             break;
                         }
                     }
-                    if(create_ok){
-                        db->sheet[tableID]->createIndex(key_index,$6);
+                    if (create_ok) {
+                        db->sheet[tableID]->createIndex(key_index, $6);
                     }
                 }
             }
@@ -725,11 +724,11 @@ idxStmt:
         }
     }
     | ALTER TABLE tbName DROP INDEX idxName SEMI{
-        if(current_db_exists()){
+        if (current_db_exists()) {
             int tableID;
-            if(table_exists($3,tableID,true)){
+            if (table_exists($3, tableID, true)) {
                 int indexID = db->sheet[tableID]->findIndex($6);
-                if(indexID != -1){
+                if (indexID != -1) {
                     db->sheet[tableID]->removeIndex(indexID);
                 }
                 else printf("INDEX %s doesn't exist\n", $6.c_str());
@@ -740,11 +739,11 @@ idxStmt:
 
 alterStmt:
     ALTER TABLE tbName ADD field SEMI{
-        if(current_db_exists()){
+        if (current_db_exists()) {
             int tableID;
-            if(table_exists($3,tableID,true)){
-                if(db->sheet[tableID]->findCol(std::string($5.name)) != -1){
-                    printf("Column %s is used\n",$5.name);
+            if (table_exists($3, tableID, true)) {
+                if (db->sheet[tableID]->findCol(std::string($5.name)) != -1) {
+                    printf("Column %s is used\n", $5.name);
                 }
                 else {
                     db->sheet[tableID]->createColumn($5);
@@ -754,33 +753,33 @@ alterStmt:
         }
     }
     | ALTER TABLE tbName DROP colName SEMI {
-        if(current_db_exists()){
+        if (current_db_exists()) {
             int tableID;
-            if(table_exists($3,tableID,true)){
-                if(db->sheet[tableID]->findCol($5) != -1)db->sheet[tableID]->removeColumn(db->sheet[tableID]->findCol($5));
-                else printf("Column %s doesn't exist\n",$5.c_str());
+            if (table_exists($3, tableID, true)) {
+                if (db->sheet[tableID]->findCol($5) != -1)db->sheet[tableID]->removeColumn(db->sheet[tableID]->findCol($5));
+                else printf("Column %s doesn't exist\n", $5.c_str());
             }
             db->update();
         }
     }
     | ALTER TABLE tbName CHANGE colName field SEMI {
-        if(current_db_exists()){
+        if (current_db_exists()) {
             int tableID;
-            if(table_exists($3,tableID,true)){
-                if(db->sheet[tableID]->findCol($5) != -1){
-                    if(db->sheet[tableID]->findCol(std::string($6.name)) == -1 || $5 == std::string($6.name))db->sheet[tableID]->modifyColumn(db->sheet[tableID]->findCol($5), $6);
-                    else printf("Column %s is used\n",$6.name);
+            if (table_exists($3, tableID, true)) {
+                if (db->sheet[tableID]->findCol($5) != -1) {
+                    if (db->sheet[tableID]->findCol(std::string($6.name)) == -1 || $5 == std::string($6.name))db->sheet[tableID]->modifyColumn(db->sheet[tableID]->findCol($5), $6);
+                    else printf("Column %s is used\n", $6.name);
                 }
-                else printf("Column %s doesn't exist\n",$5.c_str());
+                else printf("Column %s doesn't exist\n", $5.c_str());
             }
             db->update();
         }
     }
     | ALTER TABLE tbName RENAME TO tbName SEMI {
-        if(current_db_exists()){
+        if (current_db_exists()) {
             int tableID;
-            if(table_exists($3,tableID,true)){
-                for(uint i = 0;i < $6.length();i ++){
+            if (table_exists($3, tableID, true)) {
+                for (uint i = 0; i < $6.length(); i++) {
                     db->sheet[tableID]->name[i] = $6[i];
                 }
                 db->sheet[tableID]->name[$6.length()] = '\0';
@@ -789,29 +788,29 @@ alterStmt:
         }
     }
     | ALTER TABLE tbName ADD PRIMARY KEY LB colNames RB SEMI {
-        if(current_db_exists()){
+        if (current_db_exists()) {
             int tableID;
-            if(table_exists($3,tableID,true)){
-                if(db->sheet[tableID]->p_key != nullptr)printf("TABLE %s has a primary key\n",$3.c_str());
+            if (table_exists($3, tableID, true)) {
+                if (db->sheet[tableID]->p_key != nullptr)printf("TABLE %s has a primary key\n", $3.c_str());
                 else {
                     int* key_index = new int[$8.size()];
                     bool create_ok = true;
-                    for(uint i = 0;i < $8.size();i ++){
+                    for (uint i = 0; i < $8.size(); i++) {
                         bool flag = false;
-                        for(uint j = 0;j < db->sheet[tableID]->col_num;j ++){
-                            if ($8[i] == std::string(db->sheet[tableID]->col_ty[j].name)){
+                        for (uint j = 0; j < db->sheet[tableID]->col_num; j++) {
+                            if ($8[i] == std::string(db->sheet[tableID]->col_ty[j].name)) {
                                 flag = true;
                                 key_index[i] = j;
                                 break;
                             }
                         }
                         if (!flag) {
-                            printf("TABLE %s doesn't have a column named %s\n",$3.c_str(),$8[i].c_str());
+                            printf("TABLE %s doesn't have a column named %s\n", $3.c_str(), $8[i].c_str());
                             create_ok = false;
                             break;
                         }
                     }
-                    if(create_ok){
+                    if (create_ok) {
                         PrimaryKey temp = PrimaryKey(db->sheet[tableID], $8.size(), key_index);
                         int x = db->sheet[tableID]->createPrimaryKey(&temp);
                         if (x == -2)printf("Constraint problem\n");
@@ -822,39 +821,39 @@ alterStmt:
         }
     }
     | ALTER TABLE tbName DROP PRIMARY KEY SEMI {
-        if(current_db_exists()){
+        if (current_db_exists()) {
             int tableID;
-            if(table_exists($3,tableID,true)){
-                if(db->sheet[tableID]->p_key != nullptr)db->sheet[tableID]->removePrimaryKey();
-                else printf("TABLE %s doesn't have a primary key\n",$3.c_str());
+            if (table_exists($3, tableID, true)) {
+                if (db->sheet[tableID]->p_key != nullptr)db->sheet[tableID]->removePrimaryKey();
+                else printf("TABLE %s doesn't have a primary key\n", $3.c_str());
             }
             db->update();
         }
     }
     | ALTER TABLE tbName ADD CONSTRAINT pkName PRIMARY KEY LB colNames RB SEMI {
-        if(current_db_exists()){
+        if (current_db_exists()) {
             int tableID;
-            if(table_exists($3,tableID,true)){
-                if(db->sheet[tableID]->p_key != nullptr)printf("TABLE %s has a primary key\n",$3.c_str());
+            if (table_exists($3, tableID, true)) {
+                if (db->sheet[tableID]->p_key != nullptr)printf("TABLE %s has a primary key\n", $3.c_str());
                 else {
                     int* key_index = new int[$10.size()];
                     bool create_ok = true;
-                    for(uint i = 0;i < $10.size();i ++){
+                    for (uint i = 0; i < $10.size(); i++) {
                         bool flag = false;
-                        for(uint j = 0;j < db->sheet[tableID]->col_num;j ++){
-                            if ($10[i] == std::string(db->sheet[tableID]->col_ty[j].name)){
+                        for (uint j = 0; j < db->sheet[tableID]->col_num; j++) {
+                            if ($10[i] == std::string(db->sheet[tableID]->col_ty[j].name)) {
                                 flag = true;
                                 key_index[i] = j;
                                 break;
                             }
                         }
                         if (!flag) {
-                            printf("TABLE %s doesn't have a column named %s\n",$3.c_str(),$10[i].c_str());
+                            printf("TABLE %s doesn't have a column named %s\n", $3.c_str(), $10[i].c_str());
                             create_ok = false;
                             break;
                         }
                     }
-                    if(create_ok){
+                    if (create_ok) {
                         PrimaryKey temp = PrimaryKey(db->sheet[tableID], $10.size(), key_index);
                         temp.name = $6;
                         int x = db->sheet[tableID]->createPrimaryKey(&temp);
@@ -867,54 +866,54 @@ alterStmt:
     }
     | ALTER TABLE tbName DROP PRIMARY KEY pkName SEMI {
         //TODO: pkName?
-        if(current_db_exists()){
+        if (current_db_exists()) {
             int tableID;
-            if(table_exists($3,tableID,true)){
-                if(db->sheet[tableID]->p_key != nullptr)db->sheet[tableID]->removePrimaryKey();
-                else printf("TABLE %s doesn't have a primary key\n",$3.c_str());
+            if (table_exists($3, tableID, true)) {
+                if (db->sheet[tableID]->p_key != nullptr)db->sheet[tableID]->removePrimaryKey();
+                else printf("TABLE %s doesn't have a primary key\n", $3.c_str());
             }
             db->update();
         }
     }
     | ALTER TABLE tbName ADD CONSTRAINT fkName FOREIGN KEY LB colNames RB REFERENCES tbName LB colNames RB SEMI {
-        if(current_db_exists()){
+        if (current_db_exists()) {
             int tableID1;
             int tableID2;
-            if(table_exists($3,tableID1,true) && table_exists($13,tableID2,true)){
-                if(db->sheet[tableID2]->p_key == nullptr)printf("TABLE %s doesn't have a primary key\n",$13.c_str());
-                else if(db->sheet[tableID2]->p_key->v.size() == $15.size()){
+            if (table_exists($3, tableID1, true) && table_exists($13, tableID2, true)) {
+                if (db->sheet[tableID2]->p_key == nullptr)printf("TABLE %s doesn't have a primary key\n", $13.c_str());
+                else if (db->sheet[tableID2]->p_key->v.size() == $15.size()) {
                     bool isok = true;
-                    for(uint i = 0;i < db->sheet[tableID2]->p_key->v.size();i ++){
-                        if($15[i] != std::string(db->sheet[tableID2]->col_ty[db->sheet[tableID2]->p_key->v[i]].name)){
+                    for (uint i = 0; i < db->sheet[tableID2]->p_key->v.size(); i++) {
+                        if ($15[i] != std::string(db->sheet[tableID2]->col_ty[db->sheet[tableID2]->p_key->v[i]].name)) {
                             isok = false;
-                            printf("Primary key column %s mismatch column name %s\n",db->sheet[tableID2]->col_ty[db->sheet[tableID2]->p_key->v[i]].name,$15[i].c_str());
+                            printf("Primary key column %s mismatch column name %s\n", db->sheet[tableID2]->col_ty[db->sheet[tableID2]->p_key->v[i]].name, $15[i].c_str());
                             break;
                         }
                     }
-                    if(isok){
+                    if (isok) {
                         bool flag = true;
                         vector <uint> key;
-                        for(uint i = 0;i < $10.size();i ++){
+                        for (uint i = 0; i < $10.size(); i++) {
                             bool flag2 = false;
-                            for(uint j = 0;j < db->sheet[tableID1]->col_num;j ++){
-                                if($10[i] == std::string(db->sheet[tableID1]->col_ty[j].name)){
+                            for (uint j = 0; j < db->sheet[tableID1]->col_num; j++) {
+                                if ($10[i] == std::string(db->sheet[tableID1]->col_ty[j].name)) {
                                     key.push_back(j);
                                     flag2 = true;
                                     break;
                                 }
                             }
-                            if(!flag2){
+                            if (!flag2) {
                                 flag = false;
-                                printf("Column %s doesn't exist\n",$10[i].c_str());
+                                printf("Column %s doesn't exist\n", $10[i].c_str());
                                 break;
                             }
                         }
-                        if(flag){
+                        if (flag) {
                             int* temp = new int[$10.size()];
-                            for(uint i = 0;i < $10.size();i ++){
+                            for (uint i = 0; i < $10.size(); i++) {
                                 temp[i] = key[i];
                             }
-                            ForeignKey fkey = ForeignKey(db->sheet[tableID1],$10.size(),temp);
+                            ForeignKey fkey = ForeignKey(db->sheet[tableID1], $10.size(), temp);
                             fkey.name = $6;
                             db->sheet[tableID1]->createForeignKey(&fkey, db->sheet[tableID2]->p_key);
                         }
@@ -926,18 +925,18 @@ alterStmt:
         }
     }
     | ALTER TABLE tbName DROP FOREIGN KEY fkName SEMI{
-        if(current_db_exists()){
+        if (current_db_exists()) {
             int tableID;
-            if(table_exists($3,tableID,true)){
+            if (table_exists($3, tableID, true)) {
                 bool flag = false;
-                for(uint i = 0;i < db->sheet[tableID]->f_key.size();i ++){
-                    if(db->sheet[tableID]->f_key[i]->name == $7){
+                for (uint i = 0; i < db->sheet[tableID]->f_key.size(); i++) {
+                    if (db->sheet[tableID]->f_key[i]->name == $7) {
                         db->sheet[tableID]->removeForeignKey(db->sheet[tableID]->f_key[i]);
                         flag = true;
                         break;
                     }
                 }
-                if (!flag) printf("TABLE %s doesn't have a forrign key named %s\n",$3.c_str(),$7.c_str());
+                if (!flag) printf("TABLE %s doesn't have a forrign key named %s\n", $3.c_str(), $7.c_str());
             }
             db->update();
         }

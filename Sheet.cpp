@@ -118,8 +118,8 @@ char* Sheet::getStr(BufType buf, uint size) {
 }
 
 void Sheet::insert(Any& val, enumType ty, uint size, BufType& buf) {
-    if(val.isNull()){
-        for(uint i = 0;i < size;i ++){
+    if (val.isNull()) {
+        for (uint i = 0; i < size; i++) {
             *(uint8_t*)buf = 255;
             buf += 1;
         }
@@ -163,7 +163,7 @@ int Sheet::insertRecord(Any* data) {
     }
     for (uint i = 0; i < index_num; i++) {
         Anys a;
-        for(uint j = 0; j < this->index[i].key_num;j ++){
+        for (uint j = 0; j < this->index[i].key_num; j++) {
             a.push_back(data[this->index[i].key[j]]);
         }
         this->index[i].insertRecord(&a, record_num);
@@ -174,10 +174,10 @@ int Sheet::insertRecord(Any* data) {
     printf("check index_num:%d record_num:%d\n",index_num,record_num);
     for(uint i = 0;i < record_num;i ++){
         Anys temp = queryRecord(i);
-        if(temp[0].isNull())printf("null ");
-        else printf("%d ",*temp[0].anyCast<int>());
-        if(temp[1].isNull())printf("null ");
-        else printf("%d ",*temp[1].anyCast<int>());
+        if (temp[0].isNull()) printf("null ");
+        else printf("%d ", *temp[0].anyCast<int>());
+        if (temp[1].isNull()) printf("null ");
+        else printf("%d ", *temp[1].anyCast<int>());
         printf("\n");
     }*/
     return 0;
@@ -191,7 +191,7 @@ int Sheet::removeRecord(const int record_id) { // TODO when remove some p_key da
         queryRecord(record_id, data);
         for (uint i = 0; i < index_num; i++) {
             Anys temp;
-            for(uint j = 0;j < this->index[i].key_num;j ++){
+            for (uint j = 0; j < this->index[i].key_num; j++) {
                 temp.push_back(data[this->index[i].key[j]]);
             }
             this->index[i].removeRecord(&temp, record_id);
@@ -296,24 +296,26 @@ inline char* getTime() {
     return buffer;
 }
 
-int Sheet::findIndex(std::string s){
-    for(uint i = 0;i < index_num;i ++)if(s == std::string(this->index[i].name)) return i;
+int Sheet::findIndex(std::string s) {
+    for (uint i = 0; i < index_num; i++) 
+        if (s == std::string(this->index[i].name)) 
+            return i;
     return -1;
 }
 
-void Sheet::fetchWithOffset(BufType& buf, enumType ty, uint size, Any& val, uint offset){
+void Sheet::fetchWithOffset(BufType& buf, enumType ty, uint size, Any& val, uint offset) {
     buf += offset;
     BufType temp = buf;
     bool flag = true;
-    for(uint i = 0;i < size;i ++){
-        if(*(uint8_t*)buf != 255){
+    for (uint i = 0; i < size; i++) {
+        if (*(uint8_t*)buf != 255) {
             flag = false;
             break;
         }
         buf += 1;
     }
     buf = temp;
-    if(flag) val = Any();
+    if (flag) val = Any();
     else{
         switch (ty) {
         case INT: 
@@ -336,15 +338,15 @@ void Sheet::fetchWithOffset(BufType& buf, enumType ty, uint size, Any& val, uint
     buf -= offset;
 }
 
-uint Sheet::genOffset(uint index){
+uint Sheet::genOffset(uint index) {
     uint ans = 0;
-    for(uint i = 0;i < index; i ++){
+    for (uint i = 0; i < index; i++) {
         ans += this->col_ty[i].size();
     }
     return ans;
 }
 
-uint Sheet::createIndex(vector<uint> key_index,std::string name) {
+uint Sheet::createIndex(vector<uint> key_index, std::string name) {
     //Calculate max per node
 
     int max_per_node = 100;
@@ -357,7 +359,7 @@ uint Sheet::createIndex(vector<uint> key_index,std::string name) {
         if (exist(buf, record_id % record_onepg)) {
             BufType _buf = buf + (record_onepg - 1) / 8 + 1 + record_size * (record_id % record_onepg);
             Anys a;
-            for (uint j = 0;j < key_index.size();j ++){
+            for (uint j = 0; j < key_index.size(); j++) {
                 Any val;
                 fetchWithOffset(_buf, col_ty[index[index_num].key[j]].ty, col_ty[index[index_num].key[j]].size(), val, genOffset(key_index[j]));
                 a.push_back(val);
@@ -392,7 +394,7 @@ int Sheet::removeColumn(uint col_id) { // TODO need to modify index
             break;
         } else if (*it > col_id) *it -= 1;
     }
-    if (f_key.size()) for(uint i = 0; i < f_key.size(); i++) {
+    if (f_key.size()) for (uint i = 0; i < f_key.size(); i++) {
         for (auto it = f_key[i]->v.begin(); it != f_key[i]->v.end(); it++) if (*it == col_id) {
             removeForeignKey(f_key[i--]);
             break;
@@ -427,7 +429,7 @@ int Sheet::modifyColumn(uint col_id, Type ty) { // TODO 对于 Key 和 index 的
 
 void Sheet::updateColumns() {
     for (uint i = 0; i < col_num; i++) col_ty[i].key = Common;
-    if(p_key != nullptr)for (auto it: p_key->v) col_ty[it].key = Primary;
+    if (p_key != nullptr)for (auto it: p_key->v) col_ty[it].key = Primary;
     for (auto _it: f_key) for (auto it: _it->v) col_ty[it].key = Foreign;
 }
 
@@ -514,7 +516,7 @@ int Sheet::createPrimaryKey(PrimaryKey* pk) {
     updateColumns();
     // TODO new p_key_index
     int old = p_key_index;
-    if(old != -1)removeIndex(old);
+    if (old != -1)removeIndex(old);
     p_key_index = createIndex(p_key->v, "Primary_Key");
     return 0;
 
@@ -535,7 +537,7 @@ int Sheet::createPrimaryKey(PrimaryKey* pk) {
     //             fetch(buf, col_ty[i].ty, col_ty[i].size(), info[i]);
     //         }
     //         bool flag = false;
-    //         for (auto a: v){
+    //         for (auto a: v) {
     //             if (a == info[key_index])
     //             {
     //                 flag = true;
@@ -551,15 +553,15 @@ int Sheet::createPrimaryKey(PrimaryKey* pk) {
     // this->p_key.push_back(key_index);
 
     // bool index_flag = false;
-    // for (uint i = 0;i < this->index_num;i ++){
-    //     if(this->index[i].key == key_index){
+    // for (uint i = 0; i < this->index_num; i++) {
+    //     if (this->index[i].key == key_index) {
     //         this->p_key_index = i;
     //         index_flag = true;
     //         break;
     //     }
     // }
 
-    // if(!index_flag){
+    // if (!index_flag) {
     //     this->createIndex(key_index);
     //     this->p_key_index = index_num - 1;
     // }
@@ -678,8 +680,8 @@ void Sheet::print() {
     Print::end();
 }
 
-int Sheet::findCol(std::string a){
-    for(uint i = 0; i < col_num;i ++)if(a == std::string(this->col_ty[i].name))return i;
+int Sheet::findCol(std::string a) {
+    for (uint i = 0; i < col_num; i++)if (a == std::string(this->col_ty[i].name))return i;
     return -1;
 }
 
@@ -741,23 +743,16 @@ int Sheet::constraintRowKey(Any* data, Key* key) {
         for (auto i: key->v)temp.push_back(data[i]);
         int index_num = p_key_index;
         std::vector<int> ans = this->index[index_num].queryRecord(&temp);
-        if(ans.size() != 0){
-            //printf("Primary Key Fail\n");
-            return -2;
-        }
+        if (ans.size() != 0) return -2;
     } else {
         // TODO check exist(find p_key_index)
         Anys val;
-        for(auto i: key->v)val.push_back(data[i]);
+        for (auto i: key->v)val.push_back(data[i]);
         vector <int> ans;
         Sheet* p_sheet = dynamic_cast<ForeignKey*>(key)->p->sheet;
         //printf("%s %s\n",p_sheet->name,p_sheet->index[p_sheet->p_key_index].name);
         ans = p_sheet->index[p_sheet->p_key_index].queryRecord(&val);
-        //p_sheet->index[p_sheet->p_key_index].Debug();
-        if(ans.size() == 0){
-            //printf("Foriegn Key Fail\n");
-            return -3;
-        }
+        if (ans.size() == 0) return -3;
     }
     return 0;
 }
@@ -884,7 +879,7 @@ int Sheet::updateRecords(std::vector<Pia> &set, std::vector<WhereStmt> &where) {
                 queryRecord(pointer, data);
                 for (uint i = 0; i < index_num; i++) {
                     Anys temp;
-                    for(uint j = 0;j < this->index[i].key_num;j ++){
+                    for (uint j = 0; j < this->index[i].key_num; j++) {
                         temp.push_back(data[this->index[i].key[j]]);
                     }
                     this->index[i].removeRecord(&temp, pointer);

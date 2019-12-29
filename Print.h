@@ -9,9 +9,9 @@
 
 class Print {
 public:
-    static std::vector<std::pair<std::string,int> > t;
+    static std::vector<std::pair<std::string, int> > t;
     static int col_num;
-    static void title(std::vector<std::pair<std::string,int> > v);
+    static void title(std::vector<std::pair<std::string, int> > v);
     static void row(Anys v);
     static void end();
 };

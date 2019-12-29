@@ -83,7 +83,7 @@ void test_2() {
     temp.record_id = 2;
     a.record.push_back(temp);
 
-    Index ax(sheet, "haha", 1,3);
+    Index ax(sheet, "haha", 1, 3);
 
     ax.convert_BtreeNode_to_buf(&a);
     ax.convert_buf_to_BtreeNode(a.index);
@@ -117,7 +117,7 @@ void test_4() {
     vector <uint> key;
     key.push_back(0);
 
-    sheet->createIndex(key,"test_index");
+    sheet->createIndex(key, "test_index");
     sheet->insertRecord(new Any[4]{2017011475, (char*)"GGT", 345, 34});
     sheet->insertRecord(new Any[4]{634645345, (char*)"KLE", 345, 34});
     sheet->insertRecord(new Any[4]{634645345, (char*)"KLEX", 3456, 345});
@@ -272,7 +272,7 @@ void test_9() { // varchar data decimal
 */
 
 inline uint32_t date_to_uint(string str) {
-    str = str.substr(0,4) + str.substr(5,2) + str.substr(8,2);
+    str = str.substr(0, 4) + str.substr(5, 2) + str.substr(8, 2);
     return (uint32_t)atoi(str.c_str());
 }
 
@@ -345,7 +345,7 @@ void import_data_tbl() {
         Type("P_COMMENT", VARCHAR, 23),
     });
     assert(sheet->createPrimaryKey(new PrimaryKey(sheet, 1, new int[1]{0})) == 0);
-    import_data(sheet, "data/part.tbl",'|');
+    import_data(sheet, "data/part.tbl", '|');
 
     // id = 1
     sheet = db->createSheet("region", 3, new Type[3]{
@@ -354,7 +354,7 @@ void import_data_tbl() {
         Type("R_COMMENT", VARCHAR, 152),
     });
     assert(sheet->createPrimaryKey(new PrimaryKey(sheet, 1, new int[1]{0})) == 0);
-    import_data(sheet, "data/region.tbl",'|');
+    import_data(sheet, "data/region.tbl", '|');
 
     //sheet->index[sheet->p_key_index].Debug();
 
@@ -367,7 +367,7 @@ void import_data_tbl() {
     });
     assert(sheet->createPrimaryKey(new PrimaryKey(sheet, 1, new int[1]{0})) == 0);
     assert(sheet->createForeignKey(new ForeignKey(sheet, 1, new int[1]{2}), db->sheet[1]->p_key) == 0);
-    import_data(sheet, "data/nation.tbl",'|');
+    import_data(sheet, "data/nation.tbl", '|');
 
     //sheet->index[sheet->p_key_index].Debug();
     //sheet->f_key[0]->p->sheet->index[sheet->f_key[0]->p->sheet->p_key_index].Debug();
@@ -384,8 +384,8 @@ void import_data_tbl() {
     });
     assert(sheet->createPrimaryKey(new PrimaryKey(sheet, 1, new int[1]{0})) == 0);
     assert(sheet->createForeignKey(new ForeignKey(sheet, 1, new int[1]{3}), db->sheet[2]->p_key) == 0);
-    import_data(sheet, "data/supplier.tbl",'|');
-    import_data(sheet, "data/region.tbl",'|');
+    import_data(sheet, "data/supplier.tbl", '|');
+    import_data(sheet, "data/region.tbl", '|');
 
     // id = 4
     sheet = db->createSheet("customer", 8, new Type[8]{
@@ -400,7 +400,7 @@ void import_data_tbl() {
     });
     assert(sheet->createPrimaryKey(new PrimaryKey(sheet, 1, new int[1]{0})) == 0);
     assert(sheet->createForeignKey(new ForeignKey(sheet, 1, new int[1]{3}), db->sheet[2]->p_key) == 0);
-    import_data(sheet, "data/customer.tbl",'|');
+    import_data(sheet, "data/customer.tbl", '|');
 
     // id = 5
     sheet = db->createSheet("partsupp", 5, new Type[5]{
@@ -413,8 +413,8 @@ void import_data_tbl() {
     assert(sheet->createPrimaryKey(new PrimaryKey(sheet, 2, new int[2]{0, 1})) == 0);
     assert(sheet->createForeignKey(new ForeignKey(sheet, 1, new int[1]{0}), db->sheet[0]->p_key) == 0);
     assert(sheet->createForeignKey(new ForeignKey(sheet, 1, new int[1]{1}), db->sheet[3]->p_key) == 0);
-    import_data(sheet, "data/partsupp.tbl",'|');
-    import_data(sheet, "data/customer.tbl",'|');
+    import_data(sheet, "data/partsupp.tbl", '|');
+    import_data(sheet, "data/customer.tbl", '|');
 
     // id = 6
     sheet = db->createSheet("orders", 9, new Type[9]{
@@ -430,7 +430,7 @@ void import_data_tbl() {
     });
     assert(sheet->createPrimaryKey(new PrimaryKey(sheet, 1, new int[1]{0})) == 0);
     assert(sheet->createForeignKey(new ForeignKey(sheet, 1, new int[1]{1}), db->sheet[4]->p_key) == 0);
-    import_data(sheet, "data/orders.tbl",'|');
+    import_data(sheet, "data/orders.tbl", '|');
 
     // id = 7
     sheet = db->createSheet("lineitem", 16, new Type[16]{
@@ -454,7 +454,7 @@ void import_data_tbl() {
     assert(sheet->createPrimaryKey(new PrimaryKey(sheet, 2, new int[2]{0, 3})) == 0);
     assert(sheet->createForeignKey(new ForeignKey(sheet, 1, new int[1]{0}), db->sheet[6]->p_key) == 0);
     assert(sheet->createForeignKey(new ForeignKey(sheet, 2, new int[2]{1, 2}), db->sheet[5]->p_key) == 0);
-    import_data(sheet, "data/lineitem.tbl",'|');
+    import_data(sheet, "data/lineitem.tbl", '|');
 
     delete db;
 }
@@ -478,7 +478,7 @@ void import_data_csv() {
         Type("P_COMMENT", VARCHAR, 23),
     });
     assert(sheet->createPrimaryKey(new PrimaryKey(sheet, 1, new int[1]{0})) == 0);
-    import_data(sheet, "data/part.csv",',');
+    import_data(sheet, "data/part.csv", ',');
 
     // id = 1
     sheet = db->createSheet("region", 3, new Type[3]{
@@ -487,7 +487,7 @@ void import_data_csv() {
         Type("R_COMMENT", VARCHAR, 152),
     });
     assert(sheet->createPrimaryKey(new PrimaryKey(sheet, 1, new int[1]{0})) == 0);
-    import_data(sheet, "data/region.csv",',');
+    import_data(sheet, "data/region.csv", ',');
 
     // id = 2
     sheet = db->createSheet("nation", 4, new Type[4]{
@@ -498,7 +498,7 @@ void import_data_csv() {
     });
     assert(sheet->createPrimaryKey(new PrimaryKey(sheet, 1, new int[1]{0})) == 0);
     assert(sheet->createForeignKey(new ForeignKey(sheet, 1, new int[1]{2}), db->sheet[1]->p_key) == 0);
-    import_data(sheet, "data/nation.csv",',');
+    import_data(sheet, "data/nation.csv", ',');
 
     // id = 3
     sheet = db->createSheet("supplier", 7, new Type[7]{
@@ -512,8 +512,8 @@ void import_data_csv() {
     });
     assert(sheet->createPrimaryKey(new PrimaryKey(sheet, 1, new int[1]{0})) == 0);
     assert(sheet->createForeignKey(new ForeignKey(sheet, 1, new int[1]{3}), db->sheet[2]->p_key) == 0);
-    import_data(sheet, "data/supplier.csv",',');
-    import_data(sheet, "data/region.csv",',');
+    import_data(sheet, "data/supplier.csv", ',');
+    import_data(sheet, "data/region.csv", ',');
 
     // id = 4
     sheet = db->createSheet("customer", 8, new Type[8]{
@@ -528,7 +528,7 @@ void import_data_csv() {
     });
     assert(sheet->createPrimaryKey(new PrimaryKey(sheet, 1, new int[1]{0})) == 0);
     assert(sheet->createForeignKey(new ForeignKey(sheet, 1, new int[1]{3}), db->sheet[2]->p_key) == 0);
-    import_data(sheet, "data/customer.csv",',');
+    import_data(sheet, "data/customer.csv", ',');
 
     // id = 5
     sheet = db->createSheet("partsupp", 5, new Type[5]{
@@ -541,8 +541,8 @@ void import_data_csv() {
     assert(sheet->createPrimaryKey(new PrimaryKey(sheet, 2, new int[2]{0, 1})) == 0);
     assert(sheet->createForeignKey(new ForeignKey(sheet, 1, new int[1]{0}), db->sheet[0]->p_key) == 0);
     assert(sheet->createForeignKey(new ForeignKey(sheet, 1, new int[1]{1}), db->sheet[3]->p_key) == 0);
-    import_data(sheet, "data/partsupp.csv",',');
-    import_data(sheet, "data/customer.csv",',');
+    import_data(sheet, "data/partsupp.csv", ',');
+    import_data(sheet, "data/customer.csv", ',');
 
     // id = 6
     sheet = db->createSheet("orders", 9, new Type[9]{
@@ -558,7 +558,7 @@ void import_data_csv() {
     });
     assert(sheet->createPrimaryKey(new PrimaryKey(sheet, 1, new int[1]{0})) == 0);
     assert(sheet->createForeignKey(new ForeignKey(sheet, 1, new int[1]{1}), db->sheet[4]->p_key) == 0);
-    import_data(sheet, "data/orders.csv",',');
+    import_data(sheet, "data/orders.csv", ',');
 
     // id = 7
     sheet = db->createSheet("lineitem", 16, new Type[16]{
@@ -582,7 +582,7 @@ void import_data_csv() {
     assert(sheet->createPrimaryKey(new PrimaryKey(sheet, 2, new int[2]{0, 3})) == 0);
     assert(sheet->createForeignKey(new ForeignKey(sheet, 1, new int[1]{0}), db->sheet[6]->p_key) == 0);
     assert(sheet->createForeignKey(new ForeignKey(sheet, 2, new int[2]{1, 2}), db->sheet[5]->p_key) == 0);
-    import_data(sheet, "data/lineitem.csv",',');
+    import_data(sheet, "data/lineitem.csv", ',');
 
     delete db;
 }

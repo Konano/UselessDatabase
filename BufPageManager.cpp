@@ -40,7 +40,7 @@ BufPageManager::BufPageManager(FileManager* fm) : fm(fm) {
 }
 
 BufPageManager::~BufPageManager() {
-    for (int i = 0; i < MAX_BUF_NUM; ++ i) {
+    for (int i = 0; i < MAX_BUF_NUM; i++) {
         writeBack(i);
         delete addr[i];
     }
@@ -77,7 +77,7 @@ bool BufPageManager::check(int fileID, int pageID, int index) {
 }
 
 void BufPageManager::closeFile(int fileID) {
-    for (int i = 0; i < MAX_BUF_NUM; ++ i) {
+    for (int i = 0; i < MAX_BUF_NUM; i++) {
         if (file_id[i] == fileID) {
             writeBack(i);
             delete addr[i];

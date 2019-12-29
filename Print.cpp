@@ -47,10 +47,10 @@ string Any2Str(Any val) {
     } else return "NULL";
 }
 
-vector<pair<string,int> > Print::t;
+vector<pair<string, int> > Print::t;
 int Print::col_num;
 
-void Print::title(vector<pair<string,int> > v) {
+void Print::title(vector<pair<string, int> > v) {
     t = v;
     col_num = v.size();
 
