@@ -488,7 +488,7 @@ tbStmt:
     | DELETE FROM tbName WHERE whereClauses SEMI {
         if (current_db_exists()) {
             int tableID;
-            if (!table_exists($3, tableID, true)) {
+            if (table_exists($3, tableID, true)) {
                 error = false;
                 vector<Pis> from; 
                 from.push_back(Pis(tableID, $3));
@@ -503,7 +503,7 @@ tbStmt:
     | UPDATE tbName SET setClause WHERE whereClauses SEMI {
         if (current_db_exists()) {
             int tableID;
-            if (!table_exists($2, tableID, true)) {
+            if (table_exists($2, tableID, true)) {
                 error = false;
                 vector<Pis> from; 
                 from.push_back(Pis(tableID, $2));

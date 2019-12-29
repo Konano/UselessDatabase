@@ -14,13 +14,19 @@
 
 **页式文件系统**主要负责直接操作文件，按照页管理存储空间。
 
+**记录管理模块**完成记录的存储，实现朴素的增删改查。
+
+**索引模块**实现索引加速，利用B树加快搜索。
+
+**系统管理模块**主要负责对数据库和数据表进行管理。
+
 **查询解析模块**主要负责将SQL语句解析为对索引模块，系统管理模块，系统管理模块的操作。
 
 #### 2、主要模块设计原理
 
 ##### （0）文件系统
 
-​		文件系统利用给定的页式文件系统，
+​		文件系统利用给定的页式文件系统，不做过多说明。
 
 ##### （1）记录管理模块
 
@@ -28,7 +34,7 @@
 
 **文件构成：**
 
-$Sheet.cpp$ $Sheet.h $
+`Sheet.cpp` `Sheet.h `
 
 **具体功能：**
 
@@ -36,7 +42,7 @@ $Sheet.cpp$ $Sheet.h $
 
 ​		包括表头信息的存储和表内记录的存储。
 
-​		表头信息以$Json$格式直接存储对应的数据库配置文件（$database.udb$）中，存储在所属数据库的$sheet$项内部，多个表按照$List$排列。每一个表的表头信息存储如下：
+​		表头信息以 JSON 格式直接存储对应的数据库配置文件（`database.udb`）中，存储在所属数据库的 sheet 项内部，多个表按照 List 排列。每一个表的表头信息存储如下：
 
 ```json
 {
@@ -85,11 +91,11 @@ $Sheet.cpp$ $Sheet.h $
 }
 ```
 
-​		记录信息则使用页式管理系统，将记录存储在（$表名.usid$）中。存储中我们为了最大程度利用空间，除了最基本的把数据依次排列以外，还设计了$Exist$位和$isnull$位，存储在表的开头，分别占用$record\_per\_page$个比特的位置（按照字节向上取整），主要是为了标记对应的$record$是否有效（可能被删除）和标记对饮的$record$是否是空值。
+​		记录信息则使用页式管理系统，将记录存储在（`表名.usid`）中。存储中我们为了最大程度利用空间，除了最基本的把数据依次排列以外，还设计了 Exist 位，存储在表的开头，占用 record_per_page 个比特的位置（按照字节向上取整），主要是为了标记对应的 record 是否有效（可能被删除）和标记对饮的 record 是否是空值。
 
 2、增删改查
 
-​		增：利用表头中的$record\_num$（相当于RID），计算找到页式文件系统中的对应位置存储即可。
+​		增：利用表头中的 record_num （相当于RID），计算找到页式文件系统中的对应位置存储即可。
 
 ​		删：直接对某一个ID计算标记位的位置，置1即可。
 
@@ -105,7 +111,7 @@ $Sheet.cpp$ $Sheet.h $
 
 ##### 文件构成：
 
-​		$BtreeNode.h$ $Index.h$ $Index.cpp$
+​		`BtreeNode.h` `Index.h` `Index.cpp`
 
 ##### 具体功能：
 
@@ -113,7 +119,7 @@ $Sheet.cpp$ $Sheet.h $
 
 ​		包括索引表头的存储和B树索引的存储。
 
-​		索引表头以$Json$格式存储在（$database.udb$）中，具体的格式如下：
+​		索引表头以 JSON 格式存储在（`database.udb`）中，具体的格式如下：
 
 ```json
 {
@@ -135,12 +141,11 @@ $Sheet.cpp$ $Sheet.h $
 }
 ```
 
-​		索引的内容，即B树的各个节点，实际上是按照页来分配的（$表名\_索引名.usid$），也就是说，每一个页就对应了一个B树的节点，每一个节点上要记录$fa\_index$（父节点节点号），$record\_cnt$（当前节点索引个数），$isNULL$标记，之后按照孩子编号-RID-索引值-孩子编号-RID-索引值的顺序存储B树节点的信息。
+​		索引的内容，即B树的各个节点，实际上是按照页来分配的（`表名_索引名.usid`），也就是说，每一个页就对应了一个B树的节点，每一个节点上要记录 fa_index （父节点节点号）， record_cnt​ （当前节点索引个数），之后按照孩子编号-RID-索引值-孩子编号-RID-索引值的顺序存储B树节点的信息。
 
 ```
 fa_index//父节点index
 record_cnt//当前节点记录个数
-isNULL标记//Record_num个bit的标记位
 //假设这个节点有N-1个索引值
 child_index_0
 record_id_1
@@ -162,43 +167,43 @@ child_index_N
 
 ##### 文件构成：
 
-​		$Database.cpp$ $Database.h$ 数据库和数据表管理
+​		`Database.cpp​` `Database.h` 数据库和数据表管理
 
-​		$Sheet.cpp$ $Sheet.h$ 数据表列的增删改
+​		`Sheet.cpp` `Sheet.h` 数据表列的增删改
 
-​		$Key.h$ $Key.cpp$ 主外键的实现
+​		`Key.h` `Key.cpp` 主外键的实现
 
 ##### 具体功能：
 
 1、对数据库和数据表的管理
 
-​		对数据库和数据表的管理逻辑主要实现在$Database.cpp$和$Database.h$两个文件中。实际实现中，我们将不同的数据库存储在了不同的文件夹下，直接命名为对应的数据名。每个数据库内部有自己的$database.udb$，存储着数据库的配置信息，以及若干$表名.usid$和$表名\_索引名.usid$对应着记录和索引信息的页式管理文件。一个典型的结构如下：
+​		对数据库和数据表的管理逻辑主要实现在`Database.cpp`和`Database.h`两个文件中。实际实现中，我们将不同的数据库存储在了不同的文件夹下，直接命名为对应的数据名。每个数据库内部有自己的`database.udb`，存储着数据库的配置信息，以及若干`表名.usid`和`表名_索引名.usid`对应着记录和索引信息的页式管理文件。一个典型的结构如下：
 
 ![image-20191223112024693](C:\Users\Administrator\AppData\Roaming\Typora\typora-user-images\image-20191223112024693.png)
 
-​		对于我们的这种实现逻辑，对数据库的管理只需要直接删除或者增加对应的文件夹即可，而对于表的操作，则可以在$database.udb$中修改对应的表头（$database.udb$的结构见上文记录管理模块），再修改相关的文件即可。
+​		对于我们的这种实现逻辑，对数据库的管理只需要直接删除或者增加对应的文件夹即可，而对于表的操作，则可以在`database.udb`中修改对应的表头（`database.udb`的结构见上文记录管理模块），再修改相关的文件即可。
 
 2、主外键功能的实现
 
-​		主外键功能主要实现在$Key.cpp$和$Key.h$两个文件中。
+​		主外键功能主要实现在`Key.cpp`和`Key.h`两个文件中。
 
 ​		//TODO：实现原理简述
 
 3、列增删功能的实现
 
-​		列增删的功能主要实现在$Sheet.cpp$和$Sheet.h$两个文件中。
+​		列增删的功能主要实现在`Sheet.cpp`和`Sheet.h`两个文件中。
 
-​		对于某一个列的修改，体现在表头上其实相对容易，但是处理记录的变化就很困难，因为数据在记录文件中是连续排列的。我们对所有的增删列都采用了$rebuild$的方法，直接重新构造对应的存储文件，替换成新的存储格式。对应的可能有现有的索引失效的问题，调用索引模块相关的函数删除这一部分索引即可。
+​		对于某一个列的修改，体现在表头上其实相对容易，但是处理记录的变化就很困难，因为数据在记录文件中是连续排列的。我们对所有的增删列都采用了`rebuild`的方法，直接重新构造对应的存储文件，替换成新的存储格式。对应的可能有现有的索引失效的问题，调用索引模块相关的函数删除这一部分索引即可。
 
 ##### （4）查询解析模块
 
-​		查询解析模块主要利用$Lex/Yacc$完成了$SQL$语句的解析，将语句转化为对数据库其他模块的操作最终完成数据库的功能。从使用上看，这一部分实际上相当于数据库的入口，所有的使用都通过这一模块解析，并反馈结果或者报错给用户。
+​		查询解析模块主要利用$Lex/Yacc$完成了 SQL 语句的解析，将语句转化为对数据库其他模块的操作最终完成数据库的功能。从使用上看，这一部分实际上相当于数据库的入口，所有的使用都通过这一模块解析，并反馈结果或者报错给用户。
 
 ##### 文件构成：
 
-​		$Lex/Yacc$解析：$yacc.y$ $lex.l$ $parser.h$
+​		$Lex/Yacc$解析：`yacc.y` `lex.l` `parser.h`
 
-​		输出格式的控制：$Print.cpp$ $Print.h$
+​		输出格式的控制：`Print.cpp` `Print.h`
 
 ##### 具体功能：
 
@@ -216,6 +221,168 @@ child_index_N
 
 #### 3、主要模块接口说明
 
+​		从抽象的逻辑上讲，数据库是按照第一部分所说的，四个模块的方式组织的，但是实际在实现中，我们没有完全按照四个部分来组织代码。实际的主框架是由$Database$->$Sheet$->$Index$的结构+查询解析模块组织起来的，所以以下按照这个实际实现的模块来说明。
+
+（1）Database模块
+
+​		Database 模块主要完成的是与数据库，数据表相关的系统管理模块的功能。
+
+```c++
+class Database {
+private:
+    // 数据库信息的转换函数
+    json toJson();
+    void fromJson(json j);
+    
+    // TODO
+    bool checkWhere(WhereStmt w);
+    void storeData(uint idx);
+    void dfsCross(uint idx, uint f_idx);
+    
+public:
+    void update();// 更新数据库表头
+
+  	//构造和析构
+    Database(const char* name, bool create);
+    ~Database();
+    
+    Sheet* createSheet(const char* name, int col_num, Type* col_ty);// 增加表
+    Sheet* openSheet(const char* name);// 使用表
+    int deleteSheet(const char* name);// 删除表
+    void showSheets();// SHOW TABLES语句
+    int findSheet(std::string s);// 通过名字找表
+
+    // 从字符串池中存取VarChar
+    char* getVarchar(uint64_t idx); // get varchar from '.storage'
+    uint64_t storeVarchar(char* str); // store varchar into '.storage'
+
+    void buildSel(uint idx);
+};
+```
+
+（2）Sheet 模块
+
+​		Sheet 模块主要完成的是记录管理部分的功能和与表结构相关的系统管理模块的功能。
+
+```c++
+class Sheet {
+private:
+    // 一些内部辅助函数
+    void insert(Any& val, enumType ty, uint size, BufType& buf);
+    void fetch(BufType& buf, enumType ty, uint size, Any& val);
+    void fetchWithOffset(BufType& buf, enumType ty, uint size, Any& val, uint offset);
+    uint genOffset(uint index);
+    char* getStr(BufType buf, uint size);
+    
+public:
+    // 构造析构，存储相关
+    json toJson();
+    Sheet(Database* db, json j);
+    Sheet() {}
+    Sheet(uint _sel) : sel(_sel) {}
+    ~Sheet();
+    
+    // TODO
+    uint calDataSize();
+    int createSheet(uint sheet_id,Database* db, const char* name, uint col_num, Type* col_ty, bool create = false);
+    
+    // 增删改查（记录管理模块）
+    int insertRecord(Any* data);
+    int removeRecord(const int record_id);
+    Anys queryRecord(const int record_id);
+    int queryRecord(const int record_id, Any* &data);
+    int updateRecord(const int record_id, const int len, Any* data);
+
+    // TODO
+    bool checkWhere(Anys data, WhereStmt &w);
+    bool checkWheres(Anys data, std::vector<WhereStmt> &where);
+    int removeRecords(std::vector<WhereStmt> &where);
+    int updateRecords(std::vector<Pia> &set, std::vector<WhereStmt> &where);
+
+    // TODO
+    bool cmpRecord(Anys a, Anys b, enumOp op);
+    bool cmpRecords(Anys data, enumOp op, bool any, bool all);
+
+    // 对数据表的索引的增删和找
+    int findIndex(std::string s);
+    uint createIndex(std::vector<uint> key_index,std::string name);
+    void removeIndex(uint index_id);
+
+    // 对数据表列的增删改（系统管理模块）
+    int createColumn(Type ty);
+    int removeColumn(uint key_index);
+    int modifyColumn(uint key_index, Type ty);
+    void updateColumns();
+
+    // 重构数据表（在对列增删改时使用）
+    void rebuild(int ty, uint key_index);
+
+    // 主键和外键的删除和创建
+    int createForeignKey(ForeignKey* fk, PrimaryKey* pk);
+    int removeForeignKey(ForeignKey* fk);
+    int createPrimaryKey(PrimaryKey* pk);
+    int removePrimaryKey();
+
+    // TODO
+    void printCol();
+    void print();
+
+    // 通过名字找到特定的列标号
+    int findCol(std::string a);
+    
+    // 数据完整性检查
+    int constraintCol(uint col_id);
+    int constraintKey(Key* key);
+    int constraintRow(Any* data, uint record_id, bool ck_unique);
+    int constraintRowKey(Any* data, Key* key);
+
+    // TODO
+    int pointer;
+    void setPointer(int pointer);
+    bool movePointer();
+    Any getPointerColData(uint idx);
+    Anys getPointerData();
+};
+```
+
+（3）Index 模块
+
+​		Index 模块主要完成的是索引部分的功能。
+
+```c++
+class Index {
+private:
+    void overflow_upstream(BtreeNode* now);//B树节点上溢
+    void overflow_downstream(BtreeNode* now);//B树节点下溢
+    std::vector<int> queryRecord(Anys* info, BtreeNode* now);//B树内部搜索
+    void insertRecord(Anys* info, int record_id, BtreeNode* now);//B树内部插入
+    void removeRecord(Anys* info, int record_id, BtreeNode* now);//B树内部删除
+
+public:
+    //与构造和存储相关的接口
+    Index() {}
+    Index(Sheet* sheet, const char* name, std::vector<uint> key,int btree_max_per_node);
+    Index(Sheet* sheet, json j);
+    json toJson();
+    void open();
+    void close();
+    void remove();
+
+    //节点的存储和读取
+    BtreeNode* convert_buf_to_BtreeNode(int index);
+    void convert_BtreeNode_to_buf(BtreeNode* node);
+    
+    //增删查，公共接口
+	std::vector<int> queryRecord(Anys* info);
+    void insertRecord(Anys* info, int record_id);
+    void removeRecord(Anys* info, int record_id);
+
+    //调试接口
+    void Debug();
+    void debug(BtreeNode* node);
+};
+```
+
 
 
 #### 4、实验结果
@@ -232,10 +399,20 @@ child_index_N
 
 （1）$Lex/Yacc$
 
-查询解析模块的实现中我们利用了现成的工具，即$Lex/Yacc$实现了$SQL$文法的解析。
+查询解析模块的实现中我们利用了现成的工具，即$Lex/Yacc$实现了 SQL 文法的解析。
 
 （2）$JSON\ for\ Modern\ C++$
 
 开源库地址： https://github.com/nlohmann/json
 
-在实现一些配置信息的存储时（比如表的列信息，索引的列信息，数据库的信息等等），我们使用了一个$JSON$的开源库。将这些只需要单次读取的配置信息的存储简化，不使用提供的文件管理系统。
+在实现一些配置信息的存储时（比如表的列信息，索引的列信息，数据库的信息等等），我们使用了一个 JSON 的开源库。将这些只需要单次读取的配置信息的存储简化，不使用提供的文件管理系统。
+
+#### 7、其他需要说明的问题
+
+（1）空值的处理
+
+​		空值我们在实现中统一处理为了所有的位全为1为空值，也就是说，对于 INT 类数据来说，最大值是没有办法表示的。
+
+（2）VarChar 的处理
+
+​		VarChar 我们统一存储在了每一个数据库的一个`.storage`文件内，通过偏移量来计算每一个VarChar 所在的位置来存取 VarChar。
