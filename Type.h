@@ -32,7 +32,7 @@ public:
     enumKeyType key = Common;
     Any def;
 
-    bool isNull() { return null; }
+    bool beNull() { return null; }
     void setNull(bool _null) { null = _null; }
     bool isDelete() { return deleted; }
     void del() { deleted = true; }
