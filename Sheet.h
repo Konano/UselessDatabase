@@ -36,7 +36,7 @@ public:
     std::vector<ForeignKey*> f_key; // foreign keys
     int p_key_index = -1;
     uint index_num = 0;
-    Index index[MAX_INDEX_NUM];
+    Index index[MAX_INDEX_NUM]; // TODO to vector
     uint record_num = 0; // all record, include removed record
     int main_file;
     uint record_size;

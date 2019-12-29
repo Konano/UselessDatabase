@@ -23,8 +23,7 @@ private:
     BufType lastBuf;
 
     BufType fetchPage(int fileID, int pageID, int& index);
-    // writeBack will throw the buf away
-    void writeBack(int index);
+    void writeBack(int index); // writeBack will throw the buf away
     
 public:
     BufPageManager(FileManager* fm);

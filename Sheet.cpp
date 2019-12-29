@@ -172,7 +172,7 @@ int Sheet::insertRecord(Any* data) {
     record_num++;
     /*
     printf("check index_num:%d record_num:%d\n",index_num,record_num);
-    for(int i = 0;i < record_num;i ++){
+    for(uint i = 0;i < record_num;i ++){
         Anys temp = queryRecord(i);
         if(temp[0].isNull())printf("null ");
         else printf("%d ",*temp[0].anyCast<int>());
@@ -375,7 +375,7 @@ void Sheet::removeIndex(uint index_id) {
 }
 
 int Sheet::createColumn(Type ty) {
-    if (record_num > 0 && ty.isNull() == false) return -1;
+    if (record_num > 0 && ty.beNull() == false) return -1;
     col_ty[col_num++] = ty;
     rebuild(1, col_num);
     return 0;
@@ -645,7 +645,7 @@ void Sheet::printCol() {
             d.push_back(Any((char*)"DECIMAL"));
             break;
         };
-        d.push_back(Any((char*)(col_ty[i].isNull() ? "YES" : "NO")));
+        d.push_back(Any((char*)(col_ty[i].beNull() ? "YES" : "NO")));
         d.push_back(Any((char*)(col_ty[i].key == Primary ? "Primary" : col_ty[i].key == Foreign ? "Foreign" : "")));
         d.push_back(col_ty[i].def);
         Print::row(d);
@@ -688,7 +688,7 @@ int Sheet::constraintCol(uint col_id) {
     std::map<Any, bool> m;
     for (uint record_id = 0; record_id < record_num; record_id++) { // TODO optimize
         if (queryRecord(record_id, data)) continue;
-        if (col_ty[col_id].isNull() == false && data[col_id].isNull()) return -1;
+        if (col_ty[col_id].beNull() == false && data[col_id].isNull()) return -1;
     }
     return 0;
 }
@@ -727,7 +727,7 @@ int Sheet::constraintKey(Key* key) {
 
 int Sheet::constraintRow(Any* data, uint record_id, bool ck_unique) {
     for (uint i = 0; i < col_num; i++) {
-        if (col_ty[i].isNull() == false && data[i].isNull()) return -1;
+        if (col_ty[i].beNull() == false && data[i].isNull()) return -1;
     }
     if (p_key != nullptr && constraintRowKey(data, p_key)) return -3;
     for (auto it: f_key) if (constraintRowKey(data, it)) return -4;
