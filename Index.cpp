@@ -41,6 +41,10 @@ Index::Index(Sheet* sheet, json j) : sheet(sheet) {
     next_del_page = j["next_del_page"].get<int>();
     record_size = j["record_size"].get<int>();
     for (uint i = 0; i < key_num; i++) ty.push_back((enumType)j["ty"][i]);
+    open();
+    root = convert_buf_to_BtreeNode(root_page);
+    root->fa_index = -1;
+    close();
     fileID = -1; // file is closed
 }
 
@@ -202,17 +206,22 @@ void Index::convert_BtreeNode_to_buf(BtreeNode* node) {
 }
 
 std::vector<int> Index::queryRecord(Anys* info) {
-    return Index::queryRecord(info, root_page);
+    //printf("root:%d\n",root_page);
+    return Index::queryRecord(info, root);
 }
 
-std::vector<int> Index::queryRecord(Anys* info, int index) {
+std::vector<int> Index::queryRecord(Anys* info, BtreeNode *now) {
     
-    BtreeNode *now = Index::convert_buf_to_BtreeNode(index);
+    //if((*info)[0].anyCast<int>()!=nullptr)printf("val %d\n",*(*info)[0].anyCast<int>());
+    //else printf("\n");
 
     std::vector<int> v;
 
+    //printf("%d\n",now->record_cnt);
+
     int l = -1, r = -1, i;
     for (i = 0;i < now->record_cnt;i ++){
+        //if((*info)[0].anyCast<int>()!=nullptr)printf("%d %d\n",*(*info)[0].anyCast<int>(),*now->record[i].key[0].anyCast<int>());
         if(now->record[i].key == *info){
             if (l == -1) l = i;
             r = i;
@@ -222,10 +231,15 @@ std::vector<int> Index::queryRecord(Anys* info, int index) {
         }
     }
 
+    //printf("%d %d\n",now->record_cnt,l);
+
+    if(now->record_cnt > btree_max_per_node)return v;
+
     if (l == -1 && now -> is_leaf) return v;
     else if (l == -1){
         Index::convert_BtreeNode_to_buf(now);
-        return Index::queryRecord(info, now->child[i]);
+        //printf("%d %d %d\n",index, now->child[i],now->record_cnt);
+        return Index::queryRecord(info, Index::convert_buf_to_BtreeNode(now->child[i]));
     }
 
     for(int i = l;i <= r;i ++)v.push_back(now -> record[i].record_id);
@@ -236,7 +250,7 @@ std::vector<int> Index::queryRecord(Anys* info, int index) {
     else {
         for (int i = l;i <= r + 1;i ++){
             Index::convert_BtreeNode_to_buf(now);
-            std::vector<int> cv = Index::queryRecord(info, now->child[i]);
+            std::vector<int> cv = Index::queryRecord(info, Index::convert_buf_to_BtreeNode(now->child[i]));
             for(uint j = 0;j < cv.size();j ++)v.push_back(cv[j]);
         }
         return v;

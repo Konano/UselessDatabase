@@ -51,6 +51,7 @@ struct BtreeNode{
         this->is_leaf = true;
         this->fa_index = -1;
         this->record_cnt = 0;
+        this->record.clear();
         this->child.clear();
         this->child.push_back(-1);
     };

@@ -80,9 +80,25 @@ int Sheet::createSheet(uint sheet_id, Database* db, const char* name, uint col_n
     this->bpm = db->bpm;
     strcpy(this->name, name);
     this->col_num = 0;
+    vector<uint> tempvec;
     for (uint i = 0; i < col_num; i++) {
         if (this->createColumn(col_ty[i])) return -1;
+        if (col_ty[i].key == enumKeyType::Primary)tempvec.push_back(i);
     }
+
+    if(tempvec.size() != 0){
+        p_key = new PrimaryKey(this);
+        p_key->name = "default primary key name";
+        p_key->v.clear();
+        for (auto i: tempvec)p_key->v.push_back(i);
+        p_key->sheet = this;
+        updateColumns();
+        int old = p_key_index;
+        if(old != -1)removeIndex(old);
+        p_key_index = createIndex(p_key->v, "Primary_Key");
+        p_key->v_size = p_key->v.size();
+    }
+
     if (create) {
         if (fm->createFile(dirPath(db->name, name, "usid")) == false)
             return -2;
@@ -154,6 +170,7 @@ int Sheet::insertRecord(Any* data) {
     }
     bpm->markDirty(index);
     record_num++;
+    /*
     printf("check index_num:%d record_num:%d\n",index_num,record_num);
     for(int i = 0;i < record_num;i ++){
         Anys temp = queryRecord(i);
@@ -162,7 +179,7 @@ int Sheet::insertRecord(Any* data) {
         if(temp[1].isNull())printf("null ");
         else printf("%d ",*temp[1].anyCast<int>());
         printf("\n");
-    }
+    }*/
     return 0;
 }
 
@@ -329,7 +346,10 @@ uint Sheet::genOffset(uint index){
 
 uint Sheet::createIndex(vector<uint> key_index,std::string name) {
     //Calculate max per node
-    index[index_num] = Index(this, name.c_str(), key_index, 3);
+
+    int max_per_node = 100;
+
+    index[index_num] = Index(this, name.c_str(), key_index, max_per_node);
     index[index_num].open();
     int _index;
     for (uint record_id = 0; record_id < record_num; record_id++) {
@@ -579,7 +599,7 @@ int Sheet::createForeignKey(ForeignKey* fk, PrimaryKey* pk) {
     f_keyx->p = pk->sheet->p_key;
     f_key.push_back(f_keyx);
     updateColumns();
-    pk->sheet->p_key->f.push_back(fk);
+    pk->sheet->p_key->f.push_back(f_keyx);
     return 0;
 }
 
@@ -719,17 +739,25 @@ int Sheet::constraintRowKey(Any* data, Key* key) {
         for (auto i: key->v) if (data[i].isNull()) return -1;
         Anys temp;
         for (auto i: key->v)temp.push_back(data[i]);
-        int index_num = findIndex(std::string("Primary_Key"));
+        int index_num = p_key_index;
         std::vector<int> ans = this->index[index_num].queryRecord(&temp);
-        if(ans.size() != 0)return -2;
+        if(ans.size() != 0){
+            //printf("Primary Key Fail\n");
+            return -2;
+        }
     } else {
         // TODO check exist(find p_key_index)
         Anys val;
         for(auto i: key->v)val.push_back(data[i]);
         vector <int> ans;
         Sheet* p_sheet = dynamic_cast<ForeignKey*>(key)->p->sheet;
+        //printf("%s %s\n",p_sheet->name,p_sheet->index[p_sheet->p_key_index].name);
         ans = p_sheet->index[p_sheet->p_key_index].queryRecord(&val);
-        if(ans.size() == 0)return -3;
+        //p_sheet->index[p_sheet->p_key_index].Debug();
+        if(ans.size() == 0){
+            //printf("Foriegn Key Fail\n");
+            return -3;
+        }
     }
     return 0;
 }

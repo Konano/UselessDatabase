@@ -38,7 +38,7 @@ private:
 
     void overflow_upstream(BtreeNode* now);
     void overflow_downstream(BtreeNode* now);
-    std::vector<int> queryRecord(Anys* info, int index);
+    std::vector<int> queryRecord(Anys* info, BtreeNode* now);
     void insertRecord(Anys* info, int record_id, BtreeNode* now);
     void removeRecord(Anys* info, int record_id, BtreeNode* now);
 

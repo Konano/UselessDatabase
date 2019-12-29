@@ -3,11 +3,11 @@
 #include "BufPageManager.h"
 
 inline int Hash::hash(int fileID, int pageID) {
-    return pageID * HASH_PRIME + fileID;
+    return ((pageID   % (MAX_BUF_NUM << 2)) * HASH_PRIME  + fileID)  % (MAX_BUF_NUM << 2);
 }
 
 int Hash::find(int fileID, int pageID) {
-    int id = hash(fileID, pageID) % (MAX_BUF_NUM << 2);
+    int id = hash(fileID, pageID);
     while (flag[id] && bpm->check(fileID, pageID, table[id]) == false) {
         id++;
     }
@@ -16,14 +16,14 @@ int Hash::find(int fileID, int pageID) {
 }
 
 void Hash::add(int fileID, int pageID, int index) {
-    int id = hash(fileID, pageID) % (MAX_BUF_NUM << 2);
+    int id = hash(fileID, pageID);
     while (flag[id]) id++;
     flag[id] = true;
     table[id] = (uint16_t)index;
 }
 
 void Hash::del(int fileID, int pageID) {
-    int id = hash(fileID, pageID) % (MAX_BUF_NUM << 2);
+    int id = hash(fileID, pageID);
     while (flag[id] && bpm->check(fileID, pageID, table[id]) == false) {
         id++;
     }
