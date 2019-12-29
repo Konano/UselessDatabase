@@ -117,7 +117,3 @@ INSERT INTO table_name VALUES ( ~ ) ;
 聚集查询：新建索引即可。
 
 模糊查询：有些能建立索引搜索，有些就还是全局吧。
-
-## TODO
-
-- [ ] varchar 储存设计

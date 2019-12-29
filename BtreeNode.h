@@ -5,44 +5,22 @@
 #include "Anys.h"
 
 struct BtreeRecord{
-    //RECORD_ID
-    int record_id;
-
-    //KEY
-    Anys key;
+    int record_id; // RECORD_ID
+    Anys key; // KEY
     BtreeRecord() {}
     BtreeRecord(int record_id, Anys key) : record_id(record_id) , key(key) {}
 };
 
 struct BtreeNode{
-    //LEFT_PAGE
-    int left_page_index;
-
-    //RIGHT_PAGE
-    int right_page_index;
-
-    //RIGHT_PAGE_PTR
-    BtreeNode *left_page;
-
-    //LEFT_PAGE_PTR
-    BtreeNode *right_page;
-
-    //PAGE_INDEX
-    int index;
-
-    //RECORD_COUNT
-    int record_cnt;
-
-    //CHILD_INDEX
-    std::vector<int> child;
-
-    //CHILD_NODE
-    std::vector<BtreeNode*> child_ptr;
-
-    //RECORDS
-    std::vector<BtreeRecord> record;
-
-
+    int left_page_index; // LEFT_PAGE
+    int right_page_index; // RIGHT_PAGE 
+    BtreeNode *left_page; // RIGHT_PAGE_PTR
+    BtreeNode *right_page; // LEFT_PAGE_PTR
+    int index; // PAGE_INDEX
+    int record_cnt; // RECORD_COUNT
+    std::vector<int> child; // CHILD_INDEX
+    std::vector<BtreeNode*> child_ptr; // CHILD_NODE
+    std::vector<BtreeRecord> record; // RECORDS
     bool is_leaf;
 
     BtreeNode() {
@@ -54,9 +32,7 @@ struct BtreeNode{
         this->child.push_back(-1);
     };
 
-    //FATHER_INDEX
-    int fa_index;
-
+    int fa_index; // FATHER_INDEX
 };
 
 #endif

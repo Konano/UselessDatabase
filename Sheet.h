@@ -53,7 +53,7 @@ public:
     Sheet(uint _sel) : sel(_sel) {}
     ~Sheet();
     uint calDataSize();
-    int createSheet(uint sheet_id,Database* db, const char* name, uint col_num, Type* col_ty, bool create = false);
+    int createSheet(uint sheet_id, Database* db, const char* name, uint col_num, Type* col_ty, bool create = false);
     int insertRecord(Any* data);
     // TODO void removeRecord(const int len, Any* info);
     int removeRecord(const int record_id);
@@ -70,7 +70,7 @@ public:
     bool cmpRecords(Anys data, enumOp op, bool any, bool all);
 
     int findIndex(std::string s);
-    uint createIndex(std::vector<uint> key_index,std::string name);
+    uint createIndex(std::vector<uint> key_index, std::string name);
     uint createKeyIndex(Key* key); // TODO
     void removeIndex(uint index_id);
 

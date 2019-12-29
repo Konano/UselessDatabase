@@ -145,13 +145,6 @@ int Database::findSheet(std::string s) { // -1: doesn't exist, others: OK
     return -1;
 }
 
-// Sheet* Database::findSheetPointer(std::string s) {
-//     int idx = findSheet(s);
-//     if (idx < 0) return nullptr; else return sheet[idx];
-// }
-
-
-
 char* Database::getVarchar(uint64_t idx) {
     int index;
     uint page = idx >> 32;
@@ -205,8 +198,6 @@ uint64_t Database::storeVarchar(char* str) {
     mem = ((uint64_t)page << 16) + offset;
     return out;
 }
-
-
 
 bool cmpCol(enumOp op, Anys a, Anys b) {
     switch (op) {

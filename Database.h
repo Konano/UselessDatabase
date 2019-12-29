@@ -102,7 +102,4 @@ public:
     void buildSel(uint idx);
 };
 
-// void showDatabases();
-// int cleanDatabase(const char *dbname);
-
 #endif
