@@ -857,7 +857,7 @@ alterStmt:
                         PrimaryKey temp = PrimaryKey(db->sheet[tableID], $10.size(), key_index);
                         temp.name = $6;
                         int x = db->sheet[tableID]->createPrimaryKey(&temp);
-                        if (x == -2)printf("Constraint problem\n");
+                        if (x == -2) printf("Constraint problem\n");
                     }
                 }
             }
