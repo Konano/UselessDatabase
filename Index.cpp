@@ -210,6 +210,7 @@ void Index::convert_BtreeNode_to_buf(BtreeNode* node) {
 
 std::vector<int> Index::queryRecord(Anys* info) {
     //printf("root:%d\n",root_page);
+    root = Index::convert_buf_to_BtreeNode(root_page);
     return Index::queryRecord(info, root);
 }
 
@@ -302,10 +303,9 @@ void Index::overflow_downstream(BtreeNode* now) {
                 fa->child.erase(itx);
                 fa->record_cnt--;
                 Index::convert_BtreeNode_to_buf(now);
-                Index::convert_BtreeNode_to_buf(left);
-
-                overflow_downstream(fa);        
+                Index::convert_BtreeNode_to_buf(left);       
                 Index::convert_BtreeNode_to_buf(fa);
+                overflow_downstream(fa); 
             }
             else {
                 now->record.insert(now->record.begin(), fa->record[i - 1]);
@@ -342,10 +342,9 @@ void Index::overflow_downstream(BtreeNode* now) {
                 fa->child.erase(itx);
                 fa->record_cnt--;
                 Index::convert_BtreeNode_to_buf(now);
-                Index::convert_BtreeNode_to_buf(right);
-
-                overflow_downstream(fa);        
+                Index::convert_BtreeNode_to_buf(right);        
                 Index::convert_BtreeNode_to_buf(fa);
+                overflow_downstream(fa);
             }
             else {
                 now->record.insert(now->record.begin(), fa->record[i - 1]);
@@ -467,11 +466,11 @@ void Index::insertRecord(Anys* info, int record_id, BtreeNode* now) {
 }
 
 void Index::removeRecord(Anys* info, int record_id) {
+    root = Index::convert_buf_to_BtreeNode(root_page);
     removeRecord(info, record_id, root);
 }
 
 void Index::removeRecord(Anys* info, int record_id, BtreeNode* now) {
-    
     //cout << "remove" << now->index << " "  << now->record_cnt << " " << record_id << endl;
     int i = 0;
     vector<BtreeRecord>::iterator it;
@@ -485,25 +484,25 @@ void Index::removeRecord(Anys* info, int record_id, BtreeNode* now) {
         }
         i ++;
     }
-    if (it->record_id == record_id) {
+    if (it != now->record.end() && it->record_id == record_id) {
         if (now->is_leaf) {
             now->record.erase(it);
             now->child.pop_back();
             now->record_cnt--;
-            overflow_downstream(now);
             Index::convert_BtreeNode_to_buf(now);
+            overflow_downstream(now);
         }
         else {
             BtreeNode* follow_node = Index::convert_buf_to_BtreeNode(now->child[i + 1]);
             while (follow_node->child[0] != -1)follow_node = Index::convert_buf_to_BtreeNode(follow_node->child[0]);
             now->record[i] = follow_node->record[0];
-            Index::removeRecord(&follow_node->record[0].key, follow_node->record[0].record_id, follow_node);
             Index::convert_BtreeNode_to_buf(now);
             Index::convert_BtreeNode_to_buf(follow_node);
+            Index::removeRecord(&follow_node->record[0].key, follow_node->record[0].record_id, follow_node);
         }
     }
     else {
-        if (!now->is_leaf) Index::removeRecord(info, record_id, Index::convert_buf_to_BtreeNode(now->child[i]));
         Index::convert_BtreeNode_to_buf(now);
+        if (!now->is_leaf) Index::removeRecord(info, record_id, Index::convert_buf_to_BtreeNode(now->child[i]));
     }
 }
