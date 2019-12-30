@@ -23,6 +23,23 @@ private:
     uint genOffset(uint index);
     char* getStr(BufType buf, uint size);
     
+    std::vector<uint> existentRecords();
+    bool checkWhere(Anys data, WhereStmt &w);
+    bool checkWheres(Anys data, std::vector<WhereStmt> &where);
+    std::vector<uint> findWheres(std::vector<WhereStmt> &where);
+    Anys chooseData(Anys& data, std::vector<uint>& cols);
+
+    struct Pointer {
+        Sheet* s;
+        uint pid;
+        BufType buf;
+        void init();
+        bool next();
+        Pointer() {}
+        Pointer(Sheet* _s, uint _pid);
+        Anys get();
+    } pointer;
+    
 public:
     char name[MAX_NAME_LEN];
     // char comment[MAX_COMMENT_LEN];
@@ -30,13 +47,13 @@ public:
     FileManager* fm;
     BufPageManager* bpm;
     uint sheet_id;
-    uint col_num = 0; // TODO Drop this, change to vector
+    uint col_num = 0;
     Type col_ty[MAX_COL_NUM];
     PrimaryKey* p_key = nullptr; // primary key
     std::vector<ForeignKey*> f_key; // foreign keys
     int p_key_index = -1;
     uint index_num = 0;
-    Index index[MAX_INDEX_NUM]; // TODO to vector
+    Index index[MAX_INDEX_NUM];
     uint record_num = 0; // all record, include removed record
     int main_file;
     uint record_size;
@@ -49,20 +66,19 @@ public:
     json toJson();
     Sheet(Database* db, json j);
 
-    Sheet() {}
-    Sheet(uint _sel) : sel(_sel) {}
+    Sheet() { this->pointer.s = this; }
+    Sheet(uint _sel) : sel(_sel) { this->pointer.s = this; }
     ~Sheet();
     uint calDataSize();
     int createSheet(uint sheet_id, Database* db, const char* name, uint col_num, Type* col_ty, bool create = false);
     int insertRecord(Any* data);
-    // TODO void removeRecord(const int len, Any* info);
+    // void removeRecord(const int len, Any* info);
     int removeRecord(const int record_id);
     Anys queryRecord(const int record_id);
     int queryRecord(const int record_id, Any* &data);
-    int updateRecord(const int record_id, const int len, Any* data);
+    // int updateRecord(const int record_id, const int len, Any* data);
+    int updateRecord(const int record_id, std::vector<Pia> &set);
 
-    bool checkWhere(Anys data, WhereStmt &w);
-    bool checkWheres(Anys data, std::vector<WhereStmt> &where);
     int removeRecords(std::vector<WhereStmt> &where);
     int updateRecords(std::vector<Pia> &set, std::vector<WhereStmt> &where);
 
@@ -70,16 +86,16 @@ public:
     bool cmpRecords(Anys data, enumOp op, bool any, bool all);
 
     int findIndex(std::string s);
-    uint createIndex(std::vector<uint> key_index, std::string name);
-    uint createKeyIndex(Key* key); // TODO
+    uint createIndex(std::vector<uint> col_id, std::string name);
+    // uint createKeyIndex(Key* key); 
     void removeIndex(uint index_id);
 
     int createColumn(Type ty);
-    int removeColumn(uint key_index);
-    int modifyColumn(uint key_index, Type ty);
+    int removeColumn(uint col_id);
+    int modifyColumn(uint col_id, Type ty);
     void updateColumns();
 
-    void rebuild(int ty, uint key_index);
+    void rebuild(int ty, uint col_id);
 
     int createForeignKey(ForeignKey* fk, PrimaryKey* pk);
     int removeForeignKey(ForeignKey* fk);
@@ -96,17 +112,10 @@ public:
     int constraintRow(Any* data, uint record_id, bool ck_unique);
     int constraintRowKey(Any* data, Key* key);
 
-    int pointer;
-    void setPointer(int pointer);
+    void initPointer();
     bool movePointer();
     Any getPointerColData(uint idx);
     Anys getPointerData();
 };
 
 #endif
-
-// TODO i -> record_id
-
-// TODO key_index -> col_id
-
-// TODO 名字比较需要无视大小写

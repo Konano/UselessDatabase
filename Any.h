@@ -88,7 +88,11 @@ public:
 
     bool operator<(const Any &b) const
     {
-        if (b.anyCast<char*>() != nullptr) {
+        if (isNull() || b.isNull()) {
+            if (isNull() && b.isNull()) return false;
+            if (isNull() && !b.isNull()) return true;
+            if (!isNull() && b.isNull()) return false;
+        } else if (b.anyCast<char*>() != nullptr) {
             return *this < (const char*)*b.anyCast<char*>();
         } else if (b.anyCast<int>() != nullptr) {
             return *this < *b.anyCast<int>();
@@ -102,7 +106,11 @@ public:
 
     bool operator>(const Any &b) const
     {
-        if (b.anyCast<char*>() != nullptr) {
+        if (isNull() || b.isNull()) {
+            if (isNull() && b.isNull()) return false;
+            if (isNull() && !b.isNull()) return false;
+            if (!isNull() && b.isNull()) return true;
+        } else if (b.anyCast<char*>() != nullptr) {
             return *this > (const char*)*b.anyCast<char*>();
         } else if (b.anyCast<int>() != nullptr) {
             return *this > *b.anyCast<int>();
@@ -116,7 +124,11 @@ public:
 
     bool operator==(const Any &b) const
     {
-        if (b.anyCast<char*>() != nullptr) {
+        if (isNull() || b.isNull()) {
+            if (isNull() && b.isNull()) return true;
+            if (isNull() && !b.isNull()) return false;
+            if (!isNull() && b.isNull()) return false;
+        } else if (b.anyCast<char*>() != nullptr) {
             return *this == (const char*)*b.anyCast<char*>();
         } else if (b.anyCast<int>() != nullptr) {
             return *this == *b.anyCast<int>();
@@ -136,7 +148,9 @@ public:
 
     bool operator<(const char* value) const
     {
-        if (this->anyCast<char*>() != nullptr) {
+        if (isNull()) {
+            return true; 
+        } else if (this->anyCast<char*>() != nullptr) {
             return strcmp(*this->anyCast<char*>(), value) < 0;
         }
         return false;
@@ -144,7 +158,9 @@ public:
 
     bool operator>(const char* value) const
     {
-        if (this->anyCast<char*>() != nullptr) {
+        if (isNull()) {
+            return false; 
+        } else if (this->anyCast<char*>() != nullptr) {
             return strcmp(*this->anyCast<char*>(), value) > 0;
         }
         return false;
@@ -152,7 +168,9 @@ public:
 
     bool operator==(const char* value) const
     {
-        if (this->anyCast<char*>() != nullptr) {
+        if (isNull()) {
+            return false; 
+        } else if (this->anyCast<char*>() != nullptr) {
             return strcmp(*this->anyCast<char*>(), value) == 0;
         }
         return false;
@@ -167,7 +185,9 @@ public:
     template <typename ValueType>
     bool operator<(const ValueType &value) const
     {
-        if (this->anyCast<ValueType>() != nullptr) {
+        if (isNull()) {
+            return true; 
+        } else if (this->anyCast<ValueType>() != nullptr) {
             return *this->anyCast<ValueType>() < value;
         }
         return false;
@@ -176,7 +196,9 @@ public:
     template <typename ValueType>
     bool operator>(const ValueType &value) const
     {
-        if (this->anyCast<ValueType>() != nullptr) {
+        if (isNull()) {
+            return false; 
+        } else if (this->anyCast<ValueType>() != nullptr) {
             return *this->anyCast<ValueType>() > value;
         }
         return false;
@@ -185,7 +207,9 @@ public:
     template <typename ValueType>
     bool operator==(const ValueType &value) const
     {
-        if (this->anyCast<ValueType>() != nullptr) {
+        if (isNull()) {
+            return false; 
+        } else if (this->anyCast<ValueType>() != nullptr) {
             return *this->anyCast<ValueType>() == value;
         }
         return false;
