@@ -146,11 +146,10 @@ int Database::findSheet(std::string s) { // -1: doesn't exist, others: OK
 }
 
 char* Database::getVarchar(uint64_t idx) {
-    int index;
     uint page = idx >> 32;
     uint offset = (idx & 0xffffffff) >> 16;
     uint size = idx & 0xffff;
-    BufType buf = bpm->getPage(mem_file, page, index) + offset;
+    BufType buf = bpm->getPage(mem_file, page) + offset;
     char* str = new char[size + 1];
     while (true) {
         if (PAGE_SIZE - offset > size) {
@@ -163,7 +162,7 @@ char* Database::getVarchar(uint64_t idx) {
             size -= PAGE_SIZE - offset;
             page += 1;
             offset = 0;
-            buf = bpm->getPage(mem_file, page, index) + offset;
+            buf = bpm->getPage(mem_file, page) + offset;
         }
     }
     
@@ -277,7 +276,7 @@ void Database::dfsCross(uint idx, uint f_idx) {
         }
         storeData(idx);
     } else {
-        filterSheet(sel[idx].from[f_idx].first)->setPointer(-1);
+        filterSheet(sel[idx].from[f_idx].first)->initPointer();
         while (filterSheet(sel[idx].from[f_idx].first)->movePointer()) {
             dfsCross(idx, f_idx + 1);
         }

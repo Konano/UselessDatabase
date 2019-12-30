@@ -28,6 +28,7 @@ private:
 public:
     BufPageManager(FileManager* fm);
     ~BufPageManager();
+    BufType getPage(int fileID, int pageID);
     BufType getPage(int fileID, int pageID, int& index);
     void markDirty(int index);
     bool check(int fileID, int pageID, int index);

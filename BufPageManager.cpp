@@ -48,6 +48,26 @@ BufPageManager::~BufPageManager() {
     delete pool;
 }
 
+BufType BufPageManager::getPage(int fileID, int pageID) {
+    int index;
+    if (fileID == lastFileID && pageID == lastPageID) {
+        index = lastIndex;
+        return lastBuf;
+    }
+    lastFileID = fileID;
+    lastPageID = pageID;
+    lastIndex = index = hash->find(fileID, pageID);
+    if (index != -1) {
+        pool->access(index);
+        return lastBuf = addr[index];
+    } else {
+        BufType buf = fetchPage(fileID, pageID, index);
+        lastIndex = index;
+        fm->readPage(fileID, pageID, buf);
+        return lastBuf = buf;
+    }
+}
+
 BufType BufPageManager::getPage(int fileID, int pageID, int& index) {
     if (fileID == lastFileID && pageID == lastPageID) {
         index = lastIndex;

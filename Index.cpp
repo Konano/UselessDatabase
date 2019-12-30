@@ -144,8 +144,7 @@ BtreeNode* Index::convert_buf_to_BtreeNode(int index) {
     
     ans->index = index;
 
-    int _index;
-    BufType buf = sheet->bpm->getPage(fileID, index, _index);
+    BufType buf = sheet->bpm->getPage(fileID, index);
 
     ans->left_page_index = *(uint32_t *)(buf + 4);
     ans->right_page_index = *(uint32_t *)(buf + 8);
@@ -286,7 +285,7 @@ void Index::overflow_downstream(BtreeNode* now) {
         if (i != 0) {
             BtreeNode* left = Index::convert_buf_to_BtreeNode(fa->child[i - 1]);
             if (left->record_cnt <= ceil(btree_max_per_node / 2.0) - 1) {
-                //TODO: REUSE DELETED PAGE
+                // TODO: REUSE DELETED PAGE
                 left->record.push_back(fa->record[i - 1]);
                 for (int j = 0; j < now->record_cnt; j++) {
                     left->record.push_back(now->record[j]);
@@ -325,7 +324,7 @@ void Index::overflow_downstream(BtreeNode* now) {
         else {
             BtreeNode* right = Index::convert_buf_to_BtreeNode(fa->child[i + 1]);
             if (right->record_cnt <= ceil(btree_max_per_node / 2.0) - 1) {
-                //TODO: REUSE DELETED PAGE
+                // TODO: REUSE DELETED PAGE
                 now->record.push_back(fa->record[i]);
                 for (int j = 0; j < right->record_cnt; j++) {
                     now->record.push_back(right->record[j]);
@@ -385,7 +384,7 @@ void Index::overflow_upstream(BtreeNode* now) {
             fa = Index::convert_buf_to_BtreeNode(now->fa_index);
         }
         BtreeNode* right = new BtreeNode();
-        //TODO: Reuse del page
+        // TODO: Reuse del page
         right->index = page_num++;
 
         BtreeRecord mid = now->record[now->record.size() >> 1];
@@ -505,4 +504,13 @@ void Index::removeRecord(Anys* info, int record_id, BtreeNode* now) {
         Index::convert_BtreeNode_to_buf(now);
         if (!now->is_leaf) Index::removeRecord(info, record_id, Index::convert_buf_to_BtreeNode(now->child[i]));
     }
+}
+
+uint Index::queryRecordsNum(enumOp op, Anys& data) {
+    // TODO
+}
+
+
+vector<uint> Index::queryRecords(enumOp op, Anys& data) {
+    // TODO
 }

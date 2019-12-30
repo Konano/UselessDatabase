@@ -110,7 +110,6 @@ inline bool tycheck_any(Type ty, Any v) {
         case INT: 
             return v.anyCast<int>() != nullptr;
         case CHAR: 
-            return (v.anyCast<char*>() != nullptr) && (strlen((const char*)v.anyCast<char*>()) == ty.char_len);
         case VARCHAR: 
             return (v.anyCast<char*>() != nullptr) && (strlen((const char*)v.anyCast<char*>()) <= ty.char_len);
         case DATE: 
@@ -510,7 +509,7 @@ tbStmt:
                 for (auto it: $4) {
                     int colIndex = db->sheet[tableID]->findCol(it.first);
                     if (colIndex < 0) {
-                        printf("COLUMN %s doesn't exist in TABLE %s\n", $2.c_str(), it.first.c_str());
+                        printf ("COLUMN %s doesn't exist in TABLE %s\n", $2.c_str(), it.first.c_str());
                         error = true;
                     } else {
                         set.push_back(Pia(colIndex, it.second));
@@ -528,9 +527,12 @@ tbStmt:
         if (current_db_exists()) {
             db->buildSel(-1 - $1);
             db->sel_sheet[-1 - $1]->print();
-            while (db->sel_num) delete db->sel_sheet[--(db->sel_num)];
-            //TODO:检查如下操作是否科学，抛去这句可能导致同一个select语句的第二次执行无结果
-            for (int i = 0; i < MAX_SHEET_NUM; i++)db->sel[i].build = false;
+            while (db->sel_num) {
+                delete db->sel_sheet[--(db->sel_num)];
+                db->sel[db->sel_num].build = false;
+            }
+            // 检查如下操作是否科学，抛去这句可能导致同一个select语句的第二次执行无结果
+            // for (int i = 0; i < MAX_SHEET_NUM; i++) db->sel[i].build = false;
         }
     };
 
@@ -692,7 +694,7 @@ idxStmt:
         }
     }
     | ALTER TABLE tbName ADD INDEX idxName LB colNames RB SEMI {
-        //TODO: 这个和第一个CREATE的区别
+        // TODO: 这个和第一个CREATE的区别
         if (current_db_exists()) {
             int tableID;
             if (table_exists($3, tableID, true)) {
@@ -865,7 +867,7 @@ alterStmt:
         }
     }
     | ALTER TABLE tbName DROP PRIMARY KEY pkName SEMI {
-        //TODO: pkName?
+        // TODO: pkName?
         if (current_db_exists()) {
             int tableID;
             if (table_exists($3, tableID, true)) {
@@ -1009,7 +1011,12 @@ values:
 
 value:
     VALUE_INT { $$ = Any($1); }
-    | VALUE_STRING { $$ = Any((char*)$1.c_str()); }
+    | VALUE_STRING { 
+        char* str = new char[$1.length() + 1];
+        memcpy(str, $1.c_str(), $1.length());
+        str[$1.length()] = '\0';
+        $$ = Any(str);
+    }
     | VALUE_DATE { 
         if (($1 / 10000 < 1500 || $1 / 10000 > 2500) || 
             ($1 % 10000 / 100 < 1 || $1 % 10000 / 100 > 12) || 

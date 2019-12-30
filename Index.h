@@ -5,6 +5,7 @@
 #include "Any.h"
 #include "Anys.h"
 #include "Type.h"
+#include "Database.h"
 
 #include <vector>
 
@@ -62,6 +63,9 @@ public:
 
     void Debug();
     void debug(BtreeNode* node);
+
+    uint queryRecordsNum(enumOp op, Anys& data);
+    std::vector<uint> queryRecords(enumOp op, Anys& data);
 };
 
 #endif
