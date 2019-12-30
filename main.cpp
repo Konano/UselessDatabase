@@ -317,7 +317,7 @@ void import_data(Sheet* sheet, const char* filename, char separator) {
         printf("id:%d\n",*data[0].anyCast<int>());
         if(data[1].anyCast<char*>() != nullptr)
         printf("%s\n",*data[1].anyCast<char*>());*/
-        //if (std::string(filename) == std::string("data/partsupp.tbl")){printf("DEBUG");sheet->index[sheet->p_key_index].Debug();}
+        //if (std::string(filename) == std::string("data/customer.tbl")){printf("DEBUG");printf("id:%d\n",*data[0].anyCast<int>());}
         sheet->insertRecord(data);
         //if (std::string(filename) == std::string("data/partsupp.tbl")){printf("DEBUG");sheet->index[sheet->p_key_index].Debug();}
         cnt++;
@@ -368,6 +368,7 @@ void import_data_tbl() {
     assert(sheet->createPrimaryKey(new PrimaryKey(sheet, 1, new int[1]{0})) == 0);
     assert(sheet->createForeignKey(new ForeignKey(sheet, 1, new int[1]{2}), db->sheet[1]->p_key) == 0);
     import_data(sheet, "data/nation.tbl", '|');
+    //sheet->index[sheet->p_key_index].Debug();
 
     //sheet->index[sheet->p_key_index].Debug();
     //sheet->f_key[0]->p->sheet->index[sheet->f_key[0]->p->sheet->p_key_index].Debug();
@@ -401,6 +402,7 @@ void import_data_tbl() {
     assert(sheet->createPrimaryKey(new PrimaryKey(sheet, 1, new int[1]{0})) == 0);
     assert(sheet->createForeignKey(new ForeignKey(sheet, 1, new int[1]{3}), db->sheet[2]->p_key) == 0);
     import_data(sheet, "data/customer.tbl", '|');
+    //sheet->index[sheet->p_key_index].Debug();
 
     // id = 5
     sheet = db->createSheet("partsupp", 5, new Type[5]{
@@ -602,6 +604,11 @@ int main() {
     // test_9();
     // import_data_csv();
     import_data_tbl();
+    /*
+    db = new Database("orderdb", false);
+    int x = db->findSheet("customer");
+    db->sheet[x]->index[0].Debug();
+    delete db;*/
     yyparse();
     return 0;
 }

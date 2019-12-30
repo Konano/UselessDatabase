@@ -238,7 +238,7 @@ std::vector<int> Index::queryRecord(Anys* info, BtreeNode *now) {
     if (l == -1 && now -> is_leaf) 
         return v;
     else if (l == -1) {
-        Index::convert_BtreeNode_to_buf(now);
+        //Index::convert_BtreeNode_to_buf(now);
         //printf("%d %d %d\n",index, now->child[i],now->record_cnt);
         return Index::queryRecord(info, Index::convert_buf_to_BtreeNode(now->child[i]));
     }
@@ -250,7 +250,7 @@ std::vector<int> Index::queryRecord(Anys* info, BtreeNode *now) {
     }
     else {
         for (int i = l; i <= r + 1; i++) {
-            Index::convert_BtreeNode_to_buf(now);
+            //Index::convert_BtreeNode_to_buf(now);
             std::vector<int> cv = Index::queryRecord(info, Index::convert_buf_to_BtreeNode(now->child[i]));
             for (uint j = 0; j < cv.size(); j++) v.push_back(cv[j]);
         }
@@ -423,13 +423,13 @@ void Index::overflow_upstream(BtreeNode* now) {
 
         Index::convert_BtreeNode_to_buf(now);
         Index::convert_BtreeNode_to_buf(right);
-
-        overflow_upstream(fa);        
         Index::convert_BtreeNode_to_buf(fa);
+        overflow_upstream(fa);     
     }
 }
 
 void Index::insertRecord(Anys* info, int record_id) {
+    root = Index::convert_buf_to_BtreeNode(root_page);
     return insertRecord(info, record_id, root);
 }
 
@@ -437,7 +437,7 @@ void Index::insertRecord(Anys* info, int record_id, BtreeNode* now) {
 
     //BtreeNode *now = Index::convert_buf_to_BtreeNode(index);
     //cout << "insert" << now->index << " "  << now->record_cnt;
-    //cout << " " << *info->anyCast<int>() << " " << record_id << endl;
+    //cout << " " << (*info)[0].anyCast<int>() << " " << record_id << endl;
     int i = 0;
     vector<BtreeRecord>::iterator it;
     for (it = now->record.begin(); it!=now->record.end(); it++)
@@ -461,8 +461,8 @@ void Index::insertRecord(Anys* info, int record_id, BtreeNode* now) {
     }
     else {
         BtreeNode* child_i = Index::convert_buf_to_BtreeNode(now->child[i]);
-        Index::insertRecord(info, record_id, child_i);
         Index::convert_BtreeNode_to_buf(now);
+        Index::insertRecord(info, record_id, child_i);
     }
 }
 
