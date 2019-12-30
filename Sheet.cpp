@@ -268,7 +268,7 @@ int Sheet::removeRecord(const int record_id) {
             }
         }
         
-        buf[(record_id % record_onepg) / 8] -= 1 << (record_id % 8);
+        exist_reset(buf, record_id % record_onepg);
         bpm->markDirty(index);
         return 0;
     }
