@@ -28,7 +28,6 @@ public:
     uint next_del_page;
     uint16_t record_size;
     uint max_recond_num;
-    BtreeNode* root;
     int fileID;
 
     std::vector<enumType> ty;
@@ -37,11 +36,11 @@ public:
     int btree_root_index;
 private:
 
-    void overflow_upstream(BtreeNode* now);
-    void overflow_downstream(BtreeNode* now);
-    std::vector<int> queryRecord(Anys* info, BtreeNode* now);
-    void insertRecord(Anys* info, int record_id, BtreeNode* now);
-    void removeRecord(Anys* info, int record_id, BtreeNode* now);
+    void overflow_upstream(int now);
+    void overflow_downstream(int now);
+    std::vector<int> queryRecord(Anys* info, int now);
+    void insertRecord(Anys* info, int record_id, int now);
+    void removeRecord(Anys* info, int record_id, int now);
 
 public:
     Index() {}
@@ -62,7 +61,7 @@ public:
     void removeRecord(Anys* info, int record_id);
 
     void Debug();
-    void debug(BtreeNode* node);
+    void debug(int now);
 
     uint queryRecordsNum(enumOp op, Anys& data);
     std::vector<uint> queryRecords(enumOp op, Anys& data);

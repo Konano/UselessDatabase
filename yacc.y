@@ -430,7 +430,7 @@ tbStmt:
                         Any* temp = new Any[db->sheet[tableID]->col_num];
                         for (uint i = 0; i < $6.size(); i++)temp[i] = $6[i];
                         int x = db->sheet[tableID]->insertRecord(temp);
-                        if (x != 0)printf("Insert fail\n");
+                        if (x != 0)printf("Insert fail %d\n",x);
                     }
                     else printf("Data type mismatch\n");
                 }
@@ -473,7 +473,7 @@ tbStmt:
                             Any* temp = new Any[db->sheet[tableID]->col_num];
                             for (uint i = 0; i < $9.size(); i++)temp[key[i]] = $9[i];
                             int x = db->sheet[tableID]->insertRecord(temp);
-                            if (x != 0)printf("Insert fail\n");
+                            if (x != 0)printf("Insert fail %d\n",x);
                         }
                         else printf("Data type mismatch\n");
                     }

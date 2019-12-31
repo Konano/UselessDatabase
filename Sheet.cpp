@@ -220,7 +220,8 @@ void Sheet::fetch(BufType& buf, enumType ty, uint size, Any& val) {
 }
 
 int Sheet::insertRecord(Any* data) {
-    if (this->constraintRow(data, record_num, true)) return -1;
+    int x = this->constraintRow(data, record_num, true);
+    if (x) return x;
     int index;
     BufType buf = bpm->getPage(main_file, record_num / record_onepg, index);
     exist_set(buf, record_num % record_onepg);
@@ -786,15 +787,32 @@ int Sheet::constraintRowKey(Any* data, Key* key) {
         for (auto i: key->v) if (data[i].isNull()) return -1;
         Anys val;
         for (auto i: key->v) val.push_back(data[i]);
-        vector<int> ans = this->index[p_key_index].queryRecord(&val);
+        vector<int> ans;
+        if(this->index[p_key_index].fileID == -1){
+            this->index[p_key_index].open();
+            ans = this->index[p_key_index].queryRecord(&val);
+            this->index[p_key_index].close();
+        }
+        else ans = this->index[p_key_index].queryRecord(&val);
         if (ans.size() != 0) return -2;
     } else {
         Anys val;
         for (auto i: key->v) val.push_back(data[i]);
         vector <int> ans;
+        //if(key->v.size() == 2)printf("%d %d\n",*val[0].anyCast<int>(),*val[1].anyCast<int>());
         Sheet* p_sheet = dynamic_cast<ForeignKey*>(key)->p->sheet;
-        ans = p_sheet->index[p_sheet->p_key_index].queryRecord(&val);
-        if (ans.size() == 0) return -3;
+        if(p_sheet->index[p_sheet->p_key_index].fileID == -1){
+            p_sheet->index[p_sheet->p_key_index].open();
+            ans = p_sheet->index[p_sheet->p_key_index].queryRecord(&val);
+            p_sheet->index[p_sheet->p_key_index].close();
+        }
+        else {ans = p_sheet->index[p_sheet->p_key_index].queryRecord(&val);}
+        if (ans.size() == 0){
+            printf("fail:%d ",key->v.size());
+            if(key->v.size() == 1)printf("%d\n",*val[0].anyCast<int>());
+            if(key->v.size() == 2)printf("%d %d\n",*val[0].anyCast<int>(),*val[1].anyCast<int>());
+            return -3;
+        }
     }
     return 0;
 }

@@ -285,7 +285,7 @@ inline char* copyStr(const char* _str) {
 }
 
 void import_data(Sheet* sheet, const char* filename, char separator) {
-    //printf("%s\n",filename);
+    printf("%s\n",filename);
     ifstream inFile(filename, ios::in);
     string line;
     string field;
@@ -312,14 +312,16 @@ void import_data(Sheet* sheet, const char* filename, char separator) {
                 break;
             }
         }
-        /*
-        if(data[0].anyCast<int>() != nullptr)
-        printf("id:%d\n",*data[0].anyCast<int>());
-        if(data[1].anyCast<char*>() != nullptr)
-        printf("%s\n",*data[1].anyCast<char*>());*/
-        //if (std::string(filename) == std::string("data/customer.tbl")){printf("DEBUG");printf("id:%d\n",*data[0].anyCast<int>());}
-        sheet->insertRecord(data);
-        //if (std::string(filename) == std::string("data/partsupp.tbl")){printf("DEBUG");sheet->index[sheet->p_key_index].Debug();}
+        //sheet->index[sheet->p_key_index].Debug();
+        int x = sheet->insertRecord(data);
+        if (x != 0){
+            if(data[0].anyCast<int>() != nullptr)
+            printf("id:%d\n",*data[0].anyCast<int>());
+            if(data[1].anyCast<char*>() != nullptr)
+            printf("%s\n",*data[1].anyCast<char*>());
+            printf("shit %d\n",x);
+        }
+        //sheet->index[sheet->p_key_index].Debug();
         cnt++;
     }
     delete []data;
@@ -386,7 +388,7 @@ void import_data_tbl() {
     assert(sheet->createPrimaryKey(new PrimaryKey(sheet, 1, new int[1]{0})) == 0);
     assert(sheet->createForeignKey(new ForeignKey(sheet, 1, new int[1]{3}), db->sheet[2]->p_key) == 0);
     import_data(sheet, "data/supplier.tbl", '|');
-    import_data(sheet, "data/region.tbl", '|');
+    //import_data(sheet, "data/region.tbl", '|');
 
     // id = 4
     sheet = db->createSheet("customer", 8, new Type[8]{
@@ -416,7 +418,7 @@ void import_data_tbl() {
     assert(sheet->createForeignKey(new ForeignKey(sheet, 1, new int[1]{0}), db->sheet[0]->p_key) == 0);
     assert(sheet->createForeignKey(new ForeignKey(sheet, 1, new int[1]{1}), db->sheet[3]->p_key) == 0);
     import_data(sheet, "data/partsupp.tbl", '|');
-    import_data(sheet, "data/customer.tbl", '|');
+    //import_data(sheet, "data/customer.tbl", '|');
 
     // id = 6
     sheet = db->createSheet("orders", 9, new Type[9]{
@@ -433,6 +435,7 @@ void import_data_tbl() {
     assert(sheet->createPrimaryKey(new PrimaryKey(sheet, 1, new int[1]{0})) == 0);
     assert(sheet->createForeignKey(new ForeignKey(sheet, 1, new int[1]{1}), db->sheet[4]->p_key) == 0);
     import_data(sheet, "data/orders.tbl", '|');
+    sheet->index[sheet->p_key_index].Debug();
 
     // id = 7
     sheet = db->createSheet("lineitem", 16, new Type[16]{
@@ -604,11 +607,6 @@ int main() {
     // test_9();
     // import_data_csv();
     import_data_tbl();
-    /*
-    db = new Database("orderdb", false);
-    int x = db->findSheet("customer");
-    db->sheet[x]->index[0].Debug();
-    delete db;*/
     yyparse();
     return 0;
 }
