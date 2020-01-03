@@ -108,7 +108,7 @@ void Index::Btree_remove(BtreeNode* node) {
 }
 
 void Index::Debug() {
-    cout << " root_page: " << root_page << endl;
+    cout << "root_page: " << root_page << endl;
     debug(root_page);
 }
 
@@ -386,20 +386,22 @@ void Index::overflow_upstream(int now_index) {
         right->index = page_num++;
 
         BtreeRecord mid = now->record[now->record.size() >> 1];
-        vector<BtreeRecord>::iterator it = fa->record.begin();
-        vector<int>::iterator itx = fa->child.begin();
-        uint i;
-        for (i = 0; i < fa->child.size(); i++) {
-            if (fa->child[i] == now->index) {
+
+        uint loc = 0;
+        for(uint i = 0;i < fa->child.size();i ++){
+            if(fa->child[i] == now->index){
+                loc = i;
                 break;
             }
-            if(it != fa->record.end())it ++;
-            itx ++;
         }
+
+        vector<BtreeRecord>::iterator it = fa->record.begin() + loc;
+        vector<int>::iterator itx = fa->child.begin() + loc;
+
         fa->record.insert(it, mid);
         fa->child.insert(itx, -1);
-        fa->child[i] = now->index;
-        fa->child[i + 1] = right->index;
+        fa->child[loc] = now->index;
+        fa->child[loc + 1] = right->index;
         now->fa_index = fa->index;
         right->fa_index = fa->index;
         right->child.clear();
@@ -408,6 +410,12 @@ void Index::overflow_upstream(int now_index) {
         for (uint i = (now->record.size() >> 1) + 1; i < now->record.size(); i++) {
             right->child.push_back(now->child[i + 1]);
             right->record.push_back(now->record[i]);
+            if(now->child[i + 1] != -1){
+                BtreeNode* temp = Index::convert_buf_to_BtreeNode(now->child[i + 1]);
+                temp->fa_index = right->index;
+                Index::convert_BtreeNode_to_buf(temp);
+                delete temp;
+            }
         }
 
         int left_size = (now->record.size() >> 1);

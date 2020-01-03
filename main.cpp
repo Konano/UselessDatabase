@@ -348,6 +348,7 @@ void import_data_tbl() {
     });
     assert(sheet->createPrimaryKey(new PrimaryKey(sheet, 1, new int[1]{0})) == 0);
     import_data(sheet, "data/part.tbl", '|');
+    //sheet->index[sheet->p_key_index].Debug();
 
     // id = 1
     sheet = db->createSheet("region", 3, new Type[3]{
@@ -435,7 +436,7 @@ void import_data_tbl() {
     assert(sheet->createPrimaryKey(new PrimaryKey(sheet, 1, new int[1]{0})) == 0);
     assert(sheet->createForeignKey(new ForeignKey(sheet, 1, new int[1]{1}), db->sheet[4]->p_key) == 0);
     import_data(sheet, "data/orders.tbl", '|');
-    sheet->index[sheet->p_key_index].Debug();
+    // sheet->index[sheet->p_key_index].Debug();
 
     // id = 7
     sheet = db->createSheet("lineitem", 16, new Type[16]{
