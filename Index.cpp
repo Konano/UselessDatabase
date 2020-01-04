@@ -287,6 +287,12 @@ void Index::overflow_downstream(int now_index) {
                 for (int j = 0; j < now->record_cnt; j++) {
                     left->record.push_back(now->record[j]);
                     left->child.push_back(now->child[j]);
+                    if(now->child[j] != -1){
+                        BtreeNode* temp = Index::convert_buf_to_BtreeNode(now->child[j]);
+                        temp->fa_index = left->index;
+                        Index::convert_BtreeNode_to_buf(temp);
+                        delete temp;
+                    }
                 }
                 left->record_cnt += 1 + now->record_cnt;
                 left->child.push_back(now->child[now->child.size() - 1]);
@@ -326,6 +332,12 @@ void Index::overflow_downstream(int now_index) {
                 for (int j = 0; j < right->record_cnt; j++) {
                     now->record.push_back(right->record[j]);
                     now->child.push_back(right->child[j]);
+                    if(right->child[j] != -1){
+                        BtreeNode* temp = Index::convert_buf_to_BtreeNode(right->child[j]);
+                        temp->fa_index = now->index;
+                        Index::convert_BtreeNode_to_buf(temp);
+                        delete temp;
+                    }
                 }
                 now->record_cnt += 1 + right->record_cnt;
                 now->child.push_back(right->child[right->child.size() - 1]);

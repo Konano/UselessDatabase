@@ -319,7 +319,7 @@ void import_data(Sheet* sheet, const char* filename, char separator) {
             printf("id:%d\n",*data[0].anyCast<int>());
             if(data[1].anyCast<char*>() != nullptr)
             printf("%s\n",*data[1].anyCast<char*>());
-            printf("shit %d\n",x);
+            printf("fail %d\n",x);
         }
         //sheet->index[sheet->p_key_index].Debug();
         cnt++;

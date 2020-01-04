@@ -808,9 +808,6 @@ int Sheet::constraintRowKey(Any* data, Key* key) {
         }
         else {ans = p_sheet->index[p_sheet->p_key_index].queryRecord(&val);}
         if (ans.size() == 0){
-            printf("fail:%d ",key->v.size());
-            if(key->v.size() == 1)printf("%d\n",*val[0].anyCast<int>());
-            if(key->v.size() == 2)printf("%d %d\n",*val[0].anyCast<int>(),*val[1].anyCast<int>());
             return -3;
         }
     }
