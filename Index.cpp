@@ -56,7 +56,7 @@ Index::Index(Sheet* sheet, const char* name, vector<uint> key, int btree_max_per
     this->key_num = key.size();
     for (auto i : key) {
         this->key.push_back(i);
-        this->ty.push_back(sheet->col_ty[key[i]].ty);
+        this->ty.push_back(sheet->col_ty[i].ty);
     }
     for (uint i = 0; i < key.size(); i++) {
         this->offset.push_back(i == 0 ? 0 : this->offset[i - 1]);
@@ -157,13 +157,33 @@ BtreeNode* Index::convert_buf_to_BtreeNode(int index) {
         temp.record_id = *(uint32_t *)(buf + 22 + i * record_size);
         for (uint j = 0; j < this->key_num; j++) {
             if (this->ty[j] == enumType::INT) {
-                temp.key.push_back(Any(*(int*)(buf + 22 + i * record_size + 4 + this->offset[j])));
+                bool flag = true;
+                for (uint k = 0; k < 4; k++) {
+                    if (*(uint8_t*)(buf + 22 + i * record_size + 4 + this->offset[j] + k) != 255) {
+                        flag = false;
+                        break;
+                    }
+                }
+                if(flag) temp.key.push_back(Any());
+                else temp.key.push_back(Any(*(int*)(buf + 22 + i * record_size + 4 + this->offset[j])));
             }
             if (this->ty[j] == enumType::CHAR) {
-                char* str = new char[record_size - 8 + 1];
-                memcpy(str, buf + 22 + i * record_size + 4 + this->offset[j], this->offset[j] - (j == 0 ? 0 : this->offset[j - 1]));
-                str[record_size - 8] = '\0';
-                temp.key.push_back(Any(str));
+                bool flag = true;
+                for (uint k = 0; k < this->offset[j] - (j == 0 ? 0 : this->offset[j - 1]); k++) {
+                    if (*(uint8_t*)(buf + 22 + i * record_size + 4 + this->offset[j] + k) != 255) {
+                        flag = false;
+                        break;
+                    }
+                }
+                if(flag){
+                    char* str = new char[record_size - 8 + 1];
+                    memcpy(str, buf + 22 + i * record_size + 4 + this->offset[j], this->offset[j] - (j == 0 ? 0 : this->offset[j - 1]));
+                    str[record_size - 8] = '\0';
+                    temp.key.push_back(Any(str));
+                }
+                else{
+                    temp.key.push_back(Any());
+                }
             }
         }
         ans->child.push_back(*(uint32_t *)(buf + 22 + (i + 1) * record_size - 4));
@@ -189,12 +209,28 @@ void Index::convert_BtreeNode_to_buf(BtreeNode* node) {
         *(uint32_t*) buf = node->record[i].record_id; buf += 4;
         for (uint j = 0; j < this->key_num; j++) {
             if (this->ty[j] == enumType::INT) {
-                *(uint32_t*)buf = *node->record[i].key[j].anyCast<int>();
-                buf += 4;
+                if(node->record[i].key[j].isNull()){
+                    for (uint k = 0; k < 4; k++) {
+                        *(uint8_t*)buf = 255;
+                        buf += 1;
+                    }
+                }
+                else {
+                    *(uint32_t*)buf = *node->record[i].key[j].anyCast<int>();
+                    buf += 4;
+                }
             }
             if (this->ty[j] == enumType::CHAR) {
-                memcpy(buf, *node->record[i].key[j].anyCast<char*>(), this->offset[j] - (j == 0 ? 0 : this->offset[j - 1]));
-                buf += this->offset[j] - (j == 0 ? 0 : this->offset[j - 1]);
+                if(node->record[i].key[j].isNull()){
+                    for (uint k = 0; k < this->offset[j] - (j == 0 ? 0 : this->offset[j - 1]); k++) {
+                        *(uint8_t*)buf = 255;
+                        buf += 1;
+                    }
+                }
+                else{
+                    memcpy(buf, *node->record[i].key[j].anyCast<char*>(), this->offset[j] - (j == 0 ? 0 : this->offset[j - 1]));
+                    buf += this->offset[j] - (j == 0 ? 0 : this->offset[j - 1]);
+                }
             }
         }
         *(uint32_t*) buf = node->child[i + 1]; buf += 4;
@@ -613,7 +649,7 @@ uint Index::queryRecordsNum(enumOp op, Anys& data, int now_index){
                 break;
             }
             case OP_IN:{
-                //TODO
+                //UnReachable
                 break;
             }
         }
@@ -713,7 +749,7 @@ uint Index::queryRecordsNum(enumOp op, Anys& data, int now_index){
             break;
         }
         case OP_IN:{
-            //TODO
+            //UnReachable
             break;
         }
     }
@@ -811,7 +847,7 @@ std::vector<uint> Index::queryRecords(enumOp op, Anys& data, int now_index){
                 break;
             }
             case OP_IN:{
-                //TODO
+                //UnReachable
                 break;
             }
         }
@@ -928,7 +964,7 @@ std::vector<uint> Index::queryRecords(enumOp op, Anys& data, int now_index){
             break;
         }
         case OP_IN:{
-            //TODO
+            //UnReachable
             break;
         }
     }

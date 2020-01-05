@@ -52,6 +52,7 @@ public:
     PrimaryKey* p_key = nullptr; // primary key
     std::vector<ForeignKey*> f_key; // foreign keys
     int p_key_index = -1;
+    std::vector<int> f_key_index;
     uint index_num = 0;
     Index index[MAX_INDEX_NUM];
     uint record_num = 0; // all record, include removed record
