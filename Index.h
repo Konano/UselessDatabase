@@ -41,6 +41,8 @@ private:
     std::vector<int> queryRecord(Anys* info, int now);
     void insertRecord(Anys* info, int record_id, int now);
     void removeRecord(Anys* info, int record_id, int now);
+    uint queryRecordsNum(enumOp op, Anys& data, int now);
+    std::vector<uint> queryRecords(enumOp op, Anys& data, int now);
 
 public:
     Index() {}

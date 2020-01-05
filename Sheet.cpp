@@ -1012,7 +1012,13 @@ int Sheet::updateRecords(vector<Pia> &set, vector<WhereStmt> &where) {
     
     for (auto i: cols) updateRecord(i, set);
     for (auto it: pk_del) {
-        // TODO some foreign key should be set NULL
+        for (uint i = 0;i < db->sheet_num;i ++){
+            for(uint j = 0;j < db->sheet[i]->f_key.size();j ++){
+                if(db->sheet[i]->f_key[j]->p->sheet == this){
+                    
+                }
+            }
+        }
     }
     return 0;
 }

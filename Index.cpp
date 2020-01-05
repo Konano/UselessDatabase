@@ -282,7 +282,6 @@ void Index::overflow_downstream(int now_index) {
         if (i != 0) {
             BtreeNode* left = Index::convert_buf_to_BtreeNode(fa->child[i - 1]);
             if (left->record_cnt <= ceil(btree_max_per_node / 2.0) - 1) {
-                // TODO: REUSE DELETED PAGE
                 left->record.push_back(fa->record[i - 1]);
                 for (int j = 0; j < now->record_cnt; j++) {
                     left->record.push_back(now->record[j]);
@@ -327,7 +326,6 @@ void Index::overflow_downstream(int now_index) {
         else {
             BtreeNode* right = Index::convert_buf_to_BtreeNode(fa->child[i + 1]);
             if (right->record_cnt <= ceil(btree_max_per_node / 2.0) - 1) {
-                // TODO: REUSE DELETED PAGE
                 now->record.push_back(fa->record[i]);
                 for (int j = 0; j < right->record_cnt; j++) {
                     now->record.push_back(right->record[j]);
@@ -394,7 +392,6 @@ void Index::overflow_upstream(int now_index) {
             fa = Index::convert_buf_to_BtreeNode(now->fa_index);
         }
         BtreeNode* right = new BtreeNode();
-        // TODO: Reuse del page
         right->index = page_num++;
 
         BtreeRecord mid = now->record[now->record.size() >> 1];
@@ -526,11 +523,352 @@ void Index::removeRecord(Anys* info, int record_id, int now_index) {
     }
 }
 
+uint Index::queryRecordsNum(enumOp op, Anys& data, int now_index){
+    BtreeNode* now = Index::convert_buf_to_BtreeNode(now_index);
+
+    uint ans = 0;
+    std::vector<uint> temp;
+
+    int i;
+    for (i = 0; i < now->record_cnt; i++) {
+        bool flag = false;
+        switch(op){
+            case OP_EQ:{
+                if(now->record[i].key == data){
+                    ans++;
+                    temp.push_back(i);
+                }
+                else if(now->record[i].key > data){
+                    flag = true;
+                }
+                break;
+            }
+            case OP_NEQ:{
+                if(now->record[i].key != data){
+                    ans++;
+                    temp.push_back(i);
+                }
+                break;
+            }
+            case OP_LE:{
+                if(now->record[i].key <= data){
+                    ans++;
+                    temp.push_back(i);
+                }
+                else if(now->record[i].key > data){
+                    flag = true;
+                }
+                break;
+            }
+            case OP_GE:{
+                if(now->record[i].key >= data){
+                    ans++;
+                    temp.push_back(i);
+                }
+                break;
+            }
+            case OP_LS:{
+                if(now->record[i].key < data){
+                    ans++;
+                    temp.push_back(i);
+                }
+                else if(now->record[i].key >= data){
+                    flag = true;
+                }
+                break;
+            }
+            case OP_GT:{
+                if(now->record[i].key > data){
+                    ans++;
+                    temp.push_back(i);
+                }
+                break;
+            }
+            case OP_NL:{
+                //TODO
+                break;
+            }
+            case OP_NNL:{
+                //TODO
+                break;
+            }
+            case OP_IN:{
+                //TODO
+                break;
+            }
+        }
+        if(flag)break;
+    }
+
+    switch(op){
+        case OP_EQ:{
+            for(uint i = 0;i < temp.size();i ++){
+                if(now->child[temp[i]] != -1){
+                    ans += queryRecordsNum(op,data,now->child[temp[i]]);
+                }
+                if(i == temp.size() - 1 && now->child[temp[i] + 1] != -1){
+                    ans += queryRecordsNum(op,data,now->child[temp[i] + 1]);
+                }
+            }
+            break;
+        }
+        case OP_NEQ:{
+            for(uint i = 0;i < temp.size();i ++){
+                if(now->child[temp[i]] != -1){
+                    ans += queryRecordsNum(op,data,now->child[temp[i]]);
+                }
+                if(i == temp.size() - 1 && now->child[temp[i] + 1] != -1){
+                    ans += queryRecordsNum(op,data,now->child[temp[i] + 1]);
+                }
+                if(i < temp.size() - 1 && temp[i] != temp[i + 1] - 1 && now->child[temp[i] + 1] != -1){
+                    ans += queryRecordsNum(op,data,now->child[temp[i] + 1]);
+                }
+            }
+            break;
+        }
+        case OP_LE:{
+            for(uint i = 0;i < temp.size();i ++){
+                if(now->child[temp[i]] != -1){
+                    ans += queryRecordsNum(op,data,now->child[temp[i]]);
+                }
+                if(i == temp.size() - 1 && now->child[temp[i] + 1] != -1){
+                    ans += queryRecordsNum(op,data,now->child[temp[i] + 1]);
+                }
+            }
+            break;
+        }
+        case OP_GE:{
+            for(uint i = 0;i < temp.size();i ++){
+                if(now->child[temp[i]] != -1){
+                    ans += queryRecordsNum(op,data,now->child[temp[i]]);
+                }
+                if(i == temp.size() - 1 && now->child[temp[i] + 1] != -1){
+                    ans += queryRecordsNum(op,data,now->child[temp[i] + 1]);
+                }
+            }
+            break;
+        }
+        case OP_LS:{
+            for(uint i = 0;i < temp.size();i ++){
+                if(now->child[temp[i]] != -1){
+                    ans += queryRecordsNum(op,data,now->child[temp[i]]);
+                }
+                if(i == temp.size() - 1 && now->child[temp[i] + 1] != -1){
+                    ans += queryRecordsNum(op,data,now->child[temp[i] + 1]);
+                }
+            }
+            break;
+        }
+        case OP_GT:{
+            for(uint i = 0;i < temp.size();i ++){
+                if(now->child[temp[i]] != -1){
+                    ans += queryRecordsNum(op,data,now->child[temp[i]]);
+                }
+                if(i == temp.size() - 1 && now->child[temp[i] + 1] != -1){
+                    ans += queryRecordsNum(op,data,now->child[temp[i] + 1]);
+                }
+            }
+            break;
+        }
+        case OP_NL:{
+            //TODO
+            break;
+        }
+        case OP_NNL:{
+            //TODO
+            break;
+        }
+        case OP_IN:{
+            //TODO
+            break;
+        }
+    }
+
+    return ans;
+}
+
+std::vector<uint> Index::queryRecords(enumOp op, Anys& data, int now_index){
+    BtreeNode* now = Index::convert_buf_to_BtreeNode(now_index);
+
+    std::vector<uint> ans;
+    std::vector<uint> temp;
+
+    int i;
+    for (i = 0; i < now->record_cnt; i++) {
+        bool flag = false;
+        switch(op){
+            case OP_EQ:{
+                if(now->record[i].key == data){
+                    ans.push_back(now->record[i].record_id);
+                    temp.push_back(i);
+                }
+                else if(now->record[i].key > data){
+                    flag = true;
+                }
+                break;
+            }
+            case OP_NEQ:{
+                if(now->record[i].key != data){
+                    ans.push_back(now->record[i].record_id);
+                    temp.push_back(i);
+                }
+                break;
+            }
+            case OP_LE:{
+                if(now->record[i].key <= data){
+                    ans.push_back(now->record[i].record_id);
+                    temp.push_back(i);
+                }
+                else if(now->record[i].key > data){
+                    flag = true;
+                }
+                break;
+            }
+            case OP_GE:{
+                if(now->record[i].key >= data){
+                    ans.push_back(now->record[i].record_id);
+                    temp.push_back(i);
+                }
+                break;
+            }
+            case OP_LS:{
+                if(now->record[i].key < data){
+                    ans.push_back(now->record[i].record_id);
+                    temp.push_back(i);
+                }
+                else if(now->record[i].key >= data){
+                    flag = true;
+                }
+                break;
+            }
+            case OP_GT:{
+                if(now->record[i].key > data){
+                    ans.push_back(now->record[i].record_id);
+                    temp.push_back(i);
+                }
+                break;
+            }
+            case OP_NL:{
+                //TODO
+                break;
+            }
+            case OP_NNL:{
+                //TODO
+                break;
+            }
+            case OP_IN:{
+                //TODO
+                break;
+            }
+        }
+        if(flag)break;
+    }
+
+    switch(op){
+        case OP_EQ:{
+            for(uint i = 0;i < temp.size();i ++){
+                if(now->child[temp[i]] != -1){
+                    std::vector<uint> temp =  queryRecords(op,data,now->child[temp[i]]);
+                    for (auto it: temp)ans.push_back(it);
+                }
+                if(i == temp.size() - 1 && now->child[temp[i] + 1] != -1){
+                    std::vector<uint> temp =  queryRecords(op,data,now->child[temp[i] + 1]);
+                    for (auto it: temp)ans.push_back(it);
+                }
+            }
+            break;
+        }
+        case OP_NEQ:{
+            for(uint i = 0;i < temp.size();i ++){
+                if(now->child[temp[i]] != -1){
+                    std::vector<uint> temp =  queryRecords(op,data,now->child[temp[i]]);
+                    for (auto it: temp)ans.push_back(it);
+                }
+                if(i == temp.size() - 1 && now->child[temp[i] + 1] != -1){
+                    std::vector<uint> temp =  queryRecords(op,data,now->child[temp[i] + 1]);
+                    for (auto it: temp)ans.push_back(it);
+                }
+                if(i < temp.size() - 1 && temp[i] != temp[i + 1] - 1 && now->child[temp[i] + 1] != -1){
+                    std::vector<uint> temp =  queryRecords(op,data,now->child[temp[i] + 1]);
+                    for (auto it: temp)ans.push_back(it);
+                }
+            }
+            break;
+        }
+        case OP_LE:{
+            for(uint i = 0;i < temp.size();i ++){
+                if(now->child[temp[i]] != -1){
+                    std::vector<uint> temp =  queryRecords(op,data,now->child[temp[i]]);
+                    for (auto it: temp)ans.push_back(it);
+                }
+                if(i == temp.size() - 1 && now->child[temp[i] + 1] != -1){
+                    std::vector<uint> temp =  queryRecords(op,data,now->child[temp[i] + 1]);
+                    for (auto it: temp)ans.push_back(it);
+                }
+            }
+            break;
+        }
+        case OP_GE:{
+            for(uint i = 0;i < temp.size();i ++){
+                if(now->child[temp[i]] != -1){
+                    std::vector<uint> temp =  queryRecords(op,data,now->child[temp[i]]);
+                    for (auto it: temp)ans.push_back(it);
+                }
+                if(i == temp.size() - 1 && now->child[temp[i] + 1] != -1){
+                    std::vector<uint> temp =  queryRecords(op,data,now->child[temp[i] + 1]);
+                    for (auto it: temp)ans.push_back(it);
+                }
+            }
+            break;
+        }
+        case OP_LS:{
+            for(uint i = 0;i < temp.size();i ++){
+                if(now->child[temp[i]] != -1){
+                    std::vector<uint> temp =  queryRecords(op,data,now->child[temp[i]]);
+                    for (auto it: temp)ans.push_back(it);
+                }
+                if(i == temp.size() - 1 && now->child[temp[i] + 1] != -1){
+                    std::vector<uint> temp =  queryRecords(op,data,now->child[temp[i] + 1]);
+                    for (auto it: temp)ans.push_back(it);
+                }
+            }
+            break;
+        }
+        case OP_GT:{
+            for(uint i = 0;i < temp.size();i ++){
+                if(now->child[temp[i]] != -1){
+                    std::vector<uint> temp =  queryRecords(op,data,now->child[temp[i]]);
+                    for (auto it: temp)ans.push_back(it);
+                }
+                if(i == temp.size() - 1 && now->child[temp[i] + 1] != -1){
+                    std::vector<uint> temp =  queryRecords(op,data,now->child[temp[i] + 1]);
+                    for (auto it: temp)ans.push_back(it);
+                }
+            }
+            break;
+        }
+        case OP_NL:{
+            //TODO
+            break;
+        }
+        case OP_NNL:{
+            //TODO
+            break;
+        }
+        case OP_IN:{
+            //TODO
+            break;
+        }
+    }
+
+    return ans;
+}
+
 uint Index::queryRecordsNum(enumOp op, Anys& data) {
-    // TODO
+    return queryRecordsNum(op,data,root_page);
 }
 
 
 vector<uint> Index::queryRecords(enumOp op, Anys& data) {
-    // TODO
+    return queryRecords(op,data,root_page);
 }
