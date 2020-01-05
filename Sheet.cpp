@@ -95,6 +95,7 @@ Anys Sheet::Pointer::get() {
 json Sheet::toJson() { // assemble to JSON
     json j;
     j["name"] = name;
+    j["sheet_id"] = sheet_id;
     j["col_num"] = col_num;
     for (uint i = 0; i < col_num; i++) j["col_ty"].push_back(col_ty[i].toJson());
     j["record_num"] = record_num;
@@ -115,6 +116,7 @@ Sheet::Sheet(Database* db, json j) { // disassemble from JSON
     this->fm = db->fm;
     this->bpm = db->bpm;
     strcpy(name, j["name"].get<std::string>().c_str());
+    sheet_id = j["sheet_id"].get<int>();
     col_num = j["col_num"].get<int>();
     record_num = j["record_num"].get<int>();
     record_size = j["record_size"].get<int>();
