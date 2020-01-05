@@ -36,8 +36,9 @@ public:
     bool operator!=(const Key& b) { return !(*this == b); }
     Key(Sheet* s) : sheet(s) {}
     Key(Sheet* s, json j) : sheet(s) {
-        v_size = j.size();
-        for (uint i = 0; i < v_size; i++) v.push_back(j[i].get<int>());
+        name = j["name"].get<std::string>();
+        v_size = j["cols"].size();
+        for (uint i = 0; i < v_size; i++) v.push_back(j["cols"][i].get<int>());
     }
     Key(Sheet* s, uint sz, int* info) : v_size(sz), sheet(s) { 
         for (uint i = 0; i < v_size; i++) v.push_back(info[i]); 
@@ -45,7 +46,8 @@ public:
     virtual ~Key() {}
     json toJson() {
         json j;
-        for (uint i = 0; i < v_size; i++) j.push_back(v[i]);
+        j["name"] = name.c_str();
+        for (uint i = 0; i < v_size; i++) j["cols"].push_back(v[i]);
         return j;
     }
 };

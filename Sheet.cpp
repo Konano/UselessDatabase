@@ -127,9 +127,9 @@ Sheet::Sheet(Database* db, json j) { // disassemble from JSON
     for (uint i = 0; i < index_num; i++) index[i] = Index(this, j["index"][i]);
     if (j.count("primary")) p_key = new PrimaryKey(this, j["primary"]);
     if (j.count("foreign")) for (uint i = 0; i < j["foreign"].size(); i++) f_key.push_back(new ForeignKey(this, j["foreign"][i], db));
-    p_key_index = j["p_key_index"];
+    p_key_index = j["p_key_index"].get<int>();
     f_key_index.clear();
-    for(uint i = 0;i < f_key.size();i ++)f_key_index.push_back(j["f_key_index"][i]); 
+    for(uint i = 0;i < f_key.size();i ++)f_key_index.push_back(j["f_key_index"][i].get<int>()); 
 }
 
 Sheet::~Sheet() {
@@ -271,49 +271,48 @@ int Sheet::removeRecord(const int record_id) {
             this->index[i].removeRecord(&temp, record_id);
             if (i == (uint)p_key_index) {
                 // TODO some foreign key should be set NULL
-                Anys it;
-                for (uint i = 0;i < db->sheet_num;i ++){
-                    for(uint j = 0;j < db->sheet[i]->f_key.size();j ++){
-                        if(db->sheet[i]->f_key[j]->p->sheet == this){
+                for (auto _k: p_key->f) {
+                    for(uint jx = 0;jx < _k->sheet->f_key.size();jx ++){
+                        if(_k->sheet->f_key[jx]->p->sheet == this){
                             std::vector <int> ans;
-                            if(db->sheet[i]->index[db->sheet[i]->f_key_index[j]].fileID == -1){
-                                db->sheet[i]->index[db->sheet[i]->f_key_index[j]].open();
-                                ans = db->sheet[i]->index[db->sheet[i]->f_key_index[j]].queryRecord(&temp);
-                                db->sheet[i]->index[db->sheet[i]->f_key_index[j]].close();
+                            if(_k->sheet->index[_k->sheet->f_key_index[jx]].fileID == -1){
+                                _k->sheet->index[_k->sheet->f_key_index[jx]].open();
+                                ans = _k->sheet->index[_k->sheet->f_key_index[jx]].queryRecord(&temp);
+                                _k->sheet->index[_k->sheet->f_key_index[jx]].close();
                             }
                             else {
-                                ans = db->sheet[i]->index[db->sheet[i]->f_key_index[j]].queryRecord(&temp);
+                                ans = _k->sheet->index[_k->sheet->f_key_index[jx]].queryRecord(&temp);
                             }
                             for(uint k = 0;k < ans.size();k ++){
-                                if(db->sheet[i]->index[db->sheet[i]->f_key_index[j]].fileID == -1){
-                                    db->sheet[i]->index[db->sheet[i]->f_key_index[j]].open();
-                                    db->sheet[i]->index[db->sheet[i]->f_key_index[j]].removeRecord(&temp,ans[k]);
+                                if(_k->sheet->index[_k->sheet->f_key_index[jx]].fileID == -1){
+                                    _k->sheet->index[_k->sheet->f_key_index[jx]].open();
+                                    _k->sheet->index[_k->sheet->f_key_index[jx]].removeRecord(&temp,ans[k]);
                                     Anys nullkey;
                                     for(uint m = 0;m < temp.size();m ++)nullkey.push_back(Any());
-                                    db->sheet[i]->index[db->sheet[i]->f_key_index[j]].insertRecord(&nullkey,ans[k]);
-                                    db->sheet[i]->index[db->sheet[i]->f_key_index[j]].close();
+                                    _k->sheet->index[_k->sheet->f_key_index[jx]].insertRecord(&nullkey,ans[k]);
+                                    _k->sheet->index[_k->sheet->f_key_index[jx]].close();
                                 }
                                 else {
-                                    db->sheet[i]->index[db->sheet[i]->f_key_index[j]].removeRecord(&temp,ans[k]);
+                                    _k->sheet->index[_k->sheet->f_key_index[jx]].removeRecord(&temp,ans[k]);
                                     Anys nullkey;
                                     for(uint m = 0;m < temp.size();m ++)nullkey.push_back(Any());
-                                    db->sheet[i]->index[db->sheet[i]->f_key_index[j]].insertRecord(&nullkey,ans[k]);
+                                    _k->sheet->index[_k->sheet->f_key_index[jx]].insertRecord(&nullkey,ans[k]);
                                 }
-                                Anys pre = db->sheet[i]->queryRecord(ans[k]);
+                                Anys pre = _k->sheet->queryRecord(ans[k]);
                                 Anys after;
                                 vector<bool> mark;
                                 for(uint m = 0;m < pre.size();m ++)mark.push_back(true);
-                                for(uint m = 0;m < db->sheet[i]->f_key[j]->v.size();m ++)mark[db->sheet[i]->f_key[j]->v[m]] = false;
+                                for(uint m = 0;m < _k->sheet->f_key[jx]->v.size();m ++)mark[_k->sheet->f_key[jx]->v[m]] = false;
                                 for(uint m = 0;m < pre.size();m ++){
                                     if(mark[m]) after.push_back(pre[m]);
                                     else after.push_back(Any());
                                 }
                                 int index;
-                                BufType buf = bpm->getPage(main_file, ans[k] / record_onepg, index);
-                                buf += (record_onepg - 1) / 8 + 1;
-                                buf += record_size * (ans[k] % record_onepg);
-                                for (uint i = 0; i < col_num; i++) {
-                                    insert(after[i], col_ty[i].ty, col_ty[i].size(), buf);
+                                BufType buf = bpm->getPage(_k->sheet->main_file, ans[k] / _k->sheet->record_onepg, index);
+                                buf += (_k->sheet->record_onepg - 1) / 8 + 1;
+                                buf += _k->sheet->record_size * (ans[k] % _k->sheet->record_onepg);
+                                for (uint q = 0; q < _k->sheet->col_num; q++) {
+                                    insert(after[q], _k->sheet->col_ty[q].ty, _k->sheet->col_ty[q].size(), buf);
                                 }
                                 bpm->markDirty(index);
                             }
@@ -679,10 +678,10 @@ int Sheet::createForeignKey(ForeignKey* fk, PrimaryKey* pk) {
     f_key.push_back(f_keyx);
     updateColumns();
 
-    pk->sheet->p_key->f.push_back(f_keyx);
-
     string name = std::string("fk_") + std::string(f_keyx->name) + std::to_string(f_key.size());
     f_key_index.push_back(createIndex(f_keyx->v, name));
+
+    pk->sheet->p_key->f.push_back(f_keyx);
 
     return 0;
 }
