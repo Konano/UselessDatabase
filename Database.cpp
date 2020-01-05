@@ -150,7 +150,8 @@ char* Database::getVarchar(uint64_t idx) {
     uint offset = (idx & 0xffffffff) >> 16;
     uint size = idx & 0xffff;
     BufType buf = bpm->getPage(mem_file, page) + offset;
-    char* str = new char[size + 1];
+    char* str = new char[size + 1]; 
+    char* _str = str;
     while (true) {
         if (PAGE_SIZE - offset > size) {
             memcpy(str, buf, size);
@@ -167,7 +168,7 @@ char* Database::getVarchar(uint64_t idx) {
     }
     
     str[size] = '\0';
-    return str;
+    return _str;
 }
 
 uint64_t Database::storeVarchar(char* str) {
