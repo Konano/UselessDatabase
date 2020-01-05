@@ -405,7 +405,7 @@ uint Sheet::genOffset(uint index) {
 uint Sheet::createIndex(vector<uint> col_id, std::string name) {
     //Calculate max per node
 
-    int max_per_node = 10;
+    int max_per_node = 100;
 
     index[index_num] = Index(this, name.c_str(), col_id, max_per_node);
     index[index_num].open();
