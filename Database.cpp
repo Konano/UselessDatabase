@@ -9,6 +9,7 @@
 #include <string>
 #include <dirent.h>
 #include <fcntl.h>
+#include <termio.h>
 
 #ifdef WIN32
 #include <direct.h>
@@ -26,6 +27,18 @@ extern char* dirPath(const char* dir);
 extern char* dirPath(const char* dir, const char* path);
 extern char* dirPath(const char* dir, const char* filename, const char* filetype);
 extern int checkFile(const char *filename);
+
+inline char getch() {
+    struct termios tm, tm_old;
+    int fd = 0, ch;
+    if (tcgetattr(fd, &tm) < 0) return -1;
+    tm_old = tm;
+    cfmakeraw(&tm);
+    if (tcsetattr(fd, TCSANOW, &tm) < 0) return -1;
+    ch = getchar();
+    if (tcsetattr(fd, TCSANOW, &tm_old) < 0) return -1;
+    return ch;
+}
 
 json Database::toJson() {
     json j;
@@ -266,31 +279,48 @@ void Database::storeData(uint idx) {
             data.push_back(filterSheet(it.first)->getPointerColData(it.second));
         }
     }
-    sel_sheet[idx]->data.push_back(data);
+    if (data.size()) sel_sheet[idx]->data.push_back(data);
     sel_sheet[idx]->record_num += 1;
 }
 
-void Database::dfsCross(uint idx, uint f_idx) {
+bool selStop;
+
+void Database::dfsCross(uint idx, uint f_idx, bool print = false) {
     if (f_idx == sel[idx].from.size()) {
         for (auto it: sel[idx].where) {
             if (checkWhere(it) == false) return;
         }
-        // storeData(idx);
+        storeData(idx);
+        if (print && sel_sheet[idx]->record_num % MAX_RESULT_LINES == 0 && sel_sheet[idx]->printBack(MAX_RESULT_LINES)) {
+            puts("====== Press c to continue, q to quit ======");
+            while (true) {
+                char ch = getch();
+                if (ch == 'c') {
+                    puts("================= Continue =================");
+                    break;
+                }
+                if (ch == 'q') { 
+                    selStop = true;
+                    puts("=================== Quit ===================");
+                    return; 
+                }
+            }
+        }
     } else {
         filterSheet(sel[idx].from[f_idx].first)->initPointer();
         while (filterSheet(sel[idx].from[f_idx].first)->movePointer()) {
-            if (f_idx == 0 && filterSheet(sel[idx].from[0].first)->getPointer() % 10 == 0) printf("%d\n", filterSheet(sel[idx].from[f_idx].first)->getPointer());
-            // if (f_idx == 1 && filterSheet(sel[idx].from[0].first)->getPointer() == 4301) printf("%d\n", filterSheet(sel[idx].from[f_idx].first)->getPointer());
-            dfsCross(idx, f_idx + 1);
+            dfsCross(idx, f_idx + 1, print);
+            if (selStop) return;
         }
     }
 }
 
-void Database::buildSel(uint idx) {
+void Database::buildSel(uint idx, bool print) {
     if (sel[idx].build) return; 
     sel[idx].build = true;
     for (auto it: sel[idx].recursion) buildSel(-1-it);
-    dfsCross(idx, 0);
+    selStop = false;
+    dfsCross(idx, 0, print);
     if (sel[idx].select.size() == 0 && sel[idx].aggr.size() > 0) {
         uint _idx = 0;
         Sheet* sheet = sel_sheet[idx];
@@ -335,6 +365,9 @@ void Database::buildSel(uint idx) {
     for (auto it: sel[idx].aggr) {
         if (it.ty == AG_AVG) sel_sheet[idx]->col_ty[_idx].ty = DECIMAL;
         if (it.ty != AG_COUNT) _idx++;
+    }
+    if (print && selStop == false && sel_sheet[idx]->record_num % MAX_RESULT_LINES && sel_sheet[idx]->printBack(sel_sheet[idx]->record_num % MAX_RESULT_LINES) == false) {
+        sel_sheet[idx]->print();
     }
 }
 

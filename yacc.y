@@ -525,14 +525,12 @@ tbStmt:
     }
     | seleStmt SEMI {
         if (current_db_exists()) {
-            db->buildSel(-1 - $1);
-            db->sel_sheet[-1 - $1]->print();
+            db->buildSel(-1 - $1, true);
+            // db->sel_sheet[-1 - $1]->print();
             while (db->sel_num) {
                 delete db->sel_sheet[--(db->sel_num)];
                 db->sel[db->sel_num].build = false;
             }
-            // 检查如下操作是否科学，抛去这句可能导致同一个select语句的第二次执行无结果
-            // for (int i = 0; i < MAX_SHEET_NUM; i++) db->sel[i].build = false;
         }
     };
 

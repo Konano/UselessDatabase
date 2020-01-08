@@ -71,7 +71,7 @@ private:
     
     bool checkWhere(WhereStmt &w);
     void storeData(uint idx);
-    void dfsCross(uint idx, uint f_idx);
+    void dfsCross(uint idx, uint f_idx, bool print);
     
 public:
     void update();
@@ -99,7 +99,7 @@ public:
     char* getVarchar(uint64_t idx); // get varchar from '.storage'
     uint64_t storeVarchar(char* str); // store varchar into '.storage'
 
-    void buildSel(uint idx);
+    void buildSel(uint idx, bool print = false);
 };
 
 #endif

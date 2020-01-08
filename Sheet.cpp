@@ -706,6 +706,23 @@ int Sheet::removeForeignKey(ForeignKey* fk) {
     return -1;
 }
 
+void Sheet::print() {
+    std::vector<std::pair<std::string, int> > v;
+    for (uint i = 0; i < col_num; i++) v.push_back(std::pair<std::string, int>(col_ty[i].name, std::max(col_ty[i].printLen(), (int)strlen(col_ty[i].name))));
+    Print::title(v);
+    if (sel == 1) {
+        for (auto it: data) {
+            Print::row(it);
+        }
+    } else if (sel == 2) {
+        Print::row(val);
+    } else {
+        Pointer p(this);
+        while (p.next()) Print::row(p.get());
+    }
+    Print::end();
+}
+
 void Sheet::printCol() {
     std::vector<std::pair<std::string, int> > v;
     v.push_back(std::pair<std::string, int>("Field", 20));
@@ -743,21 +760,16 @@ void Sheet::printCol() {
     Print::end();
 }
 
-void Sheet::print() {
+bool Sheet::printBack(uint num) {
+    if (num == 0 || sel != 1) return false;
     std::vector<std::pair<std::string, int> > v;
     for (uint i = 0; i < col_num; i++) v.push_back(std::pair<std::string, int>(col_ty[i].name, std::max(col_ty[i].printLen(), (int)strlen(col_ty[i].name))));
     Print::title(v);
-    if (sel == 1) {
-        for (auto it: data) {
-            Print::row(it);
-        }
-    } else if (sel == 2) {
-        Print::row(val);
-    } else {
-        Pointer p(this);
-        while (p.next()) Print::row(p.get());
+    for (uint it = record_num - num; it < record_num; it++) { 
+        Print::row(data[it]);
     }
     Print::end();
+    return true;
 }
 
 int Sheet::findCol(std::string a) {
@@ -1126,6 +1138,10 @@ int Sheet::updateRecords(vector<Pia> &set, vector<WhereStmt> &where) {
         }
     }
     return 0;
+}
+
+uint Sheet::getPointer() {
+    return pointer.pid;
 }
 
 // TODO the name of the keys cannot be repeated

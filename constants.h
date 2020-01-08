@@ -18,6 +18,8 @@
 #define MAX_COL_NUM 32
 #define MAX_INDEX_NUM 256
 
+#define MAX_RESULT_LINES 50
+
 typedef uint8_t* BufType;
 typedef unsigned int uint;
 

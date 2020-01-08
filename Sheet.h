@@ -104,8 +104,9 @@ public:
     int removePrimaryKey();
     // bool queryPrimaryKey(Any* info); 
 
-    void printCol();
     void print();
+    void printCol();
+    bool printBack(uint num);
 
     int findCol(std::string a);
     int constraintCol(uint col_id);
@@ -117,6 +118,7 @@ public:
     bool movePointer();
     Any getPointerColData(uint idx);
     Anys getPointerData();
+    uint getPointer();
 };
 
 #endif
