@@ -212,7 +212,7 @@ uint64_t Database::storeVarchar(char* str) {
     return out;
 }
 
-bool cmpCol(enumOp op, Anys a, Anys b) {
+bool cmpCol(enumOp op, Anys &a, Anys &b) {
     switch (op) {
     case OP_EQ: return a == b;
     case OP_NEQ: return a != b;

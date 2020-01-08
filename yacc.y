@@ -692,7 +692,6 @@ idxStmt:
         }
     }
     | ALTER TABLE tbName ADD INDEX idxName LB colNames RB SEMI {
-        // TODO: 这个和第一个CREATE的区别
         if (current_db_exists()) {
             int tableID;
             if (table_exists($3, tableID, true)) {
@@ -865,7 +864,7 @@ alterStmt:
         }
     }
     | ALTER TABLE tbName DROP PRIMARY KEY pkName SEMI {
-        // TODO: pkName?
+        // TODO pkName?
         if (current_db_exists()) {
             int tableID;
             if (table_exists($3, tableID, true)) {

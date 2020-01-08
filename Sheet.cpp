@@ -23,7 +23,7 @@ extern char* dirPath(const char* dir, const char* filename, const char* filetype
 extern char* dirPath(const char* dir, const char* filename, const char* subname, const char* filetype);
 extern void replaceFile(const char *oldName, const char *newName);
 
-extern bool cmpCol(enumOp op, Anys a, Anys b);
+extern bool cmpCol(enumOp op, Anys &a, Anys &b);
 
 void Sheet::Pointer::init() {
     pid = -1;
@@ -270,7 +270,6 @@ int Sheet::removeRecord(const int record_id) {
             }
             this->index[i].removeRecord(&temp, record_id);
             if (i == (uint)p_key_index) {
-                // TODO some foreign key should be set NULL
                 for (auto _k: p_key->f) {
                     for(uint jx = 0;jx < _k->sheet->f_key.size();jx ++){
                         if(_k->sheet->f_key[jx]->p->sheet == this){
@@ -997,7 +996,7 @@ vector<uint> Sheet::existentRecords() {
 vector<uint> Sheet::findWheres(vector<WhereStmt> &where) { // preliminary search
     int mx = -1;
     WhereStmt w;
-    uint w_index;
+    // uint w_index;
     for (auto it: where) if (it.rvalue_ty == 1) {
         for (uint i = 0; i < index_num; i++) if (index[i].key.size() == it.cols.size()) {
             bool tmp = true;
@@ -1009,13 +1008,13 @@ vector<uint> Sheet::findWheres(vector<WhereStmt> &where) { // preliminary search
                 if (nums > mx) {
                     mx = nums;
                     w = it;
-                    w_index = i;
+                    // w_index = i;
                 }
             }
         }
     }
 
-    // FIXME debug
+    // FIXME
     // if (mx == -1) {
         return existentRecords();
     // } else {
@@ -1143,6 +1142,3 @@ int Sheet::updateRecords(vector<Pia> &set, vector<WhereStmt> &where) {
 uint Sheet::getPointer() {
     return pointer.pid;
 }
-
-// TODO the name of the keys cannot be repeated
-// TODO every foreign keys need index, to set NULL
