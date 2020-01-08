@@ -211,7 +211,7 @@ bool cmpCol(enumOp op, Anys a, Anys b) {
     }
 }
 
-bool Database::checkWhere(WhereStmt w) { // Sheet::checkWhere
+bool Database::checkWhere(WhereStmt &w) { // Sheet::checkWhere
     Anys data, _data;
     for (auto it: w.cols) {
         data.push_back(filterSheet(it.first)->getPointerColData(it.second));
@@ -275,10 +275,12 @@ void Database::dfsCross(uint idx, uint f_idx) {
         for (auto it: sel[idx].where) {
             if (checkWhere(it) == false) return;
         }
-        storeData(idx);
+        // storeData(idx);
     } else {
         filterSheet(sel[idx].from[f_idx].first)->initPointer();
         while (filterSheet(sel[idx].from[f_idx].first)->movePointer()) {
+            if (f_idx == 0 && filterSheet(sel[idx].from[0].first)->getPointer() % 10 == 0) printf("%d\n", filterSheet(sel[idx].from[f_idx].first)->getPointer());
+            // if (f_idx == 1 && filterSheet(sel[idx].from[0].first)->getPointer() == 4301) printf("%d\n", filterSheet(sel[idx].from[f_idx].first)->getPointer());
             dfsCross(idx, f_idx + 1);
         }
     }

@@ -69,7 +69,7 @@ private:
     json toJson();
     void fromJson(json j);
     
-    bool checkWhere(WhereStmt w);
+    bool checkWhere(WhereStmt &w);
     void storeData(uint idx);
     void dfsCross(uint idx, uint f_idx);
     
