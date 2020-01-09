@@ -14,7 +14,7 @@
 
 #define MAX_NAME_LEN 32
 #define MAX_COMMENT_LEN 256
-#define MAX_SHEET_NUM 256
+#define MAX_TABLE_NUM 256
 #define MAX_COL_NUM 32
 #define MAX_INDEX_NUM 256
 

@@ -8,13 +8,13 @@
 
 `database.udb`: JSON 格式，储存数据库相关信息。
 
-### Sheet
+### Table
 
 每个前缀对应一个数据表。
 
-默认有一个以 RID 为偏移量的文件 `[Sheet].usid` 用来储存数据。
+默认有一个以 RID 为偏移量的文件 `[Table].usid` 用来储存数据。
 
-`[Sheet].usim`: JSON 格式，储存数据表相关信息：
+`[Table].usim`: JSON 格式，储存数据表相关信息：
 
 - Name
 - Comment（描述，默认为无）
@@ -46,15 +46,15 @@
 
 ### Data
 
-命名格式为 `[Sheet].usid`
+命名格式为 `[Table].usid`
 
 Page size: 65536 bits, 8192 Bytes, 8KB
 
-由 Record 按 RID 排序而成，Sheet 可在已知 RID 的情况下 $O(1)$ 找到数据。
+由 Record 按 RID 排序而成，Table 可在已知 RID 的情况下 $O(1)$ 找到数据。
 
 ### Index
 
-命名格式为 `[Sheet]_{num}.usid`
+命名格式为 `[Table]_{num}.usid`
 
 Page size: 65536 bits, 8192 Bytes, 8KB
 

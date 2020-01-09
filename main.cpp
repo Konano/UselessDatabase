@@ -4,7 +4,7 @@
 #include "FileManager.h"
 #include "BufPageManager.h"
 #include "Database.h"
-#include "Sheet.h"
+#include "Table.h"
 #include "Type.h"
 #include "Index.h"
 
@@ -23,10 +23,10 @@ void test_0() { // Testcase: new database
     assert(cleanDatabase("TestDatabase") == 0);
 
     Database *db = new Database("TestDatabase", true);
-    Sheet *sheet = db->createSheet("TestSheet", 4, new Type[4]{Type("Number"), Type("Name", enumType::CHAR, 3), Type("Height"), Type("Weigh")});
-    sheet->insertRecord(new Any[4]{2017011474, (char*)"ZLK", 160, 80});
-    assert(sheet->removeRecord(0) == 0);
-    assert(sheet->removeRecord(0) == -1);
+    Table *table = db->createTable("TestTable", 4, new Type[4]{Type("Number"), Type("Name", enumType::CHAR, 3), Type("Height"), Type("Weigh")});
+    table->insertRecord(new Any[4]{2017011474, (char*)"ZLK", 160, 80});
+    assert(table->removeRecord(0) == 0);
+    assert(table->removeRecord(0) == -1);
 
     delete db;
     cout << "Pass Test 0" << endl;
@@ -36,21 +36,21 @@ void test_1() { // Testcase: record manager
     test_0();
 
     Database *db = new Database("TestDatabase", false);
-    Sheet *sheet = db->openSheet("TestSheet");
-    sheet->insertRecord(new Any[4]{2017011475, (char*)"GTT", 170, 60});
-    sheet->insertRecord(new Any[4]{2017011473, (char*)"LTF", 180, 70});
-    sheet->insertRecord(new Any[4]{2017011470, (char*)"ZLK", 190, 50});
-    assert(sheet->removeRecord(3) == 0);
-    sheet->updateRecord(2, 4, new Any[4]{2017011474, (char*)"ZLK", 160, 60});
+    Table *table = db->openTable("TestTable");
+    table->insertRecord(new Any[4]{2017011475, (char*)"GTT", 170, 60});
+    table->insertRecord(new Any[4]{2017011473, (char*)"LTF", 180, 70});
+    table->insertRecord(new Any[4]{2017011470, (char*)"ZLK", 190, 50});
+    assert(table->removeRecord(3) == 0);
+    table->updateRecord(2, 4, new Any[4]{2017011474, (char*)"ZLK", 160, 60});
     Any* ans;
-    assert(sheet->queryRecord(0, ans) == -1);
-    assert(sheet->queryRecord(3, ans) == -1);
-    assert(sheet->queryRecord(2, ans) == 0);
+    assert(table->queryRecord(0, ans) == -1);
+    assert(table->queryRecord(3, ans) == -1);
+    assert(table->queryRecord(2, ans) == 0);
     assert(ans[0] == 2017011474);
     assert(ans[1] == "ZLK");
     assert(ans[2] == 160);
     assert(ans[3] == 60);
-    assert(sheet->queryRecord(1, ans) == 0);
+    assert(table->queryRecord(1, ans) == 0);
     assert(ans[0] == 2017011475);
     assert(ans[1] == "GTT");
     assert(ans[2] == 170);
@@ -64,7 +64,7 @@ void test_2() {
     test_1();
 
     Database *db = new Database("TestDatabase", false);
-    Sheet *sheet = db->openSheet("TestSheet");
+    Table *table = db->openTable("TestTable");
 
     BtreeNode a;
     a.left_page_index = -1;
@@ -83,7 +83,7 @@ void test_2() {
     temp.record_id = 2;
     a.record.push_back(temp);
 
-    Index ax(sheet, "haha", 1, 3);
+    Index ax(table, "haha", 1, 3);
 
     ax.convert_BtreeNode_to_buf(&a);
     ax.convert_buf_to_BtreeNode(a.index);
@@ -96,12 +96,12 @@ void test_3() {
     test_1();
 
     Database *db = new Database("TestDatabase", false);
-    Sheet *sheet = db->openSheet("TestSheet");
+    Table *table = db->openTable("TestTable");
 
-    sheet->createIndex(0);
-    // assert(sheet->index[0].queryRecord(1, new Any[1]{2017011475}) == 1);
-    // assert(sheet->index[0].queryRecord(1, new Any[1]{2017011474}) == 1);
-    // sheet->removeIndex(0);
+    table->createIndex(0);
+    // assert(table->index[0].queryRecord(1, new Any[1]{2017011475}) == 1);
+    // assert(table->index[0].queryRecord(1, new Any[1]{2017011474}) == 1);
+    // table->removeIndex(0);
 
     delete db;
     cout << "Pass Test 3" << endl;
@@ -112,27 +112,27 @@ void test_4() {
     test_0();
 
     Database *db = new Database("TestDatabase", false);
-    Sheet *sheet = db->openSheet("TestSheet");
+    Table *table = db->openTable("TestTable");
 
     vector <uint> key;
     key.push_back(0);
 
-    sheet->createIndex(key, "test_index");
-    sheet->insertRecord(new Any[4]{2017011475, (char*)"GGT", 345, 34});
-    sheet->insertRecord(new Any[4]{634645345, (char*)"KLE", 345, 34});
-    sheet->insertRecord(new Any[4]{634645345, (char*)"KLEX", 3456, 345});
-    std::vector<int> v = sheet->index[0].queryRecord(new Any[1]{2017011475});
-    assert(sheet->index[0].queryRecord(new Any[1]{2017011475}).size() == 1);
-    assert(sheet->index[0].queryRecord(new Any[1]{634645345}).size() == 2);
-    assert(sheet->removeRecord(1) == 0);
-    assert(sheet->index[0].queryRecord(new Any[1]{2017011475}).size() == 0);
-    assert(sheet->index[0].queryRecord(new Any[1]{634645345}).size() == 2);
-    sheet->insertRecord(new Any[4]{4523524, (char*)"YNT", 345, 34});
-    sheet->insertRecord(new Any[4]{87674234, (char*)"VWH", 345, 34});
-    assert(sheet->index[0].queryRecord(new Any[1]{2017011475}).size() == 0);
-    assert(sheet->index[0].queryRecord(new Any[1]{634645345}).size() == 2);
-    assert(sheet->index[0].queryRecord(new Any[1]{4523524}).size() == 1);
-    assert(sheet->index[0].queryRecord(new Any[1]{87674234}).size() == 1);
+    table->createIndex(key, "test_index");
+    table->insertRecord(new Any[4]{2017011475, (char*)"GGT", 345, 34});
+    table->insertRecord(new Any[4]{634645345, (char*)"KLE", 345, 34});
+    table->insertRecord(new Any[4]{634645345, (char*)"KLEX", 3456, 345});
+    std::vector<int> v = table->index[0].queryRecord(new Any[1]{2017011475});
+    assert(table->index[0].queryRecord(new Any[1]{2017011475}).size() == 1);
+    assert(table->index[0].queryRecord(new Any[1]{634645345}).size() == 2);
+    assert(table->removeRecord(1) == 0);
+    assert(table->index[0].queryRecord(new Any[1]{2017011475}).size() == 0);
+    assert(table->index[0].queryRecord(new Any[1]{634645345}).size() == 2);
+    table->insertRecord(new Any[4]{4523524, (char*)"YNT", 345, 34});
+    table->insertRecord(new Any[4]{87674234, (char*)"VWH", 345, 34});
+    assert(table->index[0].queryRecord(new Any[1]{2017011475}).size() == 0);
+    assert(table->index[0].queryRecord(new Any[1]{634645345}).size() == 2);
+    assert(table->index[0].queryRecord(new Any[1]{4523524}).size() == 1);
+    assert(table->index[0].queryRecord(new Any[1]{87674234}).size() == 1);
 
     delete db;
     cout << "Pass Test 4" << endl;
@@ -142,28 +142,28 @@ void test_5() {
     test_1();
 
     Database *db = new Database("TestDatabase", false);
-    Sheet *sheet = db->openSheet("TestSheet");
+    Table *table = db->openTable("TestTable");
 
-    sheet->createIndex(0);
-    //sheet->index[0].Debug();
-    sheet->index[0].insertRecord(new Any[1]{2017011476}, 7);
-    //sheet->index[0].Debug();
-    sheet->index[0].insertRecord(new Any[1]{346453455}, 3);
-    //sheet->index[0].Debug();
-    //assert(sheet->index[0].queryRecord(new Any[1]{2017011475}) == 1);
-    //assert(sheet->index[0].queryRecord(new Any[1]{346453455}) == 3);
-    //assert(sheet->index[0].queryRecord(new Any[1]{4523524}) == -1);
-    //assert(sheet->index[0].queryRecord(new Any[1]{87674234}) == -1);
-    //sheet->index[0].Debug();
-    sheet->index[0].removeRecord(new Any[1]{2017011475}, 1);
-    //sheet->index[0].Debug();
-    //assert(sheet->removeRecord(3) == 0);
-    //assert(sheet->removeRecord(4) == 0);
-    //assert(sheet->index[0].queryRecord(new Any[1]{2017011475}) == -1);
-    //assert(sheet->index[0].queryRecord(new Any[1]{2017011476}) == 7);
-    //assert(sheet->index[0].queryRecord(1, new Any[1]{4523524}) == -1);
-    //assert(sheet->index[0].queryRecord(1, new Any[1]{87674234}) == -1);
-    // sheet->removeIndex(0);
+    table->createIndex(0);
+    //table->index[0].Debug();
+    table->index[0].insertRecord(new Any[1]{2017011476}, 7);
+    //table->index[0].Debug();
+    table->index[0].insertRecord(new Any[1]{346453455}, 3);
+    //table->index[0].Debug();
+    //assert(table->index[0].queryRecord(new Any[1]{2017011475}) == 1);
+    //assert(table->index[0].queryRecord(new Any[1]{346453455}) == 3);
+    //assert(table->index[0].queryRecord(new Any[1]{4523524}) == -1);
+    //assert(table->index[0].queryRecord(new Any[1]{87674234}) == -1);
+    //table->index[0].Debug();
+    table->index[0].removeRecord(new Any[1]{2017011475}, 1);
+    //table->index[0].Debug();
+    //assert(table->removeRecord(3) == 0);
+    //assert(table->removeRecord(4) == 0);
+    //assert(table->index[0].queryRecord(new Any[1]{2017011475}) == -1);
+    //assert(table->index[0].queryRecord(new Any[1]{2017011476}) == 7);
+    //assert(table->index[0].queryRecord(1, new Any[1]{4523524}) == -1);
+    //assert(table->index[0].queryRecord(1, new Any[1]{87674234}) == -1);
+    // table->removeIndex(0);
 
     delete db;
     cout << "Pass Test 5" << endl;
@@ -173,25 +173,25 @@ void test_6() {
     //test_0();
 
     Database *db = new Database("TestDatabase", false);
-    Sheet *sheet = db->openSheet("TestSheet");
+    Table *table = db->openTable("TestTable");
 
-    sheet->createIndex(1);
+    table->createIndex(1);
     //cout << "check" << endl;
-    sheet->insertRecord(new Any[4]{2017011475, (char*)"GGT", 345, 34});
-    sheet->insertRecord(new Any[4]{634645345, (char*)"KLE", 345, 34});
+    table->insertRecord(new Any[4]{2017011475, (char*)"GGT", 345, 34});
+    table->insertRecord(new Any[4]{634645345, (char*)"KLE", 345, 34});
     //cout << "check" << endl;
-    //assert(sheet->index[0].queryRecord(new Any[1]{(char*)"GGT"}) == 1);
-    //assert(sheet->index[0].queryRecord(new Any[1]{(char*)"KLE"}) == 2);
+    //assert(table->index[0].queryRecord(new Any[1]{(char*)"GGT"}) == 1);
+    //assert(table->index[0].queryRecord(new Any[1]{(char*)"KLE"}) == 2);
     //cout << "check" << endl;
-    //assert(sheet->removeRecord(1) == 0);
-    //assert(sheet->index[0].queryRecord(new Any[1]{(char*)"GGT"}) == -1);
-    //assert(sheet->index[0].queryRecord(new Any[1]{(char*)"KLE"}) == 2);
-    sheet->insertRecord(new Any[4]{4523524, (char*)"YNT", 345, 34});
-    sheet->insertRecord(new Any[4]{87674234, (char*)"VWH", 345, 34});
-    //assert(sheet->index[0].queryRecord(new Any[1]{(char*)"GGT"}) == -1);
-    //assert(sheet->index[0].queryRecord(new Any[1]{(char*)"KLE"}) == 2);
-    //assert(sheet->index[0].queryRecord(new Any[1]{(char*)"YNT"}) == 3);
-    //assert(sheet->index[0].queryRecord(new Any[1]{(char*)"VWH"}) == 4);
+    //assert(table->removeRecord(1) == 0);
+    //assert(table->index[0].queryRecord(new Any[1]{(char*)"GGT"}) == -1);
+    //assert(table->index[0].queryRecord(new Any[1]{(char*)"KLE"}) == 2);
+    table->insertRecord(new Any[4]{4523524, (char*)"YNT", 345, 34});
+    table->insertRecord(new Any[4]{87674234, (char*)"VWH", 345, 34});
+    //assert(table->index[0].queryRecord(new Any[1]{(char*)"GGT"}) == -1);
+    //assert(table->index[0].queryRecord(new Any[1]{(char*)"KLE"}) == 2);
+    //assert(table->index[0].queryRecord(new Any[1]{(char*)"YNT"}) == 3);
+    //assert(table->index[0].queryRecord(new Any[1]{(char*)"VWH"}) == 4);
 
     delete db;
     cout << "Pass Test 6" << endl;
@@ -201,7 +201,7 @@ void init() { // Testcase: new database
     assert(cleanDatabase("TestDatabase") == 0);
 
     Database *db = new Database("TestDatabase", true);
-    db->createSheet("TestSheet", 4, new Type[4]{Type("Number"), Type("Name", enumType::CHAR, 3), Type("Height"), Type("Weigh")});
+    db->createTable("TestTable", 4, new Type[4]{Type("Number"), Type("Name", enumType::CHAR, 3), Type("Height"), Type("Weigh")});
 
     delete db;
     cout << "Database init" << endl;
@@ -211,37 +211,37 @@ void test_7() { // add column, del column
     init();
 
     Database *db = new Database("TestDatabase", false);
-    Sheet *sheet = db->openSheet("TestSheet");
+    Table *table = db->openTable("TestTable");
 
-    sheet->insertRecord(new Any[4]{2017011475, (char*)"GGT", 345, 34});
-    sheet->insertRecord(new Any[4]{634645345, (char*)"KLE", 345, 34});
-    // sheet->createColumn(Type("Money", enumType::INT, 0, enumKeyType::Common, 0, Any(5)));
-    sheet->removeColumn(0);
-    // sheet->modifyColumn(1, Type("Height", enumType::INT, 0, enumKeyType::Common, 0, Any(9)));
+    table->insertRecord(new Any[4]{2017011475, (char*)"GGT", 345, 34});
+    table->insertRecord(new Any[4]{634645345, (char*)"KLE", 345, 34});
+    // table->createColumn(Type("Money", enumType::INT, 0, enumKeyType::Common, 0, Any(5)));
+    table->removeColumn(0);
+    // table->modifyColumn(1, Type("Height", enumType::INT, 0, enumKeyType::Common, 0, Any(9)));
 
     delete db;
     cout << "Pass Test 7" << endl;
 }
 
-void init_2sheets() { // Testcase: new database
+void init_2tables() { // Testcase: new database
     assert(cleanDatabase("TestDatabase") == 0);
 
     Database *db = new Database("TestDatabase", true);
-    // assert(db->createSheet("StudentInfo", 4, new Type[4]{Type("ID", enumType::INT, 0, enumKeyType::Primary), Type("Name", enumType::CHAR, 3), Type("Height"), Type("Weigh")}));
-    // assert(db->createSheet("ClassInfo", 2, new Type[2]{Type("ID", enumType::INT, 0, enumKeyType::Primary), Type("Name", enumType::CHAR, 3)}));
-    // assert(db->createSheet("Combine", 2, new Type[2]{Type("ClassID", enumType::INT, 0, enumKeyType::Foreign, 1), Type("StudentID", enumType::INT, 0, enumKeyType::Foreign, 0)}));
+    // assert(db->createTable("StudentInfo", 4, new Type[4]{Type("ID", enumType::INT, 0, enumKeyType::Primary), Type("Name", enumType::CHAR, 3), Type("Height"), Type("Weigh")}));
+    // assert(db->createTable("ClassInfo", 2, new Type[2]{Type("ID", enumType::INT, 0, enumKeyType::Primary), Type("Name", enumType::CHAR, 3)}));
+    // assert(db->createTable("Combine", 2, new Type[2]{Type("ClassID", enumType::INT, 0, enumKeyType::Foreign, 1), Type("StudentID", enumType::INT, 0, enumKeyType::Foreign, 0)}));
 
     delete db;
     cout << "Database init" << endl;
 }
 
 void test_8() {
-    init_2sheets();
+    init_2tables();
 
     Database *db = new Database("TestDatabase", false);
-    db->openSheet("StudentInfo");
-    db->openSheet("ClassInfo");
-    db->openSheet("Combine");
+    db->openTable("StudentInfo");
+    db->openTable("ClassInfo");
+    db->openTable("Combine");
 
     delete db;
 
@@ -255,16 +255,16 @@ void test_9() { // varchar data decimal
     assert(cleanDatabase("TestDatabase") == 0);
 
     Database *db = new Database("TestDatabase", true);
-    db->createSheet("TestSheet", 4, new Type[4]{Type("Number"), Type("Name", VARCHAR, 20), Type("Height", DECIMAL), Type("Birthday", DATE)});
+    db->createTable("TestTable", 4, new Type[4]{Type("Number"), Type("Name", VARCHAR, 20), Type("Height", DECIMAL), Type("Birthday", DATE)});
 
     delete db;
     cout << "Database init" << endl;
 
     db = new Database("TestDatabase", false);
-    Sheet *sheet = db->openSheet("TestSheet");
+    Table *table = db->openTable("TestTable");
 
-    sheet->insertRecord(new Any[4]{2017011475, (char*)"NanoApe", (long double)160.34, (uint32_t)20170101});
-    sheet->insertRecord(new Any[4]{634645345, (char*)"Konano", (long double)177, (uint32_t)19990501});
+    table->insertRecord(new Any[4]{2017011475, (char*)"NanoApe", (long double)160.34, (uint32_t)20170101});
+    table->insertRecord(new Any[4]{634645345, (char*)"Konano", (long double)177, (uint32_t)19990501});
 
     delete db;
     cout << "Pass Test 9" << endl;
@@ -284,19 +284,19 @@ inline char* copyStr(const char* _str) {
     return str;
 }
 
-void import_data(Sheet* sheet, const char* filename, char separator) {
+void import_data(Table* table, const char* filename, char separator) {
     printf("%s\n",filename);
     ifstream inFile(filename, ios::in);
     string line;
     string field;
     int cnt = 0;
-    Any* data = new Any[sheet->col_num];
+    Any* data = new Any[table->col_num];
     while (getline(inFile, line)) {
         istringstream sin(line); 
-        memset(data, 0, sheet->col_num * sizeof(Any));
-        for (uint i = 0; i < sheet->col_num; i++) {
+        memset(data, 0, table->col_num * sizeof(Any));
+        for (uint i = 0; i < table->col_num; i++) {
             getline(sin, field, separator);  
-            switch (sheet->col_ty[i].ty) {
+            switch (table->col_ty[i].ty) {
             case INT:
                 data[i] = atoi(field.c_str());
                 break;
@@ -312,8 +312,8 @@ void import_data(Sheet* sheet, const char* filename, char separator) {
                 break;
             }
         }
-        //sheet->index[sheet->p_key_index].Debug();
-        int x = sheet->insertRecord(data);
+        //table->index[table->p_key_index].Debug();
+        int x = table->insertRecord(data);
         if (x != 0){
             if(data[0].anyCast<int>() != nullptr)
             printf("id:%d\n",*data[0].anyCast<int>());
@@ -321,7 +321,7 @@ void import_data(Sheet* sheet, const char* filename, char separator) {
             printf("%s\n",*data[1].anyCast<char*>());
             printf("fail %d\n",x);
         }
-        //sheet->index[sheet->p_key_index].Debug();
+        //table->index[table->p_key_index].Debug();
         cnt++;
     }
     delete []data;
@@ -332,10 +332,10 @@ void import_data_tbl() {
     assert(cleanDatabase("orderdb") == 0);
 
     Database *db = new Database("orderdb", true);
-    Sheet* sheet;
+    Table* table;
 
     // id = 0
-    sheet = db->createSheet("part", 9, new Type[9]{
+    table = db->createTable("part", 9, new Type[9]{
         Type("P_PARTKEY", INT), 
         Type("P_NAME", VARCHAR, 55), 
         Type("P_MFGR", CHAR, 25),
@@ -346,38 +346,38 @@ void import_data_tbl() {
         Type("P_RETAILPRICE", DECIMAL), 
         Type("P_COMMENT", VARCHAR, 23),
     });
-    assert(sheet->createPrimaryKey(new PrimaryKey(sheet, 1, new int[1]{0})) == 0);
-    import_data(sheet, "data/part.tbl", '|');
-    //sheet->index[sheet->p_key_index].Debug();
+    assert(table->createPrimaryKey(new PrimaryKey(table, 1, new int[1]{0})) == 0);
+    import_data(table, "data/part.tbl", '|');
+    //table->index[table->p_key_index].Debug();
 
     // id = 1
-    sheet = db->createSheet("region", 3, new Type[3]{
+    table = db->createTable("region", 3, new Type[3]{
         Type("R_REGIONKEY", INT), 
         Type("R_NAME", CHAR, 25), 
         Type("R_COMMENT", VARCHAR, 152),
     });
-    assert(sheet->createPrimaryKey(new PrimaryKey(sheet, 1, new int[1]{0})) == 0);
-    import_data(sheet, "data/region.tbl", '|');
+    assert(table->createPrimaryKey(new PrimaryKey(table, 1, new int[1]{0})) == 0);
+    import_data(table, "data/region.tbl", '|');
 
-    //sheet->index[sheet->p_key_index].Debug();
+    //table->index[table->p_key_index].Debug();
 
     // id = 2
-    sheet = db->createSheet("nation", 4, new Type[4]{
+    table = db->createTable("nation", 4, new Type[4]{
         Type("N_NATIONKEY", INT), 
         Type("N_NAME", CHAR, 25), 
         Type("N_REGIONKEY", INT, 0, NULL, false),
         Type("N_COMMENT", VARCHAR, 152),
     });
-    assert(sheet->createPrimaryKey(new PrimaryKey(sheet, 1, new int[1]{0})) == 0);
-    assert(sheet->createForeignKey(new ForeignKey(sheet, 1, new int[1]{2}), db->sheet[1]->p_key) == 0);
-    import_data(sheet, "data/nation.tbl", '|');
-    //sheet->index[sheet->p_key_index].Debug();
+    assert(table->createPrimaryKey(new PrimaryKey(table, 1, new int[1]{0})) == 0);
+    assert(table->createForeignKey(new ForeignKey(table, 1, new int[1]{2}), db->table[1]->p_key) == 0);
+    import_data(table, "data/nation.tbl", '|');
+    //table->index[table->p_key_index].Debug();
 
-    //sheet->index[sheet->p_key_index].Debug();
-    //sheet->f_key[0]->p->sheet->index[sheet->f_key[0]->p->sheet->p_key_index].Debug();
+    //table->index[table->p_key_index].Debug();
+    //table->f_key[0]->p->table->index[table->f_key[0]->p->table->p_key_index].Debug();
 
     // id = 3
-    sheet = db->createSheet("supplier", 7, new Type[7]{
+    table = db->createTable("supplier", 7, new Type[7]{
         Type("S_SUPPKEY", INT), 
         Type("S_NAME", CHAR, 25), 
         Type("S_ADDRESS", VARCHAR, 40),
@@ -386,13 +386,13 @@ void import_data_tbl() {
         Type("S_ACCTBAL", DECIMAL),
         Type("S_COMMENT", VARCHAR, 101),
     });
-    assert(sheet->createPrimaryKey(new PrimaryKey(sheet, 1, new int[1]{0})) == 0);
-    assert(sheet->createForeignKey(new ForeignKey(sheet, 1, new int[1]{3}), db->sheet[2]->p_key) == 0);
-    import_data(sheet, "data/supplier.tbl", '|');
-    //import_data(sheet, "data/region.tbl", '|');
+    assert(table->createPrimaryKey(new PrimaryKey(table, 1, new int[1]{0})) == 0);
+    assert(table->createForeignKey(new ForeignKey(table, 1, new int[1]{3}), db->table[2]->p_key) == 0);
+    import_data(table, "data/supplier.tbl", '|');
+    //import_data(table, "data/region.tbl", '|');
 
     // id = 4
-    sheet = db->createSheet("customer", 8, new Type[8]{
+    table = db->createTable("customer", 8, new Type[8]{
         Type("C_CUSTKEY", INT), 
         Type("C_NAME", CHAR, 25), 
         Type("C_ADDRESS", VARCHAR, 40),
@@ -402,27 +402,27 @@ void import_data_tbl() {
         Type("C_MKTSEGMENT", CHAR, 10),
         Type("C_COMMENT", VARCHAR, 117),
     });
-    assert(sheet->createPrimaryKey(new PrimaryKey(sheet, 1, new int[1]{0})) == 0);
-    assert(sheet->createForeignKey(new ForeignKey(sheet, 1, new int[1]{3}), db->sheet[2]->p_key) == 0);
-    import_data(sheet, "data/customer.tbl", '|');
-    //sheet->index[sheet->p_key_index].Debug();
+    assert(table->createPrimaryKey(new PrimaryKey(table, 1, new int[1]{0})) == 0);
+    assert(table->createForeignKey(new ForeignKey(table, 1, new int[1]{3}), db->table[2]->p_key) == 0);
+    import_data(table, "data/customer.tbl", '|');
+    //table->index[table->p_key_index].Debug();
 
     // id = 5
-    sheet = db->createSheet("partsupp", 5, new Type[5]{
+    table = db->createTable("partsupp", 5, new Type[5]{
         Type("PS_PARTKEY", INT, 0, NULL, false), 
         Type("PS_SUPPKEY", INT, 0, NULL, false), 
         Type("PS_AVAILQTY", INT),
         Type("PS_SUPPLYCOST", DECIMAL), 
         Type("PS_COMMENT", VARCHAR, 199),
     });
-    assert(sheet->createPrimaryKey(new PrimaryKey(sheet, 2, new int[2]{0, 1})) == 0);
-    assert(sheet->createForeignKey(new ForeignKey(sheet, 1, new int[1]{0}), db->sheet[0]->p_key) == 0);
-    assert(sheet->createForeignKey(new ForeignKey(sheet, 1, new int[1]{1}), db->sheet[3]->p_key) == 0);
-    import_data(sheet, "data/partsupp.tbl", '|');
-    //import_data(sheet, "data/customer.tbl", '|');
+    assert(table->createPrimaryKey(new PrimaryKey(table, 2, new int[2]{0, 1})) == 0);
+    assert(table->createForeignKey(new ForeignKey(table, 1, new int[1]{0}), db->table[0]->p_key) == 0);
+    assert(table->createForeignKey(new ForeignKey(table, 1, new int[1]{1}), db->table[3]->p_key) == 0);
+    import_data(table, "data/partsupp.tbl", '|');
+    //import_data(table, "data/customer.tbl", '|');
 
     // id = 6
-    sheet = db->createSheet("orders", 9, new Type[9]{
+    table = db->createTable("orders", 9, new Type[9]{
         Type("O_ORDERKEY", INT), 
         Type("O_CUSTKEY", INT, 0, NULL, false), 
         Type("O_ORDERSTATUS", CHAR, 1),
@@ -433,13 +433,13 @@ void import_data_tbl() {
         Type("O_SHIPPRIORITY", INT),
         Type("O_COMMENT", VARCHAR, 79),
     });
-    assert(sheet->createPrimaryKey(new PrimaryKey(sheet, 1, new int[1]{0})) == 0);
-    assert(sheet->createForeignKey(new ForeignKey(sheet, 1, new int[1]{1}), db->sheet[4]->p_key) == 0);
-    import_data(sheet, "data/orders.tbl", '|');
-    // sheet->index[sheet->p_key_index].Debug();
+    assert(table->createPrimaryKey(new PrimaryKey(table, 1, new int[1]{0})) == 0);
+    assert(table->createForeignKey(new ForeignKey(table, 1, new int[1]{1}), db->table[4]->p_key) == 0);
+    import_data(table, "data/orders.tbl", '|');
+    // table->index[table->p_key_index].Debug();
 
     // id = 7
-    sheet = db->createSheet("lineitem", 16, new Type[16]{
+    table = db->createTable("lineitem", 16, new Type[16]{
         Type("L_ORDERKEY", INT, 0, NULL, false), 
         Type("L_PARTKEY", INT, 0, NULL, false), 
         Type("L_SUPPKEY", INT, 0, NULL, false),
@@ -457,10 +457,10 @@ void import_data_tbl() {
         Type("L_SHIPMODE", CHAR, 10),
         Type("L_COMMENT", VARCHAR, 44),
     });
-    assert(sheet->createPrimaryKey(new PrimaryKey(sheet, 2, new int[2]{0, 3})) == 0);
-    assert(sheet->createForeignKey(new ForeignKey(sheet, 1, new int[1]{0}), db->sheet[6]->p_key) == 0);
-    assert(sheet->createForeignKey(new ForeignKey(sheet, 2, new int[2]{1, 2}), db->sheet[5]->p_key) == 0);
-    import_data(sheet, "data/lineitem.tbl", '|');
+    assert(table->createPrimaryKey(new PrimaryKey(table, 2, new int[2]{0, 3})) == 0);
+    assert(table->createForeignKey(new ForeignKey(table, 1, new int[1]{0}), db->table[6]->p_key) == 0);
+    assert(table->createForeignKey(new ForeignKey(table, 2, new int[2]{1, 2}), db->table[5]->p_key) == 0);
+    import_data(table, "data/lineitem.tbl", '|');
 
     delete db;
 }
@@ -469,10 +469,10 @@ void import_data_csv() {
     assert(cleanDatabase("orderdb") == 0);
 
     Database *db = new Database("orderdb", true);
-    Sheet* sheet;
+    Table* table;
 
     // id = 0
-    sheet = db->createSheet("part", 9, new Type[9]{
+    table = db->createTable("part", 9, new Type[9]{
         Type("P_PARTKEY", INT), 
         Type("P_NAME", VARCHAR, 55), 
         Type("P_MFGR", CHAR, 25),
@@ -483,31 +483,31 @@ void import_data_csv() {
         Type("P_RETAILPRICE", DECIMAL), 
         Type("P_COMMENT", VARCHAR, 23),
     });
-    assert(sheet->createPrimaryKey(new PrimaryKey(sheet, 1, new int[1]{0})) == 0);
-    import_data(sheet, "data/part.csv", ',');
+    assert(table->createPrimaryKey(new PrimaryKey(table, 1, new int[1]{0})) == 0);
+    import_data(table, "data/part.csv", ',');
 
     // id = 1
-    sheet = db->createSheet("region", 3, new Type[3]{
+    table = db->createTable("region", 3, new Type[3]{
         Type("R_REGIONKEY", INT), 
         Type("R_NAME", CHAR, 25), 
         Type("R_COMMENT", VARCHAR, 152),
     });
-    assert(sheet->createPrimaryKey(new PrimaryKey(sheet, 1, new int[1]{0})) == 0);
-    import_data(sheet, "data/region.csv", ',');
+    assert(table->createPrimaryKey(new PrimaryKey(table, 1, new int[1]{0})) == 0);
+    import_data(table, "data/region.csv", ',');
 
     // id = 2
-    sheet = db->createSheet("nation", 4, new Type[4]{
+    table = db->createTable("nation", 4, new Type[4]{
         Type("N_NATIONKEY", INT), 
         Type("N_NAME", CHAR, 25), 
         Type("N_REGIONKEY", INT, 0, NULL, false),
         Type("N_COMMENT", VARCHAR, 152),
     });
-    assert(sheet->createPrimaryKey(new PrimaryKey(sheet, 1, new int[1]{0})) == 0);
-    assert(sheet->createForeignKey(new ForeignKey(sheet, 1, new int[1]{2}), db->sheet[1]->p_key) == 0);
-    import_data(sheet, "data/nation.csv", ',');
+    assert(table->createPrimaryKey(new PrimaryKey(table, 1, new int[1]{0})) == 0);
+    assert(table->createForeignKey(new ForeignKey(table, 1, new int[1]{2}), db->table[1]->p_key) == 0);
+    import_data(table, "data/nation.csv", ',');
 
     // id = 3
-    sheet = db->createSheet("supplier", 7, new Type[7]{
+    table = db->createTable("supplier", 7, new Type[7]{
         Type("S_SUPPKEY", INT), 
         Type("S_NAME", CHAR, 25), 
         Type("S_ADDRESS", VARCHAR, 40),
@@ -516,13 +516,13 @@ void import_data_csv() {
         Type("S_ACCTBAL", DECIMAL),
         Type("S_COMMENT", VARCHAR, 101),
     });
-    assert(sheet->createPrimaryKey(new PrimaryKey(sheet, 1, new int[1]{0})) == 0);
-    assert(sheet->createForeignKey(new ForeignKey(sheet, 1, new int[1]{3}), db->sheet[2]->p_key) == 0);
-    import_data(sheet, "data/supplier.csv", ',');
-    import_data(sheet, "data/region.csv", ',');
+    assert(table->createPrimaryKey(new PrimaryKey(table, 1, new int[1]{0})) == 0);
+    assert(table->createForeignKey(new ForeignKey(table, 1, new int[1]{3}), db->table[2]->p_key) == 0);
+    import_data(table, "data/supplier.csv", ',');
+    import_data(table, "data/region.csv", ',');
 
     // id = 4
-    sheet = db->createSheet("customer", 8, new Type[8]{
+    table = db->createTable("customer", 8, new Type[8]{
         Type("C_CUSTKEY", INT), 
         Type("C_NAME", CHAR, 25), 
         Type("C_ADDRESS", VARCHAR, 40),
@@ -532,26 +532,26 @@ void import_data_csv() {
         Type("C_MKTSEGMENT", CHAR, 10),
         Type("C_COMMENT", VARCHAR, 117),
     });
-    assert(sheet->createPrimaryKey(new PrimaryKey(sheet, 1, new int[1]{0})) == 0);
-    assert(sheet->createForeignKey(new ForeignKey(sheet, 1, new int[1]{3}), db->sheet[2]->p_key) == 0);
-    import_data(sheet, "data/customer.csv", ',');
+    assert(table->createPrimaryKey(new PrimaryKey(table, 1, new int[1]{0})) == 0);
+    assert(table->createForeignKey(new ForeignKey(table, 1, new int[1]{3}), db->table[2]->p_key) == 0);
+    import_data(table, "data/customer.csv", ',');
 
     // id = 5
-    sheet = db->createSheet("partsupp", 5, new Type[5]{
+    table = db->createTable("partsupp", 5, new Type[5]{
         Type("PS_PARTKEY", INT, 0, NULL, false), 
         Type("PS_SUPPKEY", INT, 0, NULL, false), 
         Type("PS_AVAILQTY", INT),
         Type("PS_SUPPLYCOST", DECIMAL), 
         Type("PS_COMMENT", VARCHAR, 199),
     });
-    assert(sheet->createPrimaryKey(new PrimaryKey(sheet, 2, new int[2]{0, 1})) == 0);
-    assert(sheet->createForeignKey(new ForeignKey(sheet, 1, new int[1]{0}), db->sheet[0]->p_key) == 0);
-    assert(sheet->createForeignKey(new ForeignKey(sheet, 1, new int[1]{1}), db->sheet[3]->p_key) == 0);
-    import_data(sheet, "data/partsupp.csv", ',');
-    import_data(sheet, "data/customer.csv", ',');
+    assert(table->createPrimaryKey(new PrimaryKey(table, 2, new int[2]{0, 1})) == 0);
+    assert(table->createForeignKey(new ForeignKey(table, 1, new int[1]{0}), db->table[0]->p_key) == 0);
+    assert(table->createForeignKey(new ForeignKey(table, 1, new int[1]{1}), db->table[3]->p_key) == 0);
+    import_data(table, "data/partsupp.csv", ',');
+    import_data(table, "data/customer.csv", ',');
 
     // id = 6
-    sheet = db->createSheet("orders", 9, new Type[9]{
+    table = db->createTable("orders", 9, new Type[9]{
         Type("O_ORDERKEY", INT), 
         Type("O_CUSTKEY", INT, 0, NULL, false), 
         Type("O_ORDERSTATUS", CHAR, 1),
@@ -562,12 +562,12 @@ void import_data_csv() {
         Type("O_SHIPPRIORITY", INT),
         Type("O_COMMENT", VARCHAR, 79),
     });
-    assert(sheet->createPrimaryKey(new PrimaryKey(sheet, 1, new int[1]{0})) == 0);
-    assert(sheet->createForeignKey(new ForeignKey(sheet, 1, new int[1]{1}), db->sheet[4]->p_key) == 0);
-    import_data(sheet, "data/orders.csv", ',');
+    assert(table->createPrimaryKey(new PrimaryKey(table, 1, new int[1]{0})) == 0);
+    assert(table->createForeignKey(new ForeignKey(table, 1, new int[1]{1}), db->table[4]->p_key) == 0);
+    import_data(table, "data/orders.csv", ',');
 
     // id = 7
-    sheet = db->createSheet("lineitem", 16, new Type[16]{
+    table = db->createTable("lineitem", 16, new Type[16]{
         Type("L_ORDERKEY", INT, 0, NULL, false), 
         Type("L_PARTKEY", INT, 0, NULL, false), 
         Type("L_SUPPKEY", INT, 0, NULL, false),
@@ -585,10 +585,10 @@ void import_data_csv() {
         Type("L_SHIPMODE", CHAR, 10),
         Type("L_COMMENT", VARCHAR, 44),
     });
-    assert(sheet->createPrimaryKey(new PrimaryKey(sheet, 2, new int[2]{0, 3})) == 0);
-    assert(sheet->createForeignKey(new ForeignKey(sheet, 1, new int[1]{0}), db->sheet[6]->p_key) == 0);
-    assert(sheet->createForeignKey(new ForeignKey(sheet, 2, new int[2]{1, 2}), db->sheet[5]->p_key) == 0);
-    import_data(sheet, "data/lineitem.csv", ',');
+    assert(table->createPrimaryKey(new PrimaryKey(table, 2, new int[2]{0, 3})) == 0);
+    assert(table->createForeignKey(new ForeignKey(table, 1, new int[1]{0}), db->table[6]->p_key) == 0);
+    assert(table->createForeignKey(new ForeignKey(table, 2, new int[2]{1, 2}), db->table[5]->p_key) == 0);
+    import_data(table, "data/lineitem.csv", ',');
 
     delete db;
 }

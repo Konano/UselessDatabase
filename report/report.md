@@ -34,7 +34,7 @@
 
 **文件构成：**
 
-​		`Sheet.cpp` `Sheet.h `
+​		`Table.cpp` `Table.h `
 
 **具体功能：**
 
@@ -42,7 +42,7 @@
 
 ​		包括表头信息的存储和表内记录的存储。
 
-​		表头信息以 JSON 格式直接存储对应的数据库配置文件（`database.udb`）中，存储在所属数据库的 sheet 项内部，多个表按照 List 排列。每一个表的表头信息存储如下：
+​		表头信息以 JSON 格式直接存储对应的数据库配置文件（`database.udb`）中，存储在所属数据库的 table 项内部，多个表按照 List 排列。每一个表的表头信息存储如下：
 
 ```json
 {
@@ -169,7 +169,7 @@ child_index_N
 
 ​		数据库和数据表管理：`Database.cpp` `Database.h`
 
-​		数据表列的增删改：`Sheet.cpp` `Sheet.h`
+​		数据表列的增删改：`Table.cpp` `Table.h`
 
 ​		主外键的实现：`Key.h` `Key.cpp`
 
@@ -177,7 +177,7 @@ child_index_N
 
 1、对数据库和数据表的管理
 
-​		对数据库和数据表的管理逻辑主要实现在 `Database.cpp` 和 `Database.h` 两个文件中。实际实现中，我们将不同的数据库存储在了不同的文件夹下，直接命名为对应的数据名。每个数据库内部有自己的 `database.udb`，存储着数据库的配置信息，以及若干 `SheetName.usid` 和 `SheetName_IndexName.usid` 对应着记录和索引信息的页式管理文件。一个典型的结构如下：
+​		对数据库和数据表的管理逻辑主要实现在 `Database.cpp` 和 `Database.h` 两个文件中。实际实现中，我们将不同的数据库存储在了不同的文件夹下，直接命名为对应的数据名。每个数据库内部有自己的 `database.udb`，存储着数据库的配置信息，以及若干 `TableName.usid` 和 `TableName_IndexName.usid` 对应着记录和索引信息的页式管理文件。一个典型的结构如下：
 
 ![image-20191223112024693](C:\Users\Administrator\AppData\Roaming\Typora\typora-user-images\image-20191223112024693.png)
 
@@ -191,7 +191,7 @@ child_index_N
 
 3、列增删功能的实现
 
-​		列增删的功能主要实现在 `Sheet.cpp` 和 `Sheet.h` 两个文件中。
+​		列增删的功能主要实现在 `Table.cpp` 和 `Table.h` 两个文件中。
 
 ​		对于某一个列的修改，体现在表头上其实相对容易，但是处理记录的变化就很困难，因为数据在记录文件中是连续排列的。我们对所有的增删列都采用了 `rebuild` 的方法，直接重新构造对应的存储文件，替换成新的存储格式。对应的可能有现有的索引失效的问题，调用索引模块相关的函数删除这一部分索引即可。
 
@@ -221,7 +221,7 @@ child_index_N
 
 #### 3、主要模块接口说明
 
-​		从抽象的逻辑上讲，数据库是按照第一部分所说的，四个模块的方式组织的，但是实际在实现中，我们没有完全按照四个部分来组织代码。实际的主框架是由 Database​→Sheet​→Index 的结构加上查询解析模块组织起来的，所以以下按照这个实际实现的模块来说明。
+​		从抽象的逻辑上讲，数据库是按照第一部分所说的，四个模块的方式组织的，但是实际在实现中，我们没有完全按照四个部分来组织代码。实际的主框架是由 Database​→Table​→Index 的结构加上查询解析模块组织起来的，所以以下按照这个实际实现的模块来说明。
 
 （1）Database 模块
 
@@ -247,11 +247,11 @@ public:
     Database(const char* name, bool create);
     ~Database();
     
-    Sheet* createSheet(const char* name, int col_num, Type* col_ty); // 增加数据表
-    Sheet* openSheet(const char* name); // 打开数据表
-    int deleteSheet(const char* name); // 删除数据表
-    void showSheets(); // SHOW TABLES 语句
-    int findSheet(std::string s); // 通过名字找数据表
+    Table* createTable(const char* name, int col_num, Type* col_ty); // 增加数据表
+    Table* openTable(const char* name); // 打开数据表
+    int deleteTable(const char* name); // 删除数据表
+    void showTables(); // SHOW TABLES 语句
+    int findTable(std::string s); // 通过名字找数据表
 
     // 从字符串池中存取 VarChar
     char* getVarchar(uint64_t idx);
@@ -261,12 +261,12 @@ public:
 };
 ```
 
-（2）Sheet 模块
+（2）Table 模块
 
-​		Sheet 模块主要完成的是记录管理部分的功能和与表结构相关的系统管理模块的功能。
+​		Table 模块主要完成的是记录管理部分的功能和与表结构相关的系统管理模块的功能。
 
 ```c++
-class Sheet {
+class Table {
 private:
     // 一些内部辅助函数
     void insert(Any& val, enumType ty, uint size, BufType& buf);
@@ -278,16 +278,16 @@ private:
 public:
     // 构造析构，存储相关
     json toJson();
-    Sheet(Database* db, json j);
-    Sheet() {}
-    Sheet(uint _sel) : sel(_sel) {}
-    ~Sheet();
+    Table(Database* db, json j);
+    Table() {}
+    Table(uint _sel) : sel(_sel) {}
+    ~Table();
     
     // 计算储存每条记录所需字节数
     uint calDataSize();
     
     // 建表
-    int createSheet(uint sheet_id,Database* db, const char* name, uint col_num, Type* col_ty, bool create = false);
+    int createTable(uint table_id,Database* db, const char* name, uint col_num, Type* col_ty, bool create = false);
     
     // 增删改查（记录管理模块）
     int insertRecord(Any* data);
@@ -364,8 +364,8 @@ private:
 public:
     // 与构造和存储相关的接口
     Index() {}
-    Index(Sheet* sheet, const char* name, std::vector<uint> key,int btree_max_per_node);
-    Index(Sheet* sheet, json j);
+    Index(Table* table, const char* name, std::vector<uint> key,int btree_max_per_node);
+    Index(Table* table, json j);
     json toJson();
     void open();
     void close();

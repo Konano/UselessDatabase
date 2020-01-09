@@ -10,7 +10,7 @@
 #include "json.hpp"
 using json = nlohmann::json;
 
-class Sheet;
+class Table;
 class Database;
 
 class Key {
@@ -18,7 +18,7 @@ public:
     uint v_size = 0;
     std::string name;
     std::vector<uint> v;
-    Sheet* sheet;
+    Table* table;
     virtual int ty() { return 0; }
     uint size() const { return v_size; }
     void push(int val) { v.push_back(val); v_size++; }
@@ -34,13 +34,13 @@ public:
         return true;
     }
     bool operator!=(const Key& b) { return !(*this == b); }
-    Key(Sheet* s) : sheet(s) {}
-    Key(Sheet* s, json j) : sheet(s) {
+    Key(Table* s) : table(s) {}
+    Key(Table* s, json j) : table(s) {
         name = j["name"].get<std::string>();
         v_size = j["cols"].size();
         for (uint i = 0; i < v_size; i++) v.push_back(j["cols"][i].get<int>());
     }
-    Key(Sheet* s, uint sz, int* info) : v_size(sz), sheet(s) { 
+    Key(Table* s, uint sz, int* info) : v_size(sz), table(s) { 
         for (uint i = 0; i < v_size; i++) v.push_back(info[i]); 
     }
     virtual ~Key() {}
@@ -57,18 +57,18 @@ class ForeignKey;
 class PrimaryKey: public Key {
 public:
     std::vector<ForeignKey*> f;
-    PrimaryKey(Sheet* s) : Key(s) {}
-    PrimaryKey(Sheet* s, json j) : Key(s, j) {}
-    PrimaryKey(Sheet* s, uint sz, int* info) : Key(s, sz, info) {}
+    PrimaryKey(Table* s) : Key(s) {}
+    PrimaryKey(Table* s, json j) : Key(s, j) {}
+    PrimaryKey(Table* s, uint sz, int* info) : Key(s, sz, info) {}
     int ty() { return 1; }
 };
 
 class ForeignKey: public Key {
 public:
     PrimaryKey* p;
-    ForeignKey(Sheet* s) : Key(s) {}
-    ForeignKey(Sheet* s, json j, Database* db);
-    ForeignKey(Sheet* s, uint sz, int* info) : Key(s, sz, info) {}
+    ForeignKey(Table* s) : Key(s) {}
+    ForeignKey(Table* s, json j, Database* db);
+    ForeignKey(Table* s, uint sz, int* info) : Key(s, sz, info) {}
     int ty() { return 2; }
     json toJson();
 };

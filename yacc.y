@@ -1,6 +1,6 @@
 %{
 #include "parser.h"
-#include "Sheet.h"
+#include "Table.h"
 #include "Database.h"
 #include "Type.h"
 
@@ -21,8 +21,8 @@ extern "C"
 extern Database* db;
 bool error;
 
-#define filterSheet(it) ((it) < 0 ? db->sel_sheet[-1-it] : db->sheet[it])
-#define Piu2Col(it) (filterSheet((it).first)->col_ty[(it).second])
+#define filterTable(it) ((it) < 0 ? db->sel_table[-1-it] : db->table[it])
+#define Piu2Col(it) (filterTable((it).first)->col_ty[(it).second])
 
 uint month[12] = {31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31};
 
@@ -32,7 +32,7 @@ bool current_db_exists() {
 }
 
 bool table_exists(std::string name, int& tableID, bool expect) {
-    tableID = db->findSheet(name);
+    tableID = db->findTable(name);
     if (tableID == -1 && expect) printf("TABLE %s doesn't exist\n", name.c_str());
     if (tableID != -1 && !expect) printf("TABLE %s exists\n", name.c_str());
     return tableID != -1;
@@ -46,7 +46,7 @@ Piu dealCol(Pss col, vector<Pis> &from) {
     }
 
     for (auto _it: from) if ((col.first == _it.second) || (col.first == string() && from.size() == 1)) {
-        int colIndex = filterSheet(_it.first)->findCol(col.second);
+        int colIndex = filterTable(_it.first)->findCol(col.second);
         if (colIndex < 0) {
             printf("COLUMN %s doesn't exist in TABLE %s\n", col.second.c_str(), _it.second.c_str());
             error = true;
@@ -70,37 +70,37 @@ void dealTy(uint idx) {
 	if (db->sel[idx].select.size() == 0) {
         if (db->sel[idx].aggr.size() == 0) {
             for (auto it: db->sel[idx].from) {
-                Sheet* st = filterSheet(it.first);
+                Table* st = filterTable(it.first);
                 for (uint i = 0; i < st->col_num; i++) {
-                    db->sel_sheet[idx]->col_ty[db->sel_sheet[idx]->col_num++] = st->col_ty[i];
+                    db->sel_table[idx]->col_ty[db->sel_table[idx]->col_num++] = st->col_ty[i];
                 }
             }
         } else {
            for (auto it: db->sel[idx].aggr) switch (it.ty) {
                 case AG_COUNT: { 
-                   db->sel_sheet[idx]->col_ty[db->sel_sheet[idx]->col_num++] = Type(it.as.c_str(), INT);
+                   db->sel_table[idx]->col_ty[db->sel_table[idx]->col_num++] = Type(it.as.c_str(), INT);
                    break;
                 }
                 case AG_MAX:
                 case AG_MIN: {
-                    db->sel_sheet[idx]->col_ty[db->sel_sheet[idx]->col_num++] = Type(it.as.c_str(), filterSheet(it.col.first)->col_ty[it.col.second].ty);
+                    db->sel_table[idx]->col_ty[db->sel_table[idx]->col_num++] = Type(it.as.c_str(), filterTable(it.col.first)->col_ty[it.col.second].ty);
                     break;
                 }
                 case AG_SUM: 
                 case AG_AVG: {
-                    if (filterSheet(it.col.first)->col_ty[it.col.second].ty != INT && filterSheet(it.col.first)->col_ty[it.col.second].ty != DECIMAL) {
-                        printf("Use %s for %s is illegal\n", Aggr2Str(it.ty).c_str(), Type2Str(filterSheet(it.col.first)->col_ty[it.col.second].ty).c_str());
+                    if (filterTable(it.col.first)->col_ty[it.col.second].ty != INT && filterTable(it.col.first)->col_ty[it.col.second].ty != DECIMAL) {
+                        printf("Use %s for %s is illegal\n", Aggr2Str(it.ty).c_str(), Type2Str(filterTable(it.col.first)->col_ty[it.col.second].ty).c_str());
                         error = true;
                         return;
                     }
-                    db->sel_sheet[idx]->col_ty[db->sel_sheet[idx]->col_num++] = Type(it.as.c_str(), filterSheet(it.col.first)->col_ty[it.col.second].ty);
+                    db->sel_table[idx]->col_ty[db->sel_table[idx]->col_num++] = Type(it.as.c_str(), filterTable(it.col.first)->col_ty[it.col.second].ty);
                     break;
                 }
             }
         }
     } else {
         for (auto it: db->sel[idx].select) {
-            db->sel_sheet[idx]->col_ty[db->sel_sheet[idx]->col_num++] = filterSheet(it.first)->col_ty[it.second];
+            db->sel_table[idx]->col_ty[db->sel_table[idx]->col_num++] = filterTable(it.first)->col_ty[it.second];
         }
     }
 }
@@ -149,7 +149,7 @@ WhereStmt dealWhere(YYType_Where &it, vector<Pis> &from) {
     where.op = it.op;
     where.rvalue = it.rvalue;
     where.rvalue_cols = dealCols(it.rvalue_cols, from);
-    where.rvalue_sheet = it.rvalue_sheet;
+    where.rvalue_table = it.rvalue_table;
     where.any = (it.ty == 5);
     where.all = (it.ty == 6);
     switch (it.ty) {
@@ -162,7 +162,7 @@ WhereStmt dealWhere(YYType_Where &it, vector<Pis> &from) {
         for (uint i = 0, size = where.cols.size(); i < size; i++) {
             if (tycheck_any(Piu2Col(where.cols[i]), where.rvalue[i]) == false) {
                 printf("Type error: %s.%s(%s) %s %s\n", 
-                    filterSheet(where.cols[i].first)->name, 
+                    filterTable(where.cols[i].first)->name, 
                     Piu2Col(where.cols[i]).name, 
                     Type2Str(Piu2Col(where.cols[i]).ty).c_str(),
                     op2str(where.op), 
@@ -180,11 +180,11 @@ WhereStmt dealWhere(YYType_Where &it, vector<Pis> &from) {
         for (uint i = 0, size = where.cols.size(); i < size; i++) {
             if (tycheck_ty(Piu2Col(where.cols[i]), Piu2Col(where.rvalue_cols[i])) == false) {
                 printf("Type error: %s.%s(%s) %s %s.%s(%s)\n", 
-                    filterSheet(where.cols[i].first)->name, 
+                    filterTable(where.cols[i].first)->name, 
                     Piu2Col(where.cols[i]).name, 
                     Type2Str(Piu2Col(where.cols[i]).ty).c_str(),
                     op2str(where.op), 
-                    filterSheet(where.rvalue_cols[i].first)->name, 
+                    filterTable(where.rvalue_cols[i].first)->name, 
                     Piu2Col(where.rvalue_cols[i]).name,
                     Type2Str(Piu2Col(where.rvalue_cols[i]).ty).c_str());
                 error = true;
@@ -200,28 +200,28 @@ WhereStmt dealWhere(YYType_Where &it, vector<Pis> &from) {
     case 6:
     case 7:
         where.rvalue_ty = 3;
-        if (it.ty == 4 && filterSheet(where.rvalue_sheet)->sel != 2) {
+        if (it.ty == 4 && filterTable(where.rvalue_table)->sel != 2) {
             printf("use %s for TABLE is illegal\n", op2str(where.op));
             break;
         }
-        if (it.ty > 4 && filterSheet(where.rvalue_sheet)->sel == 2) {
+        if (it.ty > 4 && filterTable(where.rvalue_table)->sel == 2) {
             printf("use %s for VALUELIST is illegal\n", op2str(where.op));
             break;
         }
-        if (where.cols.size() != filterSheet(where.rvalue_sheet)->col_num) {
+        if (where.cols.size() != filterTable(where.rvalue_table)->col_num) {
             printf("length is not equal\n");
             break;
         }
         for (uint i = 0, size = where.cols.size(); i < size; i++) {
-            if (tycheck_ty(Piu2Col(where.cols[i]), filterSheet(where.rvalue_sheet)->col_ty[i]) == false) {
+            if (tycheck_ty(Piu2Col(where.cols[i]), filterTable(where.rvalue_table)->col_ty[i]) == false) {
                 printf("Type error: %s.%s(%s) %s %s.%s(%s)\n", 
-                    filterSheet(where.cols[i].first)->name, 
+                    filterTable(where.cols[i].first)->name, 
                     Piu2Col(where.cols[i]).name, 
                     Type2Str(Piu2Col(where.cols[i]).ty).c_str(),
                     op2str(where.op), 
-                    filterSheet(where.rvalue_sheet)->name, 
-                    filterSheet(where.rvalue_sheet)->col_ty[i].name,
-                    Type2Str(filterSheet(where.rvalue_sheet)->col_ty[i].ty).c_str());
+                    filterTable(where.rvalue_table)->name, 
+                    filterTable(where.rvalue_table)->col_ty[i].name,
+                    Type2Str(filterTable(where.rvalue_table)->col_ty[i].ty).c_str());
                 error = true;
             }
         }
@@ -370,7 +370,7 @@ dbStmt:
     }
     | SHOW TABLES SEMI {
         if (current_db_exists()) {
-            db->showSheets();
+            db->showTables();
         }
     };
 
@@ -392,7 +392,7 @@ tbStmt:
                     if (!flag) break;
                 }
                 if (flag) {
-                    db->createSheet($3.c_str(), $5.size(), ty);
+                    db->createTable($3.c_str(), $5.size(), ty);
                     db->update();
                 }
                 else {
@@ -403,14 +403,14 @@ tbStmt:
     }
     | DROP TABLE tbName SEMI {
         if (current_db_exists()) {
-            if (db->deleteSheet($3.c_str())) printf("TABLE %s doesn't exist\n", $3.c_str());
+            if (db->deleteTable($3.c_str())) printf("TABLE %s doesn't exist\n", $3.c_str());
         }
     }
     | DESC tbName SEMI {
         if (current_db_exists()) {
             int tableID;
             if (table_exists($2, tableID, true)) {
-                db->sheet[tableID]->printCol();
+                db->table[tableID]->printCol();
             }
         }
     }
@@ -418,18 +418,18 @@ tbStmt:
         if (current_db_exists()) {
             int tableID;
             if (table_exists($3, tableID, true)) {
-                if (db->sheet[tableID]->col_num == $6.size()) {
+                if (db->table[tableID]->col_num == $6.size()) {
                     bool flag = true;
                     for (uint i = 0; i < $6.size(); i++) {
-                        if (!check_datatype(db->sheet[tableID]->col_ty[i], $6[i])) {
+                        if (!check_datatype(db->table[tableID]->col_ty[i], $6[i])) {
                             flag = false;
                             break;
                         }
                     }
                     if (flag) {
-                        Any* temp = new Any[db->sheet[tableID]->col_num];
+                        Any* temp = new Any[db->table[tableID]->col_num];
                         for (uint i = 0; i < $6.size(); i++)temp[i] = $6[i];
-                        int x = db->sheet[tableID]->insertRecord(temp);
+                        int x = db->table[tableID]->insertRecord(temp);
                         if (x != 0)printf("Insert fail %d\n",x);
                     }
                     else printf("Data type mismatch\n");
@@ -448,8 +448,8 @@ tbStmt:
                     bool colNamecheck = true;
                     for (uint i = 0; i < $5.size(); i++) {
                         bool flag = false;
-                        for (uint j = 0; j < db->sheet[tableID]->col_num; j++) {
-                            if ($5[i] == std::string(db->sheet[tableID]->col_ty[j].name)) {
+                        for (uint j = 0; j < db->table[tableID]->col_num; j++) {
+                            if ($5[i] == std::string(db->table[tableID]->col_ty[j].name)) {
                                 flag = true;
                                 key.push_back(j);
                                 break;
@@ -464,15 +464,15 @@ tbStmt:
                     if (colNamecheck) {
                         bool flag = true;
                         for (uint i = 0; i < key.size(); i++) {
-                            if (!check_datatype(db->sheet[tableID]->col_ty[key[i]], $9[i])) {
+                            if (!check_datatype(db->table[tableID]->col_ty[key[i]], $9[i])) {
                                 flag = false;
                                 break;
                             }
                         }
                         if (flag) {
-                            Any* temp = new Any[db->sheet[tableID]->col_num];
+                            Any* temp = new Any[db->table[tableID]->col_num];
                             for (uint i = 0; i < $9.size(); i++)temp[key[i]] = $9[i];
-                            int x = db->sheet[tableID]->insertRecord(temp);
+                            int x = db->table[tableID]->insertRecord(temp);
                             if (x != 0)printf("Insert fail %d\n",x);
                         }
                         else printf("Data type mismatch\n");
@@ -493,8 +493,8 @@ tbStmt:
                 vector<WhereStmt> where;
                 for (auto it: $5) where.push_back(dealWhere(it, from));
                 if (error) YYERROR;
-                for (auto it: where) if (it.rvalue_sheet < 0) db->buildSel(-1 - it.rvalue_sheet);
-                db->sheet[tableID]->removeRecords(where);
+                for (auto it: where) if (it.rvalue_table < 0) db->buildSel(-1 - it.rvalue_table);
+                db->table[tableID]->removeRecords(where);
             }
         }
     }
@@ -507,7 +507,7 @@ tbStmt:
                 from.push_back(Pis(tableID, $2));
                 vector<Pia> set;
                 for (auto it: $4) {
-                    int colIndex = db->sheet[tableID]->findCol(it.first);
+                    int colIndex = db->table[tableID]->findCol(it.first);
                     if (colIndex < 0) {
                         printf ("COLUMN %s doesn't exist in TABLE %s\n", $2.c_str(), it.first.c_str());
                         error = true;
@@ -518,17 +518,17 @@ tbStmt:
                 vector<WhereStmt> where;
                 for (auto it: $6) where.push_back(dealWhere(it, from));
                 if (error) YYERROR;
-                for (auto it: where) if (it.rvalue_sheet < 0) db->buildSel(-1 - it.rvalue_sheet);
-                db->sheet[tableID]->updateRecords(set, where);
+                for (auto it: where) if (it.rvalue_table < 0) db->buildSel(-1 - it.rvalue_table);
+                db->table[tableID]->updateRecords(set, where);
             }
         }
     }
     | seleStmt SEMI {
         if (current_db_exists()) {
             db->buildSel(-1 - $1, true);
-            // db->sel_sheet[-1 - $1]->print();
+            // db->sel_table[-1 - $1]->print();
             while (db->sel_num) {
-                delete db->sel_sheet[--(db->sel_num)];
+                delete db->sel_table[--(db->sel_num)];
                 db->sel[db->sel_num].build = false;
             }
         }
@@ -537,10 +537,10 @@ tbStmt:
 seleStmt:
     SELECT selector FROM fromClauses {
         if (current_db_exists()) {
-            for (auto it: $4) if (it.first == MAX_SHEET_NUM) YYERROR;
+            for (auto it: $4) if (it.first == MAX_TABLE_NUM) YYERROR;
             error = false;
             uint idx = db->sel_num++;
-            db->sel_sheet[idx] = new Sheet(1);
+            db->sel_table[idx] = new Table(1);
             db->sel[idx].select = dealCols($2, $4);
             db->sel[idx].aggr.clear();
             db->sel[idx].from = $4;
@@ -553,17 +553,17 @@ seleStmt:
             $$ = -1 - idx;
             
             if (error) {
-                delete db->sel_sheet[--db->sel_num];
+                delete db->sel_table[--db->sel_num];
                 YYERROR;
             }
         } else YYERROR;
     }
     | SELECT _aggrClauses FROM fromClauses {
         if (current_db_exists()) {
-            for (auto it: $4) if (it.first == MAX_SHEET_NUM) YYERROR;
+            for (auto it: $4) if (it.first == MAX_TABLE_NUM) YYERROR;
             error = false;
             uint idx = db->sel_num++;
-            db->sel_sheet[idx] = new Sheet(2);
+            db->sel_table[idx] = new Table(2);
             db->sel[idx].select.clear();
             db->sel[idx].aggr.clear();
             for (auto it: $2) if (it.ty == AG_COUNT) {
@@ -579,17 +579,17 @@ seleStmt:
             $$ = -1 - idx;
             
             if (error) {
-                delete db->sel_sheet[--db->sel_num];
+                delete db->sel_table[--db->sel_num];
                 YYERROR;
             }
         } else YYERROR;
     }
     | SELECT selector FROM fromClauses WHERE whereClauses {
         if (current_db_exists()) {
-            for (auto it: $4) if (it.first == MAX_SHEET_NUM) YYERROR;
+            for (auto it: $4) if (it.first == MAX_TABLE_NUM) YYERROR;
             error = false;
             uint idx = db->sel_num++;
-            db->sel_sheet[idx] = new Sheet(1);
+            db->sel_table[idx] = new Table(1);
             db->sel[idx].select = dealCols($2, $4);
             db->sel[idx].aggr.clear();
             db->sel[idx].from = $4;
@@ -599,24 +599,24 @@ seleStmt:
             }
             db->sel[idx].where.clear();
             for (auto it: $6) db->sel[idx].where.push_back(dealWhere(it, $4));
-            for (auto it: db->sel[idx].where) if (it.rvalue_sheet < 0) {
-                db->sel[idx].recursion.push_back(it.rvalue_sheet);
+            for (auto it: db->sel[idx].where) if (it.rvalue_table < 0) {
+                db->sel[idx].recursion.push_back(it.rvalue_table);
             }
             dealTy(idx);
             $$ = -1 - idx;
             
             if (error) {
-                delete db->sel_sheet[--db->sel_num];
+                delete db->sel_table[--db->sel_num];
                 YYERROR;
             }
         } else YYERROR;
     }
     | SELECT _aggrClauses FROM fromClauses WHERE whereClauses {
         if (current_db_exists()) {
-            for (auto it: $4) if (it.first == MAX_SHEET_NUM) YYERROR;
+            for (auto it: $4) if (it.first == MAX_TABLE_NUM) YYERROR;
             error = false;
             uint idx = db->sel_num++;
-            db->sel_sheet[idx] = new Sheet(2);
+            db->sel_table[idx] = new Table(2);
             db->sel[idx].select.clear();
             db->sel[idx].aggr.clear();
             for (auto it: $2) if (it.ty == AG_COUNT) {
@@ -631,14 +631,14 @@ seleStmt:
             }
             db->sel[idx].where.clear();
             for (auto it: $6) db->sel[idx].where.push_back(dealWhere(it, $4));
-            for (auto it: db->sel[idx].where) if (it.rvalue_sheet < 0) {
-                db->sel[idx].recursion.push_back(it.rvalue_sheet);
+            for (auto it: db->sel[idx].where) if (it.rvalue_table < 0) {
+                db->sel[idx].recursion.push_back(it.rvalue_table);
             }
             dealTy(idx);
             $$ = -1 - idx;
             
             if (error) {
-                delete db->sel_sheet[--db->sel_num];
+                delete db->sel_table[--db->sel_num];
                 YYERROR;
             }
         } else YYERROR;
@@ -649,14 +649,14 @@ idxStmt:
         if (current_db_exists()) {
             int tableID;
             if (table_exists($5, tableID, true)) {
-                if (db->sheet[tableID]->findIndex($3) != -1) printf("INDEX %s exists\n", $3.c_str());
+                if (db->table[tableID]->findIndex($3) != -1) printf("INDEX %s exists\n", $3.c_str());
                 else{
                     vector<uint> key_index;
                     bool create_ok = true;
                     for (uint i = 0; i < $7.size(); i++) {
                         bool flag = false;
-                        for (uint j = 0; j < db->sheet[tableID]->col_num; j++) {
-                            if ($7[i] == std::string(db->sheet[tableID]->col_ty[j].name)) {
+                        for (uint j = 0; j < db->table[tableID]->col_num; j++) {
+                            if ($7[i] == std::string(db->table[tableID]->col_ty[j].name)) {
                                 flag = true;
                                 key_index.push_back(j);
                                 break;
@@ -669,7 +669,7 @@ idxStmt:
                         }
                     }
                     if (create_ok) {
-                        db->sheet[tableID]->createIndex(key_index, $3);
+                        db->table[tableID]->createIndex(key_index, $3);
                     }
                 }
             }
@@ -679,10 +679,10 @@ idxStmt:
     | DROP INDEX idxName SEMI {
         if (current_db_exists()) {
             bool flag = false;
-            for (uint i = 0; i < db->sheet_num; i++) {
-                int indexID = db->sheet[i]->findIndex($3);
+            for (uint i = 0; i < db->table_num; i++) {
+                int indexID = db->table[i]->findIndex($3);
                 if (indexID != -1) {
-                    db->sheet[i]->removeIndex(indexID);
+                    db->table[i]->removeIndex(indexID);
                     flag = true;
                     break;
                 }
@@ -695,14 +695,14 @@ idxStmt:
         if (current_db_exists()) {
             int tableID;
             if (table_exists($3, tableID, true)) {
-                if (db->sheet[tableID]->findIndex($6) != -1) printf("INDEX %s exists\n", $6.c_str());
+                if (db->table[tableID]->findIndex($6) != -1) printf("INDEX %s exists\n", $6.c_str());
                 else{
                     vector<uint> key_index;
                     bool create_ok = true;
                     for (uint i = 0; i < $8.size(); i++) {
                         bool flag = false;
-                        for (uint j = 0; j < db->sheet[tableID]->col_num; j++) {
-                            if ($8[i] == std::string(db->sheet[tableID]->col_ty[j].name)) {
+                        for (uint j = 0; j < db->table[tableID]->col_num; j++) {
+                            if ($8[i] == std::string(db->table[tableID]->col_ty[j].name)) {
                                 flag = true;
                                 key_index.push_back(j);
                                 break;
@@ -715,7 +715,7 @@ idxStmt:
                         }
                     }
                     if (create_ok) {
-                        db->sheet[tableID]->createIndex(key_index, $6);
+                        db->table[tableID]->createIndex(key_index, $6);
                     }
                 }
             }
@@ -726,9 +726,9 @@ idxStmt:
         if (current_db_exists()) {
             int tableID;
             if (table_exists($3, tableID, true)) {
-                int indexID = db->sheet[tableID]->findIndex($6);
+                int indexID = db->table[tableID]->findIndex($6);
                 if (indexID != -1) {
-                    db->sheet[tableID]->removeIndex(indexID);
+                    db->table[tableID]->removeIndex(indexID);
                 }
                 else printf("INDEX %s doesn't exist\n", $6.c_str());
             }
@@ -741,11 +741,11 @@ alterStmt:
         if (current_db_exists()) {
             int tableID;
             if (table_exists($3, tableID, true)) {
-                if (db->sheet[tableID]->findCol(std::string($5.name)) != -1) {
+                if (db->table[tableID]->findCol(std::string($5.name)) != -1) {
                     printf("Column %s is used\n", $5.name);
                 }
                 else {
-                    db->sheet[tableID]->createColumn($5);
+                    db->table[tableID]->createColumn($5);
                 }
             }
             db->update();
@@ -755,7 +755,7 @@ alterStmt:
         if (current_db_exists()) {
             int tableID;
             if (table_exists($3, tableID, true)) {
-                if (db->sheet[tableID]->findCol($5) != -1)db->sheet[tableID]->removeColumn(db->sheet[tableID]->findCol($5));
+                if (db->table[tableID]->findCol($5) != -1)db->table[tableID]->removeColumn(db->table[tableID]->findCol($5));
                 else printf("Column %s doesn't exist\n", $5.c_str());
             }
             db->update();
@@ -765,8 +765,8 @@ alterStmt:
         if (current_db_exists()) {
             int tableID;
             if (table_exists($3, tableID, true)) {
-                if (db->sheet[tableID]->findCol($5) != -1) {
-                    if (db->sheet[tableID]->findCol(std::string($6.name)) == -1 || $5 == std::string($6.name))db->sheet[tableID]->modifyColumn(db->sheet[tableID]->findCol($5), $6);
+                if (db->table[tableID]->findCol($5) != -1) {
+                    if (db->table[tableID]->findCol(std::string($6.name)) == -1 || $5 == std::string($6.name))db->table[tableID]->modifyColumn(db->table[tableID]->findCol($5), $6);
                     else printf("Column %s is used\n", $6.name);
                 }
                 else printf("Column %s doesn't exist\n", $5.c_str());
@@ -779,9 +779,9 @@ alterStmt:
             int tableID;
             if (table_exists($3, tableID, true)) {
                 for (uint i = 0; i < $6.length(); i++) {
-                    db->sheet[tableID]->name[i] = $6[i];
+                    db->table[tableID]->name[i] = $6[i];
                 }
-                db->sheet[tableID]->name[$6.length()] = '\0';
+                db->table[tableID]->name[$6.length()] = '\0';
             }
             db->update();
         }
@@ -790,14 +790,14 @@ alterStmt:
         if (current_db_exists()) {
             int tableID;
             if (table_exists($3, tableID, true)) {
-                if (db->sheet[tableID]->p_key != nullptr)printf("TABLE %s has a primary key\n", $3.c_str());
+                if (db->table[tableID]->p_key != nullptr)printf("TABLE %s has a primary key\n", $3.c_str());
                 else {
                     int* key_index = new int[$8.size()];
                     bool create_ok = true;
                     for (uint i = 0; i < $8.size(); i++) {
                         bool flag = false;
-                        for (uint j = 0; j < db->sheet[tableID]->col_num; j++) {
-                            if ($8[i] == std::string(db->sheet[tableID]->col_ty[j].name)) {
+                        for (uint j = 0; j < db->table[tableID]->col_num; j++) {
+                            if ($8[i] == std::string(db->table[tableID]->col_ty[j].name)) {
                                 flag = true;
                                 key_index[i] = j;
                                 break;
@@ -810,8 +810,8 @@ alterStmt:
                         }
                     }
                     if (create_ok) {
-                        PrimaryKey temp = PrimaryKey(db->sheet[tableID], $8.size(), key_index);
-                        int x = db->sheet[tableID]->createPrimaryKey(&temp);
+                        PrimaryKey temp = PrimaryKey(db->table[tableID], $8.size(), key_index);
+                        int x = db->table[tableID]->createPrimaryKey(&temp);
                         if (x == -2)printf("Constraint problem\n");
                     }
                 }
@@ -823,9 +823,9 @@ alterStmt:
         if (current_db_exists()) {
             int tableID;
             if (table_exists($3, tableID, true)) {
-                if (db->sheet[tableID]->p_key == nullptr) printf("TABLE %s doesn't have a primary key\n", $3.c_str());
--           	else if (db->sheet[tableID]->p_key->f.size() != 0) printf("Delete related foreign key first\n");
--           	else db->sheet[tableID]->removePrimaryKey();
+                if (db->table[tableID]->p_key == nullptr) printf("TABLE %s doesn't have a primary key\n", $3.c_str());
+                else if (db->table[tableID]->p_key->f.size() != 0) printf("Delete related foreign key first\n");
+           	    else db->table[tableID]->removePrimaryKey();
             }
             db->update();
         }
@@ -834,14 +834,14 @@ alterStmt:
         if (current_db_exists()) {
             int tableID;
             if (table_exists($3, tableID, true)) {
-                if (db->sheet[tableID]->p_key != nullptr)printf("TABLE %s has a primary key\n", $3.c_str());
+                if (db->table[tableID]->p_key != nullptr)printf("TABLE %s has a primary key\n", $3.c_str());
                 else {
                     int* key_index = new int[$10.size()];
                     bool create_ok = true;
                     for (uint i = 0; i < $10.size(); i++) {
                         bool flag = false;
-                        for (uint j = 0; j < db->sheet[tableID]->col_num; j++) {
-                            if ($10[i] == std::string(db->sheet[tableID]->col_ty[j].name)) {
+                        for (uint j = 0; j < db->table[tableID]->col_num; j++) {
+                            if ($10[i] == std::string(db->table[tableID]->col_ty[j].name)) {
                                 flag = true;
                                 key_index[i] = j;
                                 break;
@@ -854,9 +854,9 @@ alterStmt:
                         }
                     }
                     if (create_ok) {
-                        PrimaryKey temp = PrimaryKey(db->sheet[tableID], $10.size(), key_index);
+                        PrimaryKey temp = PrimaryKey(db->table[tableID], $10.size(), key_index);
                         temp.name = $6;
-                        int x = db->sheet[tableID]->createPrimaryKey(&temp);
+                        int x = db->table[tableID]->createPrimaryKey(&temp);
                         if (x == -2) printf("Constraint problem\n");
                     }
                 }
@@ -869,9 +869,9 @@ alterStmt:
         if (current_db_exists()) {
             int tableID;
             if (table_exists($3, tableID, true)) {
-                if (db->sheet[tableID]->p_key == nullptr) printf("TABLE %s doesn't have a primary key\n", $3.c_str());
--           	else if (db->sheet[tableID]->p_key->f.size() != 0) printf("Delete related foreign key first\n");
--           	else db->sheet[tableID]->removePrimaryKey();
+                if (db->table[tableID]->p_key == nullptr) printf("TABLE %s doesn't have a primary key\n", $3.c_str());
+                else if (db->table[tableID]->p_key->f.size() != 0) printf("Delete related foreign key first\n");
+                else db->table[tableID]->removePrimaryKey();
             }
             db->update();
         }
@@ -881,13 +881,13 @@ alterStmt:
             int tableID1;
             int tableID2;
             if (table_exists($3, tableID1, true) && table_exists($13, tableID2, true)) {
-                if (db->sheet[tableID2]->p_key == nullptr)printf("TABLE %s doesn't have a primary key\n", $13.c_str());
-                else if (db->sheet[tableID2]->p_key->v.size() == $15.size()) {
+                if (db->table[tableID2]->p_key == nullptr)printf("TABLE %s doesn't have a primary key\n", $13.c_str());
+                else if (db->table[tableID2]->p_key->v.size() == $15.size()) {
                     bool isok = true;
-                    for (uint i = 0; i < db->sheet[tableID2]->p_key->v.size(); i++) {
-                        if ($15[i] != std::string(db->sheet[tableID2]->col_ty[db->sheet[tableID2]->p_key->v[i]].name)) {
+                    for (uint i = 0; i < db->table[tableID2]->p_key->v.size(); i++) {
+                        if ($15[i] != std::string(db->table[tableID2]->col_ty[db->table[tableID2]->p_key->v[i]].name)) {
                             isok = false;
-                            printf("Primary key column %s mismatch column name %s\n", db->sheet[tableID2]->col_ty[db->sheet[tableID2]->p_key->v[i]].name, $15[i].c_str());
+                            printf("Primary key column %s mismatch column name %s\n", db->table[tableID2]->col_ty[db->table[tableID2]->p_key->v[i]].name, $15[i].c_str());
                             break;
                         }
                     }
@@ -896,8 +896,8 @@ alterStmt:
                         vector <uint> key;
                         for (uint i = 0; i < $10.size(); i++) {
                             bool flag2 = false;
-                            for (uint j = 0; j < db->sheet[tableID1]->col_num; j++) {
-                                if ($10[i] == std::string(db->sheet[tableID1]->col_ty[j].name)) {
+                            for (uint j = 0; j < db->table[tableID1]->col_num; j++) {
+                                if ($10[i] == std::string(db->table[tableID1]->col_ty[j].name)) {
                                     key.push_back(j);
                                     flag2 = true;
                                     break;
@@ -914,9 +914,9 @@ alterStmt:
                             for (uint i = 0; i < $10.size(); i++) {
                                 temp[i] = key[i];
                             }
-                            ForeignKey fkey = ForeignKey(db->sheet[tableID1], $10.size(), temp);
+                            ForeignKey fkey = ForeignKey(db->table[tableID1], $10.size(), temp);
                             fkey.name = $6;
-                            db->sheet[tableID1]->createForeignKey(&fkey, db->sheet[tableID2]->p_key);
+                            db->table[tableID1]->createForeignKey(&fkey, db->table[tableID2]->p_key);
                         }
                     }
                 }
@@ -930,9 +930,9 @@ alterStmt:
             int tableID;
             if (table_exists($3, tableID, true)) {
                 bool flag = false;
-                for (uint i = 0; i < db->sheet[tableID]->f_key.size(); i++) {
-                    if (db->sheet[tableID]->f_key[i]->name == $7) {
-                        db->sheet[tableID]->removeForeignKey(db->sheet[tableID]->f_key[i]);
+                for (uint i = 0; i < db->table[tableID]->f_key.size(); i++) {
+                    if (db->table[tableID]->f_key[i]->name == $7) {
+                        db->table[tableID]->removeForeignKey(db->table[tableID]->f_key[i]);
                         flag = true;
                         break;
                     }
@@ -1040,17 +1040,17 @@ fromClauses:
 
 fromClause:
     tbName {
-        int idx = (db ? db->findSheet($1) : MAX_SHEET_NUM);
+        int idx = (db ? db->findTable($1) : MAX_TABLE_NUM);
         if (idx < 0) {
-            idx = MAX_SHEET_NUM;
+            idx = MAX_TABLE_NUM;
             printf("Can not find TABLE %s\n", $1.c_str());
         }
         $$ = make_pair(idx, $1);
     }
     | tbName AS aliasName {
-        int idx = (db ? db->findSheet($1) : MAX_SHEET_NUM);
+        int idx = (db ? db->findTable($1) : MAX_TABLE_NUM);
         if (idx < 0) {
-            idx = MAX_SHEET_NUM;
+            idx = MAX_TABLE_NUM;
             printf("Can not find TABLE %s\n", $1.c_str());
         }
         $$ = make_pair(idx, $3);
@@ -1098,25 +1098,25 @@ whereClause:
         $$.ty = 4;
         $$.cols = $1;
         $$.op = $2;
-        $$.rvalue_sheet = $4;
+        $$.rvalue_table = $4;
     }
     | _cols op ANY LB seleStmt RB {
         $$.ty = 5;
         $$.cols = $1;
         $$.op = $2;
-        $$.rvalue_sheet = $5;
+        $$.rvalue_table = $5;
     }
     | _cols op ALL LB seleStmt RB {
         $$.ty = 6;
         $$.cols = $1;
         $$.op = $2;
-        $$.rvalue_sheet = $5;
+        $$.rvalue_table = $5;
     }
     | _cols IN LB seleStmt RB {
         $$.ty = 7;
         $$.cols = $1;
         $$.op = OP_IN;
-        $$.rvalue_sheet = $4;
+        $$.rvalue_table = $4;
     };
 
 _cols:

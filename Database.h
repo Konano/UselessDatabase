@@ -14,7 +14,7 @@ typedef std::pair<int, uint> Piu;
 typedef std::pair<std::string, Any> Psa;
 typedef std::pair<int, Any> Pia;
 
-class Sheet;
+class Table;
 class FileManager;
 class BufPageManager;
 
@@ -52,7 +52,7 @@ struct WhereStmt {
     uint rvalue_ty = 0;
     std::vector<Any> rvalue;       // rvalue_ty = 1
     std::vector<Piu> rvalue_cols;  // rvalue_ty = 2
-    int rvalue_sheet;              // rvalue_ty = 3
+    int rvalue_table;              // rvalue_ty = 3
 };
 
 struct SelectStmt {
@@ -76,25 +76,25 @@ private:
 public:
     void update();
     char name[MAX_NAME_LEN];
-    Sheet* sheet[MAX_SHEET_NUM];
-    uint sheet_num;
+    Table* table[MAX_TABLE_NUM];
+    uint table_num;
 
     FileManager* fm;
     BufPageManager* bpm;
     int mem_file; // the file_index of '.storage' 
     uint64_t mem; // mem_file's end offset
 
-    SelectStmt sel[MAX_SHEET_NUM]; 
-    Sheet* sel_sheet[MAX_SHEET_NUM]; // temp_table
+    SelectStmt sel[MAX_TABLE_NUM]; 
+    Table* sel_table[MAX_TABLE_NUM]; // temp_table
     uint sel_num = 0;
 
     Database(const char* name, bool create);
     ~Database();
-    Sheet* createSheet(const char* name, int col_num, Type* col_ty);
-    Sheet* openSheet(const char* name);
-    int deleteSheet(const char* name);
-    void showSheets();
-    int findSheet(std::string s);
+    Table* createTable(const char* name, int col_num, Type* col_ty);
+    Table* openTable(const char* name);
+    int deleteTable(const char* name);
+    void showTables();
+    int findTable(std::string s);
 
     char* getVarchar(uint64_t idx); // get varchar from '.storage'
     uint64_t storeVarchar(char* str); // store varchar into '.storage'

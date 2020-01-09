@@ -14,11 +14,11 @@ using json = nlohmann::json;
 
 class BtreeNode;
 class BufPageManager;
-class Sheet;
+class Table;
 
 class Index {
 public:
-    Sheet* sheet;
+    Table* table;
     char name[MAX_NAME_LEN];
     uint key_num;
     std::vector<uint> key;
@@ -46,8 +46,8 @@ private:
 
 public:
     Index() {}
-    Index(Sheet* sheet, const char* name, std::vector<uint> key, int btree_max_per_node);
-    Index(Sheet* sheet, json j);
+    Index(Table* table, const char* name, std::vector<uint> key, int btree_max_per_node);
+    Index(Table* table, json j);
     json toJson();
 
     void open();

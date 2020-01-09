@@ -1,4 +1,4 @@
-#include "Sheet.h"
+#include "Table.h"
 
 #include "Database.h"
 #include "FileManager.h"
@@ -13,7 +13,7 @@
 #include <iostream>
 using namespace std;
 
-#define filterSheet(it) ((it) < 0 ? this->db->sel_sheet[-1-it] : this->db->sheet[it])
+#define filterTable(it) ((it) < 0 ? this->db->sel_table[-1-it] : this->db->table[it])
 
 #define exist(buf, offset) (buf[(offset) / 8] & (1 << ((offset) % 8)))
 #define exist_set(buf, offset) (buf[(offset) / 8] |= (1 << ((offset) % 8)))
@@ -25,11 +25,11 @@ extern void replaceFile(const char *oldName, const char *newName);
 
 extern bool cmpCol(enumOp op, Anys &a, Anys &b);
 
-void Sheet::Pointer::init() {
+void Table::Pointer::init() {
     pid = -1;
 }
 
-bool Sheet::Pointer::next() {
+bool Table::Pointer::next() {
     pid++;
     if (!s->sel) {
         if (pid % s->record_onepg == 0) {
@@ -45,7 +45,7 @@ bool Sheet::Pointer::next() {
     return pid < s->record_num;
 }
 
-// Anys Sheet::queryRecord(const int record_id) {
+// Anys Table::queryRecord(const int record_id) {
 //     if (sel) return this->data[record_id];
 //     Anys data;
 //     BufType buf = bpm->getPage(main_file, record_id / record_onepg);
@@ -61,13 +61,13 @@ bool Sheet::Pointer::next() {
 //     return data;
 // }
 
-Sheet::Pointer::Pointer(Sheet* _s, uint _pid = -1) {
+Table::Pointer::Pointer(Table* _s, uint _pid = -1) {
     s = _s;
     pid = _pid;
     if (pid != (uint)-1) buf = s->bpm->getPage(s->main_file, pid / s->record_onepg);
 }
 
-Anys Sheet::Pointer::get() {
+Anys Table::Pointer::get() {
     if (s->sel) return s->data[pid];
     BufType _buf = buf + (s->record_onepg - 1) / 8 + 1 + s->record_size * (pid % s->record_onepg);
     Anys as; Any a;
@@ -78,7 +78,7 @@ Anys Sheet::Pointer::get() {
     return as;
 }
 
-// int Sheet::queryRecord(const int record_id, Any* &data) {
+// int Table::queryRecord(const int record_id, Any* &data) {
 //     BufType buf = bpm->getPage(main_file, record_id / record_onepg);
 //     if (exist(buf, record_id % record_onepg)) {
 //         buf += (record_onepg - 1) / 8 + 1;
@@ -92,10 +92,10 @@ Anys Sheet::Pointer::get() {
 //     } else return -1;
 // }
 
-json Sheet::toJson() { // assemble to JSON
+json Table::toJson() { // assemble to JSON
     json j;
     j["name"] = name;
-    j["sheet_id"] = sheet_id;
+    j["table_id"] = table_id;
     j["col_num"] = col_num;
     for (uint i = 0; i < col_num; i++) j["col_ty"].push_back(col_ty[i].toJson());
     j["record_num"] = record_num;
@@ -110,13 +110,13 @@ json Sheet::toJson() { // assemble to JSON
     return j;
 }
 
-Sheet::Sheet(Database* db, json j) { // disassemble from JSON
+Table::Table(Database* db, json j) { // disassemble from JSON
     this->pointer.s = this; 
     this->db = db;
     this->fm = db->fm;
     this->bpm = db->bpm;
     strcpy(name, j["name"].get<std::string>().c_str());
-    sheet_id = j["sheet_id"].get<int>();
+    table_id = j["table_id"].get<int>();
     col_num = j["col_num"].get<int>();
     record_num = j["record_num"].get<int>();
     record_size = j["record_size"].get<int>();
@@ -132,7 +132,7 @@ Sheet::Sheet(Database* db, json j) { // disassemble from JSON
     for(uint i = 0;i < f_key.size();i ++)f_key_index.push_back(j["f_key_index"][i].get<int>()); 
 }
 
-Sheet::~Sheet() {
+Table::~Table() {
     if (sel == false) {
         fm->closeFile(main_file);
         if (p_key) delete p_key;
@@ -140,14 +140,14 @@ Sheet::~Sheet() {
     }
 }
 
-uint Sheet::calDataSize() {
+uint Table::calDataSize() {
     uint size = 0;
     for (uint i = 0; i < col_num; i++) size += col_ty[i].size();
     return size;
 }
 
-int Sheet::createSheet(uint sheet_id, Database* db, const char* name, uint col_num, Type* col_ty, bool create) {
-    this->sheet_id = sheet_id;
+int Table::createTable(uint table_id, Database* db, const char* name, uint col_num, Type* col_ty, bool create) {
+    this->table_id = table_id;
     this->db = db;
     this->fm = db->fm;
     this->bpm = db->bpm;
@@ -164,7 +164,7 @@ int Sheet::createSheet(uint sheet_id, Database* db, const char* name, uint col_n
         p_key->name = "default primary key name";
         p_key->v.clear();
         for (auto i: tempvec)p_key->v.push_back(i);
-        p_key->sheet = this;
+        p_key->table = this;
         updateColumns();
         int old = p_key_index;
         if(old != -1)removeIndex(old);
@@ -183,14 +183,14 @@ int Sheet::createSheet(uint sheet_id, Database* db, const char* name, uint col_n
     return 0;
 }
 
-char* Sheet::getStr(BufType buf, uint size) {
+char* Table::getStr(BufType buf, uint size) {
     char* str = new char[size + 1];
     memcpy(str, buf, size);
     str[size] = '\0';
     return str;
 }
 
-void Sheet::insert(Any& val, enumType ty, uint size, BufType& buf) {
+void Table::insert(Any& val, enumType ty, uint size, BufType& buf) {
     if (val.isNull()) {
         for (uint i = 0; i < size; i++) {
             *(uint8_t*)buf = 255;
@@ -219,12 +219,12 @@ void Sheet::insert(Any& val, enumType ty, uint size, BufType& buf) {
     }
 }
 
-void Sheet::fetch(BufType& buf, enumType ty, uint size, Any& val) {
+void Table::fetch(BufType& buf, enumType ty, uint size, Any& val) {
     fetchWithOffset(buf, ty, size, val, 0);
     buf += size;
 }
 
-int Sheet::insertRecord(Any* data) {
+int Table::insertRecord(Any* data) {
     int x = this->constraintRow(data, record_num, true);
     if (x) return x;
     int index;
@@ -257,7 +257,7 @@ int Sheet::insertRecord(Any* data) {
     return 0;
 }
 
-int Sheet::removeRecord(const int record_id) {
+int Table::removeRecord(const int record_id) {
     int index;
     BufType buf = bpm->getPage(main_file, record_id / record_onepg, index);
     if (exist(buf, record_id % record_onepg)) {
@@ -271,47 +271,47 @@ int Sheet::removeRecord(const int record_id) {
             this->index[i].removeRecord(&temp, record_id);
             if (i == (uint)p_key_index) {
                 for (auto _k: p_key->f) {
-                    for(uint jx = 0;jx < _k->sheet->f_key.size();jx ++){
-                        if(_k->sheet->f_key[jx]->p->sheet == this){
+                    for(uint jx = 0;jx < _k->table->f_key.size();jx ++){
+                        if(_k->table->f_key[jx]->p->table == this){
                             std::vector <int> ans;
-                            if(_k->sheet->index[_k->sheet->f_key_index[jx]].fileID == -1){
-                                _k->sheet->index[_k->sheet->f_key_index[jx]].open();
-                                ans = _k->sheet->index[_k->sheet->f_key_index[jx]].queryRecord(&temp);
-                                _k->sheet->index[_k->sheet->f_key_index[jx]].close();
+                            if(_k->table->index[_k->table->f_key_index[jx]].fileID == -1){
+                                _k->table->index[_k->table->f_key_index[jx]].open();
+                                ans = _k->table->index[_k->table->f_key_index[jx]].queryRecord(&temp);
+                                _k->table->index[_k->table->f_key_index[jx]].close();
                             }
                             else {
-                                ans = _k->sheet->index[_k->sheet->f_key_index[jx]].queryRecord(&temp);
+                                ans = _k->table->index[_k->table->f_key_index[jx]].queryRecord(&temp);
                             }
                             for(uint k = 0;k < ans.size();k ++){
-                                if(_k->sheet->index[_k->sheet->f_key_index[jx]].fileID == -1){
-                                    _k->sheet->index[_k->sheet->f_key_index[jx]].open();
-                                    _k->sheet->index[_k->sheet->f_key_index[jx]].removeRecord(&temp,ans[k]);
+                                if(_k->table->index[_k->table->f_key_index[jx]].fileID == -1){
+                                    _k->table->index[_k->table->f_key_index[jx]].open();
+                                    _k->table->index[_k->table->f_key_index[jx]].removeRecord(&temp,ans[k]);
                                     Anys nullkey;
                                     for(uint m = 0;m < temp.size();m ++)nullkey.push_back(Any());
-                                    _k->sheet->index[_k->sheet->f_key_index[jx]].insertRecord(&nullkey,ans[k]);
-                                    _k->sheet->index[_k->sheet->f_key_index[jx]].close();
+                                    _k->table->index[_k->table->f_key_index[jx]].insertRecord(&nullkey,ans[k]);
+                                    _k->table->index[_k->table->f_key_index[jx]].close();
                                 }
                                 else {
-                                    _k->sheet->index[_k->sheet->f_key_index[jx]].removeRecord(&temp,ans[k]);
+                                    _k->table->index[_k->table->f_key_index[jx]].removeRecord(&temp,ans[k]);
                                     Anys nullkey;
                                     for(uint m = 0;m < temp.size();m ++)nullkey.push_back(Any());
-                                    _k->sheet->index[_k->sheet->f_key_index[jx]].insertRecord(&nullkey,ans[k]);
+                                    _k->table->index[_k->table->f_key_index[jx]].insertRecord(&nullkey,ans[k]);
                                 }
-                                Anys pre = _k->sheet->queryRecord(ans[k]);
+                                Anys pre = _k->table->queryRecord(ans[k]);
                                 Anys after;
                                 vector<bool> mark;
                                 for(uint m = 0;m < pre.size();m ++)mark.push_back(true);
-                                for(uint m = 0;m < _k->sheet->f_key[jx]->v.size();m ++)mark[_k->sheet->f_key[jx]->v[m]] = false;
+                                for(uint m = 0;m < _k->table->f_key[jx]->v.size();m ++)mark[_k->table->f_key[jx]->v[m]] = false;
                                 for(uint m = 0;m < pre.size();m ++){
                                     if(mark[m]) after.push_back(pre[m]);
                                     else after.push_back(Any());
                                 }
                                 int index;
-                                BufType buf = bpm->getPage(_k->sheet->main_file, ans[k] / _k->sheet->record_onepg, index);
-                                buf += (_k->sheet->record_onepg - 1) / 8 + 1;
-                                buf += _k->sheet->record_size * (ans[k] % _k->sheet->record_onepg);
-                                for (uint q = 0; q < _k->sheet->col_num; q++) {
-                                    insert(after[q], _k->sheet->col_ty[q].ty, _k->sheet->col_ty[q].size(), buf);
+                                BufType buf = bpm->getPage(_k->table->main_file, ans[k] / _k->table->record_onepg, index);
+                                buf += (_k->table->record_onepg - 1) / 8 + 1;
+                                buf += _k->table->record_size * (ans[k] % _k->table->record_onepg);
+                                for (uint q = 0; q < _k->table->col_num; q++) {
+                                    insert(after[q], _k->table->col_ty[q].ty, _k->table->col_ty[q].size(), buf);
                                 }
                                 bpm->markDirty(index);
                             }
@@ -328,7 +328,7 @@ int Sheet::removeRecord(const int record_id) {
     return -1;
 }
 
-Anys Sheet::queryRecord(const int record_id) {
+Anys Table::queryRecord(const int record_id) {
     if (sel) return this->data[record_id];
     Anys data;
     BufType buf = bpm->getPage(main_file, record_id / record_onepg);
@@ -344,7 +344,7 @@ Anys Sheet::queryRecord(const int record_id) {
     return data;
 }
 
-int Sheet::queryRecord(const int record_id, Any* &data) {
+int Table::queryRecord(const int record_id, Any* &data) {
     BufType buf = bpm->getPage(main_file, record_id / record_onepg);
     if (exist(buf, record_id % record_onepg)) {
         buf += (record_onepg - 1) / 8 + 1;
@@ -358,7 +358,7 @@ int Sheet::queryRecord(const int record_id, Any* &data) {
     } else return -1;
 }
 
-// int Sheet::updateRecord(const int record_id, const int len, Any* data) {
+// int Table::updateRecord(const int record_id, const int len, Any* data) {
 //     if (this->constraintRow(data, record_id, true)) return -1;
 //     int index;
 //     BufType buf = bpm->getPage(main_file, record_id / record_onepg, index);
@@ -371,7 +371,7 @@ int Sheet::queryRecord(const int record_id, Any* &data) {
 //     return 0;
 // }
 
-int Sheet::updateRecord(const int record_id, vector<Pia> &set) {
+int Table::updateRecord(const int record_id, vector<Pia> &set) {
     Anys before = queryRecord(record_id);
     Anys after = before;
     for (auto it: set) after[it.first] = it.second;
@@ -404,14 +404,14 @@ inline char* getTime() {
     return buffer;
 }
 
-int Sheet::findIndex(std::string s) {
+int Table::findIndex(std::string s) {
     for (uint i = 0; i < index_num; i++) 
         if (s == std::string(this->index[i].name)) 
             return i;
     return -1;
 }
 
-void Sheet::fetchWithOffset(BufType& buf, enumType ty, uint size, Any& val, uint offset) {
+void Table::fetchWithOffset(BufType& buf, enumType ty, uint size, Any& val, uint offset) {
     buf += offset;
     BufType temp = buf;
     bool flag = true;
@@ -446,7 +446,7 @@ void Sheet::fetchWithOffset(BufType& buf, enumType ty, uint size, Any& val, uint
     buf -= offset;
 }
 
-uint Sheet::genOffset(uint index) {
+uint Table::genOffset(uint index) {
     uint ans = 0;
     for (uint i = 0; i < index; i++) {
         ans += this->col_ty[i].size();
@@ -454,7 +454,7 @@ uint Sheet::genOffset(uint index) {
     return ans;
 }
 
-uint Sheet::createIndex(vector<uint> col_id, std::string name) {
+uint Table::createIndex(vector<uint> col_id, std::string name) {
     //Calculate max per node
 
     int max_per_node = 25;
@@ -477,20 +477,20 @@ uint Sheet::createIndex(vector<uint> col_id, std::string name) {
     return index_num++;
 }
 
-void Sheet::removeIndex(uint index_id) {
+void Table::removeIndex(uint index_id) {
     index[index_id].close();
     index[index_id].remove();
     index[index_id] = index[--index_num];
 }
 
-int Sheet::createColumn(Type ty) {
+int Table::createColumn(Type ty) {
     if (record_num > 0 && ty.beNull() == false) return -1;
     col_ty[col_num++] = ty;
     rebuild(1, col_num);
     return 0;
 }
 
-int Sheet::removeColumn(uint col_id) {
+int Table::removeColumn(uint col_id) {
     // if (col_ty[col_id].key == Primary) {
     //     printf("Need to remove primary key \"%s\" first.", p_key->name.c_str());
     //     return -1;
@@ -528,7 +528,7 @@ int Sheet::removeColumn(uint col_id) {
     return 0;
 }
 
-int Sheet::modifyColumn(uint col_id, Type ty) {
+int Table::modifyColumn(uint col_id, Type ty) {
     switch (col_ty[col_id].ty) {
     case INT: 
     case DATE: 
@@ -552,13 +552,13 @@ int Sheet::modifyColumn(uint col_id, Type ty) {
     return 0;
 }
 
-void Sheet::updateColumns() {
+void Table::updateColumns() {
     for (uint i = 0; i < col_num; i++) col_ty[i].key = Common;
     if (p_key != nullptr)for (auto it: p_key->v) col_ty[it].key = Primary;
     for (auto _it: f_key) for (auto it: _it->v) col_ty[it].key = Foreign;
 }
 
-void Sheet::rebuild(int ty, uint col_id) {
+void Table::rebuild(int ty, uint col_id) {
     if (record_num == 0) return;
     int _main_file;
     fm->createFile(dirPath(db->name, name, "tmp", "usid"));
@@ -629,7 +629,7 @@ void Sheet::rebuild(int ty, uint col_id) {
     record_onepg = _record_onepg;
 }
 
-int Sheet::createPrimaryKey(PrimaryKey* pk) {
+int Table::createPrimaryKey(PrimaryKey* pk) {
     if (p_key) return -1;
     if (constraintKey(pk)) return -2;
     p_key = new PrimaryKey(this);
@@ -637,14 +637,14 @@ int Sheet::createPrimaryKey(PrimaryKey* pk) {
     p_key->name = pk->name;
     p_key->v.clear();
     for (auto i: pk->v)p_key->v.push_back(i);
-    p_key->sheet = pk->sheet;
+    p_key->table = pk->table;
     updateColumns();
     if (p_key_index != -1) removeIndex(p_key_index);
     p_key_index = createIndex(p_key->v, "pk");
     return 0;
 }
 
-int Sheet::removePrimaryKey() {
+int Table::removePrimaryKey() {
     if (p_key == nullptr) return -1;
     for (auto it: p_key->f) it->p = nullptr;
     for (auto col: p_key->v) col_ty[col].key = enumKeyType::Common;
@@ -655,15 +655,15 @@ int Sheet::removePrimaryKey() {
     return 0;
 }
 
-int Sheet::createForeignKey(ForeignKey* fk, PrimaryKey* pk) {
-    if (*pk->sheet->p_key != *pk) return -1;
-    fk->p = pk->sheet->p_key;
+int Table::createForeignKey(ForeignKey* fk, PrimaryKey* pk) {
+    if (*pk->table->p_key != *pk) return -1;
+    fk->p = pk->table->p_key;
     if (fk->size() != pk->size()) return -3;
     for (uint i = 0; i < fk->size(); i++) {
         if (col_ty[fk->v[i]].ty == CHAR || col_ty[fk->v[i]].ty == VARCHAR) {
-            if (pk->sheet->col_ty[pk->v[i]].ty != CHAR && pk->sheet->col_ty[pk->v[i]].ty != VARCHAR) return -5;
+            if (pk->table->col_ty[pk->v[i]].ty != CHAR && pk->table->col_ty[pk->v[i]].ty != VARCHAR) return -5;
         }
-        else if (col_ty[fk->v[i]].ty != pk->sheet->col_ty[pk->v[i]].ty) return -5;
+        else if (col_ty[fk->v[i]].ty != pk->table->col_ty[pk->v[i]].ty) return -5;
     }
     if (constraintKey(fk)) return -2;
     
@@ -672,20 +672,20 @@ int Sheet::createForeignKey(ForeignKey* fk, PrimaryKey* pk) {
     f_keyx->name = fk->name;
     f_keyx->v.clear();
     for (auto i: fk->v)f_keyx->v.push_back(i);
-    f_keyx->sheet = fk->sheet;
-    f_keyx->p = pk->sheet->p_key;
+    f_keyx->table = fk->table;
+    f_keyx->p = pk->table->p_key;
     f_key.push_back(f_keyx);
     updateColumns();
 
     string name = std::string("fk_") + std::string(f_keyx->name) + std::to_string(f_key.size());
     f_key_index.push_back(createIndex(f_keyx->v, name));
 
-    pk->sheet->p_key->f.push_back(f_keyx);
+    pk->table->p_key->f.push_back(f_keyx);
 
     return 0;
 }
 
-int Sheet::removeForeignKey(ForeignKey* fk) {
+int Table::removeForeignKey(ForeignKey* fk) {
     int i = 0;
     for (auto it = f_key.begin(); it != f_key.end(); it++){
         if (*it == fk) { 
@@ -705,7 +705,7 @@ int Sheet::removeForeignKey(ForeignKey* fk) {
     return -1;
 }
 
-void Sheet::print() {
+void Table::print() {
     std::vector<std::pair<std::string, int> > v;
     for (uint i = 0; i < col_num; i++) v.push_back(std::pair<std::string, int>(col_ty[i].name, std::max(col_ty[i].printLen(), (int)strlen(col_ty[i].name))));
     Print::title(v);
@@ -722,7 +722,7 @@ void Sheet::print() {
     Print::end();
 }
 
-void Sheet::printCol() {
+void Table::printCol() {
     std::vector<std::pair<std::string, int> > v;
     v.push_back(std::pair<std::string, int>("Field", 20));
     v.push_back(std::pair<std::string, int>("Type", 15));
@@ -759,7 +759,7 @@ void Sheet::printCol() {
     Print::end();
 }
 
-bool Sheet::printBack(uint num) {
+bool Table::printBack(uint num) {
     if (num == 0 || sel != 1) return false;
     std::vector<std::pair<std::string, int> > v;
     for (uint i = 0; i < col_num; i++) v.push_back(std::pair<std::string, int>(col_ty[i].name, std::max(col_ty[i].printLen(), (int)strlen(col_ty[i].name))));
@@ -771,12 +771,12 @@ bool Sheet::printBack(uint num) {
     return true;
 }
 
-int Sheet::findCol(std::string a) {
+int Table::findCol(std::string a) {
     for (uint i = 0; i < col_num; i++) if (a == std::string(this->col_ty[i].name)) return i;
     return -1;
 }
 
-int Sheet::constraintCol(uint col_id) {
+int Table::constraintCol(uint col_id) {
     if (col_ty[col_id].beNull() == false) {
         Pointer p(this);
         while (p.next()) if (p.get()[col_id].isNull()) return -1;
@@ -784,7 +784,7 @@ int Sheet::constraintCol(uint col_id) {
     return 0;
 }
 
-int Sheet::constraintKey(Key* key) {
+int Table::constraintKey(Key* key) {
     Anys data, _data;
     if (key->ty() == 1) {
         std::map<Anys, bool> m;
@@ -820,8 +820,8 @@ int Sheet::constraintKey(Key* key) {
                 _data.push_back(data[i]);
             }
             if (null == false && non_null == false) return -1;
-            Sheet* p_sheet = dynamic_cast<ForeignKey*>(key)->p->sheet;
-            if (p_sheet->index[p_sheet->p_key_index].queryRecord(&_data).size() == 0) return -4;
+            Table* p_table = dynamic_cast<ForeignKey*>(key)->p->table;
+            if (p_table->index[p_table->p_key_index].queryRecord(&_data).size() == 0) return -4;
         }
         // for (uint record_id = 0; record_id < record_num; record_id++) {
         //     if (queryRecord(record_id, data)) continue;
@@ -835,14 +835,14 @@ int Sheet::constraintKey(Key* key) {
         //     if (null == false && non_null == false) return -1;
         //     Anys _data = Anys(data, col_num);
         //     Anys val = chooseData(_data, key->v);
-        //     Sheet* p_sheet = dynamic_cast<ForeignKey*>(key)->p->sheet;
-        //     if (p_sheet->index[p_sheet->p_key_index].queryRecord(&val).size() == 0) return -4;
+        //     Table* p_table = dynamic_cast<ForeignKey*>(key)->p->table;
+        //     if (p_table->index[p_table->p_key_index].queryRecord(&val).size() == 0) return -4;
         // }
     }
     return 0;
 }
 
-int Sheet::constraintRow(Any* data, uint record_id, bool ck_unique) {
+int Table::constraintRow(Any* data, uint record_id, bool ck_unique) {
     for (uint i = 0; i < col_num; i++) {
         if (col_ty[i].beNull() == false && data[i].isNull()) return -1;
     }
@@ -851,13 +851,13 @@ int Sheet::constraintRow(Any* data, uint record_id, bool ck_unique) {
     return 0;
 }
 
-Anys Sheet::chooseData(Anys& data, vector<uint>& cols) {
+Anys Table::chooseData(Anys& data, vector<uint>& cols) {
     Anys val;
     for (auto i: cols) val.push_back(data[i]);
     return val;
 }
 
-int Sheet::constraintRowKey(Any* data, Key* key) {
+int Table::constraintRowKey(Any* data, Key* key) {
     if (key->ty() == 1) {
         for (auto i: key->v) if (data[i].isNull()) return -1;
         Anys val;
@@ -875,13 +875,13 @@ int Sheet::constraintRowKey(Any* data, Key* key) {
         for (auto i: key->v) val.push_back(data[i]);
         vector <int> ans;
         //if(key->v.size() == 2)printf("%d %d\n",*val[0].anyCast<int>(),*val[1].anyCast<int>());
-        Sheet* p_sheet = dynamic_cast<ForeignKey*>(key)->p->sheet;
-        if(p_sheet->index[p_sheet->p_key_index].fileID == -1){
-            p_sheet->index[p_sheet->p_key_index].open();
-            ans = p_sheet->index[p_sheet->p_key_index].queryRecord(&val);
-            p_sheet->index[p_sheet->p_key_index].close();
+        Table* p_table = dynamic_cast<ForeignKey*>(key)->p->table;
+        if(p_table->index[p_table->p_key_index].fileID == -1){
+            p_table->index[p_table->p_key_index].open();
+            ans = p_table->index[p_table->p_key_index].queryRecord(&val);
+            p_table->index[p_table->p_key_index].close();
         }
-        else {ans = p_sheet->index[p_sheet->p_key_index].queryRecord(&val);}
+        else {ans = p_table->index[p_table->p_key_index].queryRecord(&val);}
         if (ans.size() == 0){
             return -3;
         }
@@ -889,23 +889,23 @@ int Sheet::constraintRowKey(Any* data, Key* key) {
     return 0;
 }
 
-void Sheet::initPointer() {
+void Table::initPointer() {
     return pointer.init();
 }
 
-bool Sheet::movePointer() {
+bool Table::movePointer() {
     return pointer.next();
 }
 
-Any Sheet::getPointerColData(uint idx) {
+Any Table::getPointerColData(uint idx) {
     return pointer.get()[idx];
 }
 
-Anys Sheet::getPointerData() {
+Anys Table::getPointerData() {
     return pointer.get();
 }
 
-bool Sheet::cmpRecord(Anys a, Anys b, enumOp op) {
+bool Table::cmpRecord(Anys a, Anys b, enumOp op) {
     switch (op) {
     case OP_EQ: return a == b;
     case OP_NEQ: return a != b;
@@ -917,7 +917,7 @@ bool Sheet::cmpRecord(Anys a, Anys b, enumOp op) {
     }
 }
 
-bool Sheet::cmpRecords(Anys data, enumOp op, bool any, bool all) {
+bool Table::cmpRecords(Anys data, enumOp op, bool any, bool all) {
     bool cmp;
     Anys _data;
     Pointer p(this);
@@ -938,7 +938,7 @@ bool Sheet::cmpRecords(Anys data, enumOp op, bool any, bool all) {
     return false;
 }
 
-bool Sheet::checkWhere(Anys __data, WhereStmt &w) { // Database::checkWhere
+bool Table::checkWhere(Anys __data, WhereStmt &w) { // Database::checkWhere
     Anys data, _data;
     for (auto it: w.cols) data.push_back(__data[it.second]);
     switch (w.rvalue_ty) {
@@ -965,21 +965,21 @@ bool Sheet::checkWhere(Anys __data, WhereStmt &w) { // Database::checkWhere
     case 3:
         if (w.op == OP_IN) w.any = true, w.op = OP_EQ;
         if (w.any || w.all) {
-            return filterSheet(w.rvalue_sheet)->cmpRecords(data, w.op, w.any, w.all);
+            return filterTable(w.rvalue_table)->cmpRecords(data, w.op, w.any, w.all);
         } else {
-            return filterSheet(w.rvalue_sheet)->cmpRecord(data, filterSheet(w.rvalue_sheet)->val, w.op);
+            return filterTable(w.rvalue_table)->cmpRecord(data, filterTable(w.rvalue_table)->val, w.op);
         }
     default:
         return false;
     }
 }
 
-bool Sheet::checkWheres(Anys data, vector<WhereStmt> &where) {
+bool Table::checkWheres(Anys data, vector<WhereStmt> &where) {
     for (auto it: where) if (checkWhere(data, it) == false) return false;
     return true;
 }
 
-vector<uint> Sheet::existentRecords() {
+vector<uint> Table::existentRecords() {
     vector<uint> ret;
     BufType buf;
     for (uint record_id = 0; record_id < record_num; record_id++) {
@@ -993,7 +993,7 @@ vector<uint> Sheet::existentRecords() {
     return ret;
 }
 
-vector<uint> Sheet::findWheres(vector<WhereStmt> &where) { // preliminary search
+vector<uint> Table::findWheres(vector<WhereStmt> &where) { // preliminary search
     int mx = -1;
     WhereStmt w;
     // uint w_index;
@@ -1024,7 +1024,7 @@ vector<uint> Sheet::findWheres(vector<WhereStmt> &where) { // preliminary search
     // }
 }
 
-int Sheet::removeRecords(vector<WhereStmt> &where) {
+int Table::removeRecords(vector<WhereStmt> &where) {
     vector<uint> cols = findWheres(where);
     for (auto i: cols) {
         Pointer p(this, i);
@@ -1035,7 +1035,7 @@ int Sheet::removeRecords(vector<WhereStmt> &where) {
     return 0;
 }
 
-int Sheet::updateRecords(vector<Pia> &set, vector<WhereStmt> &where) {
+int Table::updateRecords(vector<Pia> &set, vector<WhereStmt> &where) {
     for (auto it: set) {
         if (col_ty[it.first].beNull() == false && it.second.isNull() == true) return -1;
     }
@@ -1058,8 +1058,8 @@ int Sheet::updateRecords(vector<Pia> &set, vector<WhereStmt> &where) {
                 continue;
                 BK2: Anys val = chooseData(data, it->v);
                 vector<int> ans;
-                Sheet* p_sheet = it->p->sheet;
-                ans = p_sheet->index[p_sheet->p_key_index].queryRecord(&val);
+                Table* p_table = it->p->table;
+                ans = p_table->index[p_table->p_key_index].queryRecord(&val);
                 printf("%d %d\n", val[0].anyRefCast<int>(), val.size());
                 if (ans.size() == 0) goto FAIL;
             }
@@ -1087,38 +1087,38 @@ int Sheet::updateRecords(vector<Pia> &set, vector<WhereStmt> &where) {
     
     for (auto i: cols) updateRecord(i, set);
     for (auto it: pk_del) {
-        for (uint i = 0;i < db->sheet_num;i ++){
-            for(uint j = 0;j < db->sheet[i]->f_key.size();j ++){
-                if(db->sheet[i]->f_key[j]->p->sheet == this){
+        for (uint i = 0;i < db->table_num;i ++){
+            for(uint j = 0;j < db->table[i]->f_key.size();j ++){
+                if(db->table[i]->f_key[j]->p->table == this){
                     std::vector <int> ans;
-                    if(db->sheet[i]->index[db->sheet[i]->f_key_index[j]].fileID == -1){
-                        db->sheet[i]->index[db->sheet[i]->f_key_index[j]].open();
-                        ans = db->sheet[i]->index[db->sheet[i]->f_key_index[j]].queryRecord(&it);
-                        db->sheet[i]->index[db->sheet[i]->f_key_index[j]].close();
+                    if(db->table[i]->index[db->table[i]->f_key_index[j]].fileID == -1){
+                        db->table[i]->index[db->table[i]->f_key_index[j]].open();
+                        ans = db->table[i]->index[db->table[i]->f_key_index[j]].queryRecord(&it);
+                        db->table[i]->index[db->table[i]->f_key_index[j]].close();
                     }
                     else {
-                        ans = db->sheet[i]->index[db->sheet[i]->f_key_index[j]].queryRecord(&it);
+                        ans = db->table[i]->index[db->table[i]->f_key_index[j]].queryRecord(&it);
                     }
                     for(uint k = 0;k < ans.size();k ++){
-                        if(db->sheet[i]->index[db->sheet[i]->f_key_index[j]].fileID == -1){
-                            db->sheet[i]->index[db->sheet[i]->f_key_index[j]].open();
-                            db->sheet[i]->index[db->sheet[i]->f_key_index[j]].removeRecord(&it,ans[k]);
+                        if(db->table[i]->index[db->table[i]->f_key_index[j]].fileID == -1){
+                            db->table[i]->index[db->table[i]->f_key_index[j]].open();
+                            db->table[i]->index[db->table[i]->f_key_index[j]].removeRecord(&it,ans[k]);
                             Anys nullkey;
                             for(uint m = 0;m < it.size();m ++)nullkey.push_back(Any());
-                            db->sheet[i]->index[db->sheet[i]->f_key_index[j]].insertRecord(&nullkey,ans[k]);
-                            db->sheet[i]->index[db->sheet[i]->f_key_index[j]].close();
+                            db->table[i]->index[db->table[i]->f_key_index[j]].insertRecord(&nullkey,ans[k]);
+                            db->table[i]->index[db->table[i]->f_key_index[j]].close();
                         }
                         else {
-                            db->sheet[i]->index[db->sheet[i]->f_key_index[j]].removeRecord(&it,ans[k]);
+                            db->table[i]->index[db->table[i]->f_key_index[j]].removeRecord(&it,ans[k]);
                             Anys nullkey;
                             for(uint m = 0;m < it.size();m ++)nullkey.push_back(Any());
-                            db->sheet[i]->index[db->sheet[i]->f_key_index[j]].insertRecord(&nullkey,ans[k]);
+                            db->table[i]->index[db->table[i]->f_key_index[j]].insertRecord(&nullkey,ans[k]);
                         }
-                        Anys pre = db->sheet[i]->queryRecord(ans[k]);
+                        Anys pre = db->table[i]->queryRecord(ans[k]);
                         Anys after;
                         vector<bool> mark;
                         for(uint m = 0;m < pre.size();m ++)mark.push_back(true);
-                        for(uint m = 0;m < db->sheet[i]->f_key[j]->v.size();m ++)mark[db->sheet[i]->f_key[j]->v[m]] = false;
+                        for(uint m = 0;m < db->table[i]->f_key[j]->v.size();m ++)mark[db->table[i]->f_key[j]->v[m]] = false;
                         for(uint m = 0;m < pre.size();m ++){
                             if(mark[m]) after.push_back(pre[m]);
                             else after.push_back(Any());
@@ -1139,6 +1139,6 @@ int Sheet::updateRecords(vector<Pia> &set, vector<WhereStmt> &where) {
     return 0;
 }
 
-uint Sheet::getPointer() {
+uint Table::getPointer() {
     return pointer.pid;
 }

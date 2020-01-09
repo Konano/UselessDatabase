@@ -1,5 +1,5 @@
-#ifndef __SHEET
-#define __SHEET
+#ifndef __TABLE
+#define __TABLE
 
 #include "constants.h"
 #include "Type.h"
@@ -15,7 +15,7 @@ class Database;
 class FileManager;
 class BufPageManager;
 
-class Sheet {
+class Table {
 private:
     void insert(Any& val, enumType ty, uint size, BufType& buf);
     void fetch(BufType& buf, enumType ty, uint size, Any& val);
@@ -30,13 +30,13 @@ private:
     Anys chooseData(Anys& data, std::vector<uint>& cols);
 
     struct Pointer {
-        Sheet* s;
+        Table* s;
         uint pid;
         BufType buf;
         void init();
         bool next();
         Pointer() {}
-        Pointer(Sheet* _s, uint _pid);
+        Pointer(Table* _s, uint _pid);
         Anys get();
     } pointer;
     
@@ -46,7 +46,7 @@ public:
     Database* db;
     FileManager* fm;
     BufPageManager* bpm;
-    uint sheet_id;
+    uint table_id;
     uint col_num = 0;
     Type col_ty[MAX_COL_NUM];
     PrimaryKey* p_key = nullptr; // primary key
@@ -65,13 +65,13 @@ public:
     Anys val;   // when sel = 2
 
     json toJson();
-    Sheet(Database* db, json j);
+    Table(Database* db, json j);
 
-    Sheet() { this->pointer.s = this; }
-    Sheet(uint _sel) : sel(_sel) { this->pointer.s = this; }
-    ~Sheet();
+    Table() { this->pointer.s = this; }
+    Table(uint _sel) : sel(_sel) { this->pointer.s = this; }
+    ~Table();
     uint calDataSize();
-    int createSheet(uint sheet_id, Database* db, const char* name, uint col_num, Type* col_ty, bool create = false);
+    int createTable(uint table_id, Database* db, const char* name, uint col_num, Type* col_ty, bool create = false);
     int insertRecord(Any* data);
     // void removeRecord(const int len, Any* info);
     int removeRecord(const int record_id);

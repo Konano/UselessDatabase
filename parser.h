@@ -4,7 +4,7 @@
 #include "Any.h"
 #include "Type.h"
 #include "Database.h"
-#include "Sheet.h"
+#include "Table.h"
 
 #include <stdio.h>
 #include <iostream>
@@ -24,7 +24,7 @@ struct YYType_Where {
 	enumOp op;
 	vector<Any> rvalue;
 	vector<Pss> rvalue_cols;
-	int rvalue_sheet;
+	int rvalue_table;
 };
 
 struct YYType {

@@ -1,7 +1,7 @@
 #include "Index.h"
 
 #include "BufPageManager.h"
-#include "Sheet.h"
+#include "Table.h"
 #include "FileManager.h"
 #include "Database.h"
 #include "BtreeNode.h"
@@ -28,7 +28,7 @@ json Index::toJson() {
     return j;
 }
 
-Index::Index(Sheet* sheet, json j) : sheet(sheet) {
+Index::Index(Table* table, json j) : table(table) {
     strcpy(name, j["name"].get<std::string>().c_str());
     key.clear();
     ty.clear();
@@ -44,9 +44,9 @@ Index::Index(Sheet* sheet, json j) : sheet(sheet) {
     fileID = -1; // file is closed
 }
 
-Index::Index(Sheet* sheet, const char* name, vector<uint> key, int btree_max_per_node) : sheet(sheet), key(key), btree_max_per_node(btree_max_per_node) {
+Index::Index(Table* table, const char* name, vector<uint> key, int btree_max_per_node) : table(table), key(key), btree_max_per_node(btree_max_per_node) {
     strcpy(this->name, name);
-    sheet->fm->createFile(dirPath(sheet->db->name, sheet->name, name, "usid"));
+    table->fm->createFile(dirPath(table->db->name, table->name, name, "usid"));
     page_num = 1;
     next_del_page = -1;
     record_size = 8;
@@ -56,44 +56,44 @@ Index::Index(Sheet* sheet, const char* name, vector<uint> key, int btree_max_per
     this->key_num = key.size();
     for (auto i : key) {
         this->key.push_back(i);
-        this->ty.push_back(sheet->col_ty[i].ty);
+        this->ty.push_back(table->col_ty[i].ty);
     }
     for (uint i = 0; i < key.size(); i++) {
         this->offset.push_back(i == 0 ? 0 : this->offset[i - 1]);
-        this->offset[i] += sheet->col_ty[key[i]].size();
+        this->offset[i] += table->col_ty[key[i]].size();
     }
-    for (uint i = 0; i < key.size(); i++) this->offset[i] -= sheet->col_ty[key[i]].size();
+    for (uint i = 0; i < key.size(); i++) this->offset[i] -= table->col_ty[key[i]].size();
     for (uint i = 0; i < key.size(); i++)
-        record_size += sheet->col_ty[key[i]].size();
+        record_size += table->col_ty[key[i]].size();
     max_recond_num = (PAGE_SIZE - 18) / record_size;
 
     open();
 
     int index;
-    BufType buf = sheet->bpm->getPage(fileID, 0, index);
+    BufType buf = table->bpm->getPage(fileID, 0, index);
     *(uint32_t *)(buf+0) = -1;
     *(uint32_t *)(buf+4) = -1;
     *(uint32_t *)(buf+8) = -1;
     *(uint32_t *)(buf+12) = -1;
     *(uint16_t *)(buf+16) = 0;
-    sheet->bpm->markDirty(index);
+    table->bpm->markDirty(index);
     
     root_page = 0;
     close();
 }
 
 void Index::open() {
-    sheet->fm->openFile(dirPath(sheet->db->name, sheet->name, name, "usid"), fileID);
+    table->fm->openFile(dirPath(table->db->name, table->name, name, "usid"), fileID);
 }
 
 void Index::close() {
-    sheet->fm->closeFile(fileID);
+    table->fm->closeFile(fileID);
     fileID = -1; // file is closed
 }
 
 void Index::remove() {
     if (fileID != -1) close();
-    sheet->fm->deleteFile(dirPath(sheet->db->name, sheet->name, name, "usid"));
+    table->fm->deleteFile(dirPath(table->db->name, table->name, name, "usid"));
 }
 
 void Index::Btree_remove(BtreeNode* node) {
@@ -139,7 +139,7 @@ BtreeNode* Index::convert_buf_to_BtreeNode(int index) {
     
     ans->index = index;
 
-    BufType buf = sheet->bpm->getPage(fileID, index);
+    BufType buf = table->bpm->getPage(fileID, index);
 
     ans->left_page_index = *(uint32_t *)(buf + 4);
     ans->right_page_index = *(uint32_t *)(buf + 8);
@@ -194,7 +194,7 @@ BtreeNode* Index::convert_buf_to_BtreeNode(int index) {
 
 void Index::convert_BtreeNode_to_buf(BtreeNode* node) {
     int _index;
-    BufType buf = sheet->bpm->getPage(fileID, node->index, _index);
+    BufType buf = table->bpm->getPage(fileID, node->index, _index);
 
     *(uint32_t*) buf = -1; buf += 4; 
     *(uint32_t*) buf = node->left_page_index; buf += 4; 
@@ -235,7 +235,7 @@ void Index::convert_BtreeNode_to_buf(BtreeNode* node) {
         }
         *(uint32_t*) buf = node->child[i + 1]; buf += 4;
     }
-    sheet->bpm->markDirty(_index);
+    table->bpm->markDirty(_index);
 }
 
 std::vector<int> Index::queryRecord(Anys* info) {
