@@ -823,8 +823,9 @@ alterStmt:
         if (current_db_exists()) {
             int tableID;
             if (table_exists($3, tableID, true)) {
-                if (db->sheet[tableID]->p_key != nullptr)db->sheet[tableID]->removePrimaryKey();
-                else printf("TABLE %s doesn't have a primary key\n", $3.c_str());
+                if (db->sheet[tableID]->p_key == nullptr) printf("TABLE %s doesn't have a primary key\n", $3.c_str());
+-           	else if (db->sheet[tableID]->p_key->f.size() != 0) printf("Delete related foreign key first\n");
+-           	else db->sheet[tableID]->removePrimaryKey();
             }
             db->update();
         }
@@ -868,8 +869,9 @@ alterStmt:
         if (current_db_exists()) {
             int tableID;
             if (table_exists($3, tableID, true)) {
-                if (db->sheet[tableID]->p_key != nullptr)db->sheet[tableID]->removePrimaryKey();
-                else printf("TABLE %s doesn't have a primary key\n", $3.c_str());
+                if (db->sheet[tableID]->p_key == nullptr) printf("TABLE %s doesn't have a primary key\n", $3.c_str());
+-           	else if (db->sheet[tableID]->p_key->f.size() != 0) printf("Delete related foreign key first\n");
+-           	else db->sheet[tableID]->removePrimaryKey();
             }
             db->update();
         }
@@ -935,7 +937,7 @@ alterStmt:
                         break;
                     }
                 }
-                if (!flag) printf("TABLE %s doesn't have a forrign key named %s\n", $3.c_str(), $7.c_str());
+                if (!flag) printf("TABLE %s doesn't have a foreign key named %s\n", $3.c_str(), $7.c_str());
             }
             db->update();
         }
