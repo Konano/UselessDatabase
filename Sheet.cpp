@@ -648,7 +648,7 @@ int Sheet::removePrimaryKey() {
     if (p_key == nullptr) return -1;
     for (auto it: p_key->f) it->p = nullptr;
     for (auto col: p_key->v) col_ty[col].key = enumKeyType::Common;
-    int index_id = findIndex(std::string("pk"));
+    int index_id = p_key_index;
     removeIndex(index_id);
     delete p_key;
     p_key = nullptr;
