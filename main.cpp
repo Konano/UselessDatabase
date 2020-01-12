@@ -607,8 +607,8 @@ int main() {
     // test_8();
     // test_9();
     // import_data_csv();
-    // import_data_tbl();
-    // cout << "import finish" << endl; 
+    import_data_tbl();
+    cout << "import finish" << endl; 
     yyparse();
     return 0;
 }

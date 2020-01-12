@@ -893,6 +893,14 @@ void Table::initPointer() {
     return pointer.init();
 }
 
+void Table::removePointer() {
+    pointer.pid = -1;
+}
+
+bool Table::checkPointer() {
+    return pointer.pid != -1;
+}
+
 bool Table::movePointer() {
     return pointer.next();
 }

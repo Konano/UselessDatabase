@@ -115,7 +115,9 @@ public:
     int constraintRowKey(Any* data, Key* key);
 
     void initPointer();
+    void removePointer();
     bool movePointer();
+    bool checkPointer();
     Any getPointerColData(uint idx);
     Anys getPointerData();
     uint getPointer();

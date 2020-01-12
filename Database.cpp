@@ -227,6 +227,7 @@ bool cmpCol(enumOp op, Anys &a, Anys &b) {
 bool Database::checkWhere(WhereStmt &w) { // Table::checkWhere
     Anys data, _data;
     for (auto it: w.cols) {
+        if (filterTable(it.first)->checkPointer() == false) return true;
         data.push_back(filterTable(it.first)->getPointerColData(it.second));
     }
     switch (w.rvalue_ty) {
@@ -246,6 +247,7 @@ bool Database::checkWhere(WhereStmt &w) { // Table::checkWhere
     }
     case 2: {
         for (auto it: w.rvalue_cols) {
+            if (filterTable(it.first)->checkPointer() == false) return true;
             _data.push_back(filterTable(it.first)->getPointerColData(it.second));
         }
         return cmpCol(w.op, data, _data);
@@ -286,10 +288,10 @@ void Database::storeData(uint idx) {
 bool selStop;
 
 void Database::dfsCross(uint idx, uint f_idx, bool print = false) {
+    for (auto it: sel[idx].where) {
+        if (checkWhere(it) == false) return;
+    }
     if (f_idx == sel[idx].from.size()) {
-        for (auto it: sel[idx].where) {
-            if (checkWhere(it) == false) return;
-        }
         storeData(idx);
         if (print && sel_table[idx]->record_num % MAX_RESULT_LINES == 0 && sel_table[idx]->printBack(MAX_RESULT_LINES)) {
             puts("====== Press c to continue, q to quit ======");
@@ -310,8 +312,12 @@ void Database::dfsCross(uint idx, uint f_idx, bool print = false) {
         filterTable(sel[idx].from[f_idx].first)->initPointer();
         while (filterTable(sel[idx].from[f_idx].first)->movePointer()) {
             dfsCross(idx, f_idx + 1, print);
-            if (selStop) return;
+            if (selStop) {
+                filterTable(sel[idx].from[f_idx].first)->removePointer();
+                return;
+            }
         }
+        filterTable(sel[idx].from[f_idx].first)->removePointer();
     }
 }
 
@@ -320,6 +326,8 @@ void Database::buildSel(uint idx, bool print) {
     sel[idx].build = true;
     for (auto it: sel[idx].recursion) buildSel(-1-it);
     selStop = false;
+    for (int i = 0; i < sel[idx].from.size(); i++) 
+        filterTable(sel[idx].from[i].first)->removePointer();
     dfsCross(idx, 0, print);
     if (sel[idx].select.size() == 0 && sel[idx].aggr.size() > 0) {
         uint _idx = 0;
