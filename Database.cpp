@@ -326,7 +326,7 @@ void Database::buildSel(uint idx, bool print) {
     sel[idx].build = true;
     for (auto it: sel[idx].recursion) buildSel(-1-it);
     selStop = false;
-    for (int i = 0; i < sel[idx].from.size(); i++) 
+    for (uint i = 0; i < sel[idx].from.size(); i++) 
         filterTable(sel[idx].from[i].first)->removePointer();
     dfsCross(idx, 0, print);
     if (sel[idx].select.size() == 0 && sel[idx].aggr.size() > 0) {

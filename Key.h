@@ -69,6 +69,7 @@ public:
     ForeignKey(Table* s) : Key(s) {}
     ForeignKey(Table* s, json j, Database* db);
     ForeignKey(Table* s, uint sz, int* info) : Key(s, sz, info) {}
+    ForeignKey(Table* s, uint sz, int* info, const char* str) : Key(s, sz, info) { name = std::string(str); }
     int ty() { return 2; }
     json toJson();
 };

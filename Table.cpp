@@ -809,6 +809,9 @@ int Table::constraintKey(Key* key) {
         //     m[as] = true;
         // }
     } else {
+        Table* p_table = dynamic_cast<ForeignKey*>(key)->p->table;
+        if (p_table->index[p_table->p_key_index].fileID == -1) 
+            p_table->index[p_table->p_key_index].open();
         Pointer p(this);
         while (p.next()) {
             data = p.get();
@@ -820,7 +823,6 @@ int Table::constraintKey(Key* key) {
                 _data.push_back(data[i]);
             }
             if (null == false && non_null == false) return -1;
-            Table* p_table = dynamic_cast<ForeignKey*>(key)->p->table;
             if (p_table->index[p_table->p_key_index].queryRecord(&_data).size() == 0) return -4;
         }
         // for (uint record_id = 0; record_id < record_num; record_id++) {
